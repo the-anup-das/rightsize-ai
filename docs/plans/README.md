@@ -6,7 +6,7 @@ One file per major feature. Each has the same sections: Goal, Why it beats what 
 
 | # | Plan | Phase | Status |
 |---|---|---|---|
-| 00 | [Competitor landscape](00-competitors.md) | research | done 2026-09-24 |
+| 00 | [Competitor landscape](00-competitors.md) | research | revised 2026-09-24 (two passes) |
 | F1 | [Model catalog](F01-model-catalog.md) | 1 | planned |
 | F2 | [Hardware database and detection](F02-hardware.md) | 1 | planned |
 | F3 | [Fit engine](F03-fit-engine.md) | 1 | planned |

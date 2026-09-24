@@ -8,7 +8,7 @@ Answer "what is this model" for any Hub repo **without downloading it**: paramet
 
 ## Why it beats what exists
 
-The HF hardware panel and LM Studio compare **file sizes**. We read `config.json` plus the safetensors or GGUF **header** (a few KB over HTTP Range), so context length and KV cache are modelled. vram-calc's handling of MLA, sliding-window and hybrid attention becomes a per-architecture override table anyone can extend.
+The Hugging Face hub panel compares **file sizes** and LM Studio estimates one model at a time. We read `config.json` plus the safetensors or GGUF **header** (a few KB over HTTP Range), so context length and KV cache are modelled. vram-calc's handling of MLA, sliding-window and hybrid attention becomes a per-architecture override table anyone can extend.
 
 ## Public API
 

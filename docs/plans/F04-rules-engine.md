@@ -8,7 +8,7 @@ Turn candidates plus fit results into a ranked, explained list of `Plan`s. Enfor
 
 ## Why it beats what exists
 
-GPUStack, the HF panel and LM Studio answer yes / no for the model you picked. We return the **next best thing that fits** with the quality penalty stated, and every rule that fired cites its source URL. GPUStack's backend x OS x GPU matrix and the HF / vLLM quantization matrices become open, testable rules.
+Hub badges, LM Studio and GPUStack answer yes / no for the model you picked; CanIRun.ai and canirunllm rank alternatives by fit but carry no per-quant quality penalty and cite no rules. We return the **next best thing that fits** with the quality penalty stated, and every rule that fired cites its source URL. GPUStack's backend x OS x GPU matrix and the HF / vLLM quantization matrices become open, testable rules.
 
 ## Public API
 

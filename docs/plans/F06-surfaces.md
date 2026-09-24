@@ -8,7 +8,7 @@ Expose the same functions three ways: a Python SDK, a CLI with `--json` on every
 
 ## Why it beats what exists
 
-Every web calculator is UI-only; gguf-parser-go is Go; no MCP server answers "will this fit, at which quant, with which framework". Rightsize is the only planner an agent can call.
+Most web calculators are UI-only and gguf-parser-go is Go. The MCP servers that exist (local-ai-mcp, gpu-container) are LLM-inference only. Rightsize is the only agent-callable planner that covers fine-tuning, five model families and recipe output. See 00-competitors.md section 4.
 
 ## Public API
 
