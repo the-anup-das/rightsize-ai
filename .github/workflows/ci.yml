@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (${{ matrix.os }}, py${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv python install ${{ matrix.python }}
+      - run: uv sync --python ${{ matrix.python }} --group dev --extra mcp
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run pytest -m "not slow"
+
+  lightweight:
+    name: lightweight budgets (wheel size, clean-install deps)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv python install 3.12
+      - run: uv build
+      - name: wheel under 300 KB
+        run: |
+          python3 - <<'PY'
+          import glob, os, sys
+          wheel = glob.glob("dist/*.whl")[0]
+          size = os.path.getsize(wheel)
+          print(f"{wheel}: {size/1024:.1f} KB")
+          sys.exit(0 if size < 300 * 1024 else 1)
+          PY
+      - name: clean install pulls no ML frameworks
+        run: |
+          uv venv /tmp/clean --python 3.12
+          uv pip install --python /tmp/clean/bin/python dist/*.whl
+          uv pip list --python /tmp/clean/bin/python | tee /tmp/deps.txt
+          ! grep -iE '^(torch|transformers|numpy|diffusers|unsloth|jinja2) ' /tmp/deps.txt
+      - name: installed package runs
+        run: /tmp/clean/bin/rightsize --version
