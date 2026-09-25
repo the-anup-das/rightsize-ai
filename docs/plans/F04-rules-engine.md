@@ -61,6 +61,7 @@ Quality data (`data/quality/`): base-model quality from Artificial Analysis / Ar
 - **Candidate generation**: hardware-first enumerates curated models for the family and task x quant ladder x runtimes supported on the target; model-first enumerates the quant ladder x runtimes for one model. Both call F3 for each `(model, quant, runtime, device, stage)`.
 - **Ranking**: `score = base_quality x (1 - quant_penalty)`, tie-break by speed, then simplicity (fewer install steps). Quality floor filters before ranking. Pinned framework restricts recipes, not candidates.
 - **Explainability**: `Plan.trace` lists every fired rule as `"{id}: {message} ({source_url})"`, plus the formula ids used.
+- **Budget-to-bits candidates**: besides the uniform quant ladder, the generator adds a mixed-precision candidate when the budget lands between two formats: ModelOpt AutoQuantize (`effective_bits`) on NVIDIA, UD-style GGUF mixes on llama.cpp. Ranked like any other candidate; its quality penalty is interpolated between the neighbouring uniform formats and marked lower confidence.
 
 ## MVP scope
 

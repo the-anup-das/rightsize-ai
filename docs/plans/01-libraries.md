@@ -60,7 +60,7 @@ Status column: MVP / P2 / later / runtime. Families: L = LLM and VLM, D = diffus
 | mistral.rs ISQ (`--isq 2..8`, MoQE for MoE experts, AFQ on Metal) | in-memory | L, VLM | CUDA, Metal, CPU | quantizes at load, model larger than RAM can stream | runtime + P2 recipe |
 | MLC LLM (`mlc_llm convert_weight`, `compile`) | q4f16_1, q4f32_1, q3f16_1, q4f16_awq | L | CUDA, ROCm, Metal, Vulkan, OpenCL, WebGPU, iOS, Android | one model to every backend incl. browser | later (mobile phase) |
 | LMDeploy `lmdeploy lite auto_awq` **(verify)** | AWQ W4A16 | L | NVIDIA | TurboMind runtime | P2 |
-| NVIDIA TensorRT Model Optimizer | FP8 / NVFP4 / INT4 checkpoints, TRT-LLM engines | L, D | NVIDIA | | P2 |
+| NVIDIA TensorRT Model Optimizer (`nvidia-modelopt`, Apache-2.0) | HF checkpoints (FP8, INT8 SmoothQuant, INT4 AWQ, NVFP4, MXFP4) for vLLM / SGLang / TensorRT-LLM / Dynamo; TRT-LLM engines | L, VLM, D | NVIDIA (GPU for calibration) | `mtq.quantize` configs; `mtq.auto_quantize` per-layer mix under an `effective_bits` budget (gradient-based sensitivity); integrates with transformers, diffusers, NeMo / Megatron-Bridge, Megatron-LM, Accelerate; also QAT, pruning, distillation, speculative decoding, sparsity | MVP (PTQ + AutoQuantize) |
 | Intel AutoRound; Intel Neural Compressor | gptq / awq / GGUF; int8 | L, V | Intel, CUDA | AutoRound tops Intel's low-bit leaderboard | P2 |
 | AMD Quark; Brevitas (QAT) | ONNX / safetensors / GGUF | L, V | AMD | | P2 |
 | Nunchaku (SVDQuant INT4 / NVFP4) | Nunchaku | D | NVIDIA Turing+ / Blackwell | 4-bit FLUX at ~1/4 memory | P2 |

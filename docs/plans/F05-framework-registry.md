@@ -78,7 +78,7 @@ The full inventory, including what vLLM and Hugging Face offer and the libraries
 | whisper.cpp quantize; faster-whisper / CTranslate2; WhisperKit (Apple); NeMo Parakeet export | GGML; CT2 int8; Core ML; ONNX | audio (STT) | CPU, NVIDIA, Apple | MVP (whisper.cpp, CT2), P2 (WhisperKit, Parakeet) |
 | Kokoro, Piper, F5-TTS export paths | ONNX / GGML | audio (TTS) | CPU, Apple, NVIDIA | P2 |
 | sentence-transformers `export_*_quantized_*`, `quantize_embeddings`, model2vec; fastembed; Text Embeddings Inference | ONNX / OpenVINO int8; static vectors | embeddings | CPU, GPU | MVP (sentence-transformers), P2 (fastembed, TEI) |
-| NVIDIA TensorRT Model Optimizer | FP8 / NVFP4, TRT-LLM engines | LLM, diffusion | NVIDIA | P2 |
+| NVIDIA TensorRT Model Optimizer (`nvidia-modelopt`, Apache-2.0): `mtq.quantize` with `FP8_DEFAULT_CFG`, `INT8_SMOOTHQUANT_CFG`, `INT4_AWQ_CFG`, `NVFP4_DEFAULT_CFG`, MXFP4; `mtq.auto_quantize(constraints={"effective_bits": ...})` per-layer mixed precision; `export_hf_checkpoint` | HF checkpoints for vLLM, SGLang, TensorRT-LLM, Dynamo; TRT-LLM engines | LLM, VLM, diffusion | NVIDIA (GPU needed for calibration) | MVP (PTQ recipes + AutoQuantize); QAT, pruning, distillation, speculative decoding later |
 | Intel AutoRound; AMD Quark | gptq / awq / GGUF; ONNX | LLM | Intel; AMD | P2 |
 | Nunchaku (SVDQuant); stable-diffusion.cpp; ComfyUI-GGUF | INT4 / NVFP4; GGUF | diffusion | NVIDIA Turing+ / Blackwell; any | P2 |
 | torchao `quantize_` / QAT; ONNX Runtime quantization; Ultralytics export | int8 / int4 / fp8; ONNX / TensorRT / OpenVINO / CoreML / TFLite | vision | many | P2 |
@@ -91,7 +91,8 @@ The full inventory, including what vLLM and Hugging Face offer and the libraries
 - Bundled recipes load from `data/recipes/`; third-party recipe packs register via entry point `rightsize.recipes` pointing at a folder.
 - Template renderer: a minimal `{{ var }}` / `{% if %}` subset implemented in-house (no jinja2 in core); jinja2 optional under `[dev]` for validating parity.
 - `render()` validates inputs against the recipe's `inputs`, fills defaults from the `PlanStep` (quant, paths, device), and returns `RenderedStep{kind: command|config, text, install_line, notes, source_doc_url}`.
-- Every calibration-based recipe (AWQ, GPTQ, SmoothQuant, FP8 static, NVFP4, imatrix, OpenVINO static) declares `calibration.method`, `calibration.samples` (default 128–512 for LLMs, ~200 for classic int8) and `calibration.dataset`; see [02-quantization-concepts.md](02-quantization-concepts.md).
+- **Budget-driven mixed precision.** When the target is NVIDIA and the memory budget falls between two uniform formats, the plan offers a `modelopt.auto_quantize` recipe whose `effective_bits` input comes from F3 (`bits_that_fit = (usable_vram - kv - overhead) x 8 / params`, rounded down to 0.1). The same idea maps to llama.cpp as a UD-style mix and to Unsloth Dynamic where a matching upload exists.
+- Every calibration-based recipe (AWQ, GPTQ, SmoothQuant, FP8 static, NVFP4, imatrix, OpenVINO static, ModelOpt) declares `calibration.method`, `calibration.samples` (default 128–512 for LLMs, ~200 for classic int8) and `calibration.dataset`; see [02-quantization-concepts.md](02-quantization-concepts.md).
 - `docs.py` writes `docs/frameworks/<framework>.md` from the registry: what it is, when to pick it, hardware, install, recipes with example renders. Run in CI; diff must be clean.
 
 ## MVP scope
@@ -120,6 +121,8 @@ The 14 MVP recipes above plus 4 serve recipes; docs generation; entry point disc
 - [ ] Minimal template renderer with tests
 - [ ] Loader for bundled recipes + entry-point discovery
 - [ ] 14 MVP quantize / fine-tune recipes + 4 serve recipes, each with `source_doc_url` and `version_tested`
+- [ ] TensorRT Model Optimizer recipes: FP8, INT8 SmoothQuant, INT4 AWQ, NVFP4 (`mtq.quantize` + `export_hf_checkpoint`) with serve targets vLLM / SGLang / TensorRT-LLM
+- [ ] AutoQuantize recipe with `effective_bits` supplied by F3's budget-to-bits helper
 - [ ] `render()` and `Plan.render()`
 - [ ] `docs.py` generator; CI diff check
 - [ ] Nightly dry-run workflow

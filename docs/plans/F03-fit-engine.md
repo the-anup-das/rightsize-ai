@@ -88,5 +88,6 @@ LLM analytic + oobabooga path + speed; fine-tune components with Unsloth floors;
 - [ ] Audio table + estimator
 - [ ] Vision / embedding weight-only estimator
 - [ ] Multi-GPU and offload split
+- [ ] `bits_that_fit(model, device, ctx, runtime)` helper: the effective bits-per-weight a budget allows after KV and overhead; feeds ModelOpt AutoQuantize and GGUF mix candidates (F4, F5)
 - [ ] Golden tests listed above
 - [ ] `confidence` and `formula_id` on every result; docs page explaining each formula
