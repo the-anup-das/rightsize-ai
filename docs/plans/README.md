@@ -12,7 +12,7 @@ One file per major feature. Each has the same sections: Goal, Why it beats what 
 | F1 | [Model catalog](F01-model-catalog.md) | 1 | first slice: facts from Hub headers, cache, offline |
 | F2 | [Hardware database and detection](F02-hardware.md) | 1 | 259 devices, bandwidth for 201, detection, `bench`, HF profile import |
 | F3 | [Fit engine](F03-fit-engine.md) | 1 | LLM GGUF inference: weights, KV, overhead, speed; other families planned |
-| F4 | [Rules and ranking](F04-rules-engine.md) | 1 | planned |
+| F4 | [Rules and ranking](F04-rules-engine.md) | 1 | recommend both flows, 31 rules |
 | F5 | [Framework registry and recipes](F05-framework-registry.md) | 1 | renderer and loader; five llama.cpp recipes |
 | F6 | [Surfaces: SDK, CLI, MCP](F06-surfaces.md) | 1 | `estimate` / `detect` real in SDK and CLI; MCP planned |
 | F7 | [Cloud rental fallback](F07-cloud-fallback.md) | 1 | planned |

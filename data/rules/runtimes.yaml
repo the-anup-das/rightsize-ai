@@ -1,0 +1,81 @@
+# Where each serving runtime runs. Checked against the projects' own install docs on
+# 2026-09-25; where a vendor's table disagreed with its code, the code and the hardware
+# vendor's docs won, and the rule says so.
+rules:
+  - id: vllm_is_linux_only
+    applies_to: {runtime.name: vllm}
+    condition: "device.os in ['windows', 'macos']"
+    effect: block
+    message: >-
+      vLLM's GPU builds run on Linux; on Windows it needs WSL, and on Apple Silicon the
+      community vLLM-Metal plugin
+    source_url: https://docs.vllm.ai/en/latest/getting_started/installation/gpu/
+    test:
+      fires: {runtime: {name: vllm}, device: {os: windows}}
+      silent: {runtime: {name: vllm}, device: {os: linux}}
+
+  - id: vllm_needs_turing_or_newer
+    applies_to: {runtime.name: vllm}
+    condition: "device.vendor == 'nvidia' and device.compute_capability < 7.5"
+    effect: block
+    message: vLLM needs NVIDIA compute capability 7.5 (Turing) or newer
+    source_url: https://docs.vllm.ai/en/latest/getting_started/installation/gpu/
+    test:
+      fires: {runtime: {name: vllm}, device: {vendor: nvidia, compute_capability: 7.0}}
+      silent: {runtime: {name: vllm}, device: {vendor: nvidia, compute_capability: 8.9}}
+
+  - id: sglang_not_on_windows
+    applies_to: {runtime.name: sglang}
+    condition: "device.os == 'windows'"
+    effect: block
+    message: >-
+      SGLang runs on Linux (NVIDIA, AMD, Intel, TPU) and on Apple Silicon through MLX; its
+      maintainers have answered no to native Windows
+    source_url: https://github.com/sgl-project/sglang/discussions/4095
+    test:
+      fires: {runtime: {name: sglang}, device: {os: windows}}
+      silent: {runtime: {name: sglang}, device: {os: linux}}
+
+  - id: mlx_not_on_windows
+    applies_to: {runtime.name: [mlx, mlx-lm]}
+    condition: "device.os == 'windows'"
+    effect: block
+    message: >-
+      MLX runs on Apple Silicon (macOS 14+) and on Linux with CUDA (SM 7.5+) or CPU, not
+      on Windows
+    source_url: https://ml-explore.github.io/mlx/build/html/install.html
+    test:
+      fires: {runtime: {name: mlx}, device: {os: windows}}
+      silent: {runtime: {name: mlx}, device: {os: macos}}
+
+  - id: mlx_cuda_needs_turing
+    applies_to: {runtime.name: [mlx, mlx-lm]}
+    condition: "device.vendor == 'nvidia' and device.compute_capability < 7.5"
+    effect: block
+    message: MLX's CUDA backend needs NVIDIA SM 7.5 or newer
+    source_url: https://ml-explore.github.io/mlx/build/html/install.html
+    test:
+      fires: {runtime: {name: mlx}, device: {vendor: nvidia, compute_capability: 7.0}}
+      silent: {runtime: {name: mlx}, device: {vendor: nvidia, compute_capability: 8.6}}
+
+  - id: lm_studio_no_intel_macs
+    applies_to: {runtime.name: lm studio}
+    condition: "device.os == 'macos' and device.vendor != 'apple'"
+    effect: block
+    message: LM Studio does not support Intel Macs
+    source_url: https://lmstudio.ai/docs/app/system-requirements
+    test:
+      fires: {runtime: {name: lm studio}, device: {os: macos, vendor: intel}}
+      silent: {runtime: {name: lm studio}, device: {os: macos, vendor: apple}}
+
+  - id: llama_cpp_quantized_v_cache_needs_flash_attention
+    applies_to: {runtime.name: llama.cpp}
+    condition: "plan.kv_type in ['q8_0', 'q5_1', 'q5_0', 'q4_1', 'q4_0', 'iq4_nl']"
+    effect: note
+    message: >-
+      a quantized V cache needs flash attention; llama.cpp turns it on by itself under the
+      default -fa auto and refuses under -fa off
+    source_url: https://github.com/ggml-org/llama.cpp/blob/b11177/src/llama-context.cpp
+    test:
+      fires: {runtime: {name: llama.cpp}, plan: {kv_type: q8_0}}
+      silent: {runtime: {name: llama.cpp}, plan: {kv_type: f16}}

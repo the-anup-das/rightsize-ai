@@ -1,0 +1,97 @@
+# Quantization formats outside GGUF, as vLLM and the hardware vendors document them. vLLM's
+# own quantization table lags its code in places (it still marks AWQ and GPTQ unsupported on
+# AMD), so these cite the code-backed docs instead.
+rules:
+  - id: fp8_weight_only_below_ada
+    applies_to: {quant.method: fp8}
+    condition: >-
+      device.vendor == 'nvidia' and device.compute_capability < 8.9
+      and device.compute_capability >= 7.5
+    effect: penalize
+    penalty: 0.8
+    message: >-
+      below Ada, FP8 runs as weight-only W8A16 through FP8 Marlin: the memory saving without
+      the FP8 compute speed-up
+    source_url: https://docs.vllm.ai/en/latest/features/quantization/llm_compressor/fp8/
+    test:
+      fires: {quant: {method: fp8}, device: {vendor: nvidia, compute_capability: 8.6}}
+      silent: {quant: {method: fp8}, device: {vendor: nvidia, compute_capability: 8.9}}
+
+  - id: fp8_needs_turing
+    applies_to: {quant.method: fp8}
+    condition: "device.vendor == 'nvidia' and device.compute_capability < 7.5"
+    effect: block
+    message: FP8 models need compute capability 7.5 or newer, even weight-only
+    source_url: https://docs.vllm.ai/en/latest/features/quantization/llm_compressor/fp8/
+    test:
+      fires: {quant: {method: fp8}, device: {vendor: nvidia, compute_capability: 7.0}}
+      silent: {quant: {method: fp8}, device: {vendor: nvidia, compute_capability: 7.5}}
+
+  - id: nvfp4_weight_only_below_blackwell
+    applies_to: {quant.method: nvfp4}
+    condition: >-
+      device.vendor == 'nvidia' and device.compute_capability < 10.0
+      and device.compute_capability >= 7.5
+    effect: penalize
+    penalty: 0.8
+    message: >-
+      below SM 10.0 vLLM runs NVFP4 weight-only through FP4 Marlin, without activation
+      quantization
+    source_url: https://docs.vllm.ai/projects/llm-compressor/en/latest/examples/quantization_w4a4_fp4/
+    test:
+      fires: {quant: {method: nvfp4}, device: {vendor: nvidia, compute_capability: 8.9}}
+      silent: {quant: {method: nvfp4}, device: {vendor: nvidia, compute_capability: 10.0}}
+
+  - id: nvfp4_needs_turing
+    applies_to: {quant.method: nvfp4}
+    condition: "device.vendor == 'nvidia' and device.compute_capability < 7.5"
+    effect: block
+    message: NVFP4 checkpoints need compute capability 7.5 or newer
+    source_url: https://docs.vllm.ai/projects/llm-compressor/en/latest/examples/quantization_w4a4_fp4/
+    test:
+      fires: {quant: {method: nvfp4}, device: {vendor: nvidia, compute_capability: 7.0}}
+      silent: {quant: {method: nvfp4}, device: {vendor: nvidia, compute_capability: 8.0}}
+
+  - id: mxfp4_marlin_not_on_turing
+    applies_to: {quant.method: mxfp4}
+    condition: "device.vendor == 'nvidia' and device.compute_capability == 7.5"
+    effect: block
+    message: vLLM's Marlin MXFP4 kernels do not support Turing
+    source_url: https://docs.vllm.ai/en/latest/features/quantization/
+    test:
+      fires: {quant: {method: mxfp4}, device: {vendor: nvidia, compute_capability: 7.5}}
+      silent: {quant: {method: mxfp4}, device: {vendor: nvidia, compute_capability: 8.6}}
+
+  - id: awq_on_amd_is_instinct_only
+    applies_to: {quant.method: awq}
+    condition: "device.vendor == 'amd'"
+    effect: note
+    message: >-
+      AMD documents AWQ in vLLM on Instinct MI300 and MI350 (with VLLM_USE_TRITON_AWQ=1);
+      consumer Radeon cards are not listed
+    source_url: https://rocm.docs.amd.com/projects/ai-ecosystem/en/latest/optimization/vllm-v1-optimization.html
+    test:
+      fires: {quant: {method: awq}, device: {vendor: amd}}
+      silent: {quant: {method: awq}, device: {vendor: nvidia}}
+
+  - id: bnb_4bit_needs_pascal
+    applies_to: {quant.method: bnb}
+    condition: "device.vendor == 'nvidia' and device.compute_capability < 6.0"
+    effect: block
+    message: bitsandbytes 4-bit (NF4/FP4) needs NVIDIA compute capability 6.0 or newer
+    source_url: https://huggingface.co/docs/bitsandbytes/main/en/installation
+    test:
+      fires: {quant: {method: bnb}, device: {vendor: nvidia, compute_capability: 5.2}}
+      silent: {quant: {method: bnb}, device: {vendor: nvidia, compute_capability: 7.5}}
+
+  - id: nunchaku_int4_architectures
+    applies_to: {quant.method: nunchaku}
+    condition: "device.vendor == 'nvidia' and device.compute_capability in [9.0, 10.0, 10.3]"
+    effect: block
+    message: >-
+      Nunchaku lists sm_75, sm_80, sm_86, sm_89 and sm_120; Hopper and datacenter
+      Blackwell are not supported
+    source_url: https://nunchaku.tech/docs/nunchaku/installation/installation.html
+    test:
+      fires: {quant: {method: nunchaku}, device: {vendor: nvidia, compute_capability: 9.0}}
+      silent: {quant: {method: nunchaku}, device: {vendor: nvidia, compute_capability: 8.9}}

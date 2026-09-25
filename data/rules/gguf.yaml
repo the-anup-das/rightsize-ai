@@ -1,0 +1,78 @@
+# GGUF and llama.cpp rules. Each one here was checked against the llama.cpp we pin (b11177),
+# by running it rather than by reading about it.
+rules:
+  - id: imatrix_required_by_llama_quantize
+    applies_to: {quant.method: gguf, stage: [quantize, serve]}
+    condition: "quant.requires_imatrix == True"
+    effect: require
+    requires: imatrix
+    message: >-
+      llama-quantize refuses this type without an importance matrix; the plan computes one
+      first. Q2_K_S needs one too, and IQ3_S, IQ3_M and the IQ4 types do not.
+    source_url: https://github.com/ggml-org/llama.cpp/blob/b11177/src/llama-quant.cpp
+    test:
+      fires: {quant: {method: gguf, type: IQ2_XXS, requires_imatrix: true}, stage: quantize}
+      silent: {quant: {method: gguf, type: IQ4_XS, requires_imatrix: false}, stage: quantize}
+
+  - id: iquant_better_with_imatrix
+    applies_to: {quant.method: gguf}
+    condition: "quant.is_iquant == True and quant.requires_imatrix == False"
+    effect: note
+    message: >-
+      runs without an importance matrix but quantizes better with one, which the plan
+      computes anyway
+    source_url: https://github.com/ggml-org/llama.cpp/pull/4861
+    test:
+      fires: {quant: {method: gguf, type: IQ4_XS, is_iquant: true, requires_imatrix: false}}
+      silent: {quant: {method: gguf, type: Q4_K_M, is_iquant: false, requires_imatrix: false}}
+
+  - id: quality_not_measured_for_type
+    applies_to: {quant.method: gguf}
+    condition: "quant.band == 'unknown'"
+    effect: note
+    message: >-
+      llama.cpp publishes no quality figure this far down; `rightsize quantize --eval`
+      measures it on the actual model with a KL-divergence gate
+    source_url: https://github.com/the-anup-das/rightsize-ai/blob/main/docs/plans/F08-execution-eval.md
+    test:
+      fires: {quant: {method: gguf, type: IQ1_S, band: unknown}}
+      silent: {quant: {method: gguf, type: Q4_K_M, band: good}}
+
+  - id: low_bits_break_tool_calling
+    applies_to: {quant.method: gguf, task: agentic}
+    condition: "quant.bits < 2.8"
+    effect: block
+    message: >-
+      Unsloth measured tool calling falling apart below its 2-bit K mix: heavily quantized
+      models keep general knowledge but fail to call tools or call them endlessly
+    source_url: https://unsloth.ai/docs/basics/dynamic-3.0-ggufs
+    test:
+      fires: {quant: {method: gguf, bits: 2.38}, task: agentic}
+      silent: {quant: {method: gguf, bits: 4.89}, task: agentic}
+
+  - id: iquants_slow_on_apple
+    applies_to: {quant.method: gguf}
+    condition: "quant.is_iquant == True and device.vendor == 'apple'"
+    effect: penalize
+    penalty: 0.9
+    message: >-
+      i-quants run slower than K-quants on Apple's Metal and ARM CPUs (IQ3_S measured at
+      under half Q3_K_S's speed on an M2 Max CPU); on CUDA and x86 they are level
+    source_url: https://github.com/ggml-org/llama.cpp/pull/5676
+    test:
+      fires: {quant: {method: gguf, is_iquant: true}, device: {vendor: apple}}
+      silent: {quant: {method: gguf, is_iquant: true}, device: {vendor: nvidia}}
+
+  - id: unified_memory_share_is_an_assumption
+    applies_to: {stage: serve}
+    condition: "device.unified_memory == True"
+    effect: note
+    message: >-
+      the GPU shares this memory with the CPU and the operating system, and rightsize assumes
+      it gets 70% - a community measurement with no primary source. On a Mac the limit can be
+      raised with sudo sysctl iogpu.wired_limit_mb=N if a plan is tight.
+    source_url: https://github.com/ml-explore/mlx-lm/blob/main/README.md
+    test:
+      fires: {stage: serve, device: {vendor: nvidia, unified_memory: true}}
+      silent: {stage: serve, device: {vendor: nvidia, unified_memory: false}}
+

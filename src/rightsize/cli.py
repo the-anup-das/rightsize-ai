@@ -14,7 +14,6 @@ import sys
 from rightsize import __version__
 
 _PLANS = {
-    "recommend": ("F4 rules and ranking", "docs/plans/F04-rules-engine.md"),
     "plan": ("F5 recipe rendering", "docs/plans/F05-framework-registry.md"),
     "data": ("data package updates", "data/README.md"),
 }
@@ -32,12 +31,20 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("-q", "--quiet", action="store_true", help="only failures and final tables")
     sub = p.add_subparsers(dest="command")
 
-    r = sub.add_parser("recommend", help="hardware-first: rank models that fit your devices")
-    r.add_argument("--task")
-    r.add_argument("--family")
-    r.add_argument("--finetune-device")
-    r.add_argument("--target-device")
-    r.add_argument("--framework")
+    r = sub.add_parser("recommend", help="rank the models that fit your hardware, with plans")
+    r.add_argument("--task", default="chat", choices=["chat", "coding", "agentic"])
+    r.add_argument("--target-device", "--device", dest="target_device", default="detect",
+                   help="where it will run: preset or catalogue name, @hf-user, or detect")
+    r.add_argument("--finetune-device", default=None, help="where it is fine-tuned, if at all")
+    r.add_argument("--mode", default="infer", choices=["infer", "lora", "qlora", "full"])
+    r.add_argument("--model", default=None, help="model-first: every quantization of this model")
+    r.add_argument("--quality", default=None,
+                   choices=["near-lossless", "good", "noticeable", "any"],
+                   help="quantization loss to accept (default noticeable; any with --model)")
+    r.add_argument("--ctx", type=int, default=8192)
+    r.add_argument("--top", type=int, default=5)
+    r.add_argument("--allow-slow", action="store_true", help="include plans under 5 tok/s")
+    r.add_argument("--commands", action="store_true", help="print the top plan's commands")
 
     e = sub.add_parser("estimate", help="memory and speed for one model on one device")
     e.add_argument("model", help="Hub id, e.g. Qwen/Qwen3-4B")
@@ -275,6 +282,75 @@ def _estimate_training(args: argparse.Namespace, fx, dev) -> int:
     return 0
 
 
+def cmd_recommend(args: argparse.Namespace) -> int:
+    from rightsize._console import verdict_style
+    from rightsize.rules.recommend import recommend_for_model, recommend_result
+
+    common = dict(
+        finetune_device=args.finetune_device, mode=args.mode, ctx=args.ctx,
+        allow_slow=args.allow_slow, top_k=args.top,
+    )
+    if args.model:
+        result = recommend_for_model(
+            args.model, args.target_device, task=args.task, quality=args.quality or "any",
+            **common,
+        )
+    else:
+        result = recommend_result(
+            args.task, args.target_device, quality=args.quality or "noticeable", **common
+        )
+    if args.json:
+        print(json.dumps([p.model_dump(mode="json") for p in result.plans], indent=2))
+        return 0 if result.plans else 1
+    con = _console(args)
+    target = result.plans[0].steps[-1].device.name if result.plans else args.target_device
+    con.title(f"{args.model or args.task} on {target}")
+    if not result.plans:
+        con.fail("nothing fits under these constraints")
+        for why in _closest_misses(result.rejected):
+            con.info("  " + why)
+        return 1
+    rows, styles = [], []
+    for p in result.plans:
+        serve = p.steps[-1]
+        f = serve.fit
+        rows.append([
+            str(p.rank),
+            p.model.ref.repo,
+            serve.quant.variant if serve.quant else "",
+            f"{f.vram_gb:.2f}",
+            f"{f.speed:.0f}" if f.speed else "?",
+            f.verdict.value,
+            f"{p.quality_penalty:.3f}" if p.quality_penalty is not None else "",
+            f"{p.score:.2f}",
+        ])
+        styles.append(verdict_style(f.verdict.value))
+    con.table(["#", "model", "quant", "vram GB", "tok/s", "verdict", "+ppl", "score"], rows,
+              styles=styles)
+    for line in result.plans[0].trace:
+        con.debug(line)
+    if args.commands:
+        con.out()
+        for step in result.plans[0].render():
+            con.out("$ " + step.text)
+    return 0
+
+
+def _closest_misses(rejected) -> list[str]:
+    """One line per reason, most common first: why nothing made it."""
+    from collections import Counter
+
+    counts = Counter(r.reason.split(":")[0] for r in rejected)
+    examples = {}
+    for r in rejected:
+        examples.setdefault(r.reason.split(":")[0], r)
+    return [
+        f"{n} x {kind}: e.g. {examples[kind].repo} {examples[kind].quant or ''} "
+        f"- {examples[kind].reason}"
+        for kind, n in counts.most_common(4)
+    ]
+
+
 def cmd_frameworks(args: argparse.Namespace) -> int:
     from rightsize.registry import all_recipes
 
@@ -431,6 +507,7 @@ def main(argv: list[str] | None = None) -> int:
         parser.print_help()
         return 0
     handlers = {
+        "recommend": cmd_recommend,
         "detect": cmd_detect,
         "estimate": cmd_estimate,
         "frameworks": cmd_frameworks,

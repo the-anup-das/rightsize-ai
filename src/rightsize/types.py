@@ -84,6 +84,10 @@ class Device(BaseModel):
     backends: list[str] = Field(default_factory=list, description="cuda, rocm, metal, vulkan, ...")
     os: Literal["linux", "windows", "macos", "ios", "android", "unknown"] = "unknown"
     usable_fraction: float = Field(default=1.0, gt=0, le=1.0)
+    unified_memory: bool = Field(
+        default=False,
+        description="memory shared with the CPU and OS (Apple silicon, Jetson, GB10)",
+    )
     provenance: Provenance | None = None
 
     @property
@@ -174,7 +178,11 @@ class Plan(BaseModel):
     steps: list[PlanStep]
     score: float = Field(description="Ranking score; higher is better")
     quality_penalty: float | None = Field(
-        default=None, description="Estimated quality loss from quantization, 0..1"
+        default=None,
+        description=(
+            "Perplexity the quantization adds over 16-bit, in llama.cpp's own units "
+            "(measured on Llama-3-8B); 0.18 for Q4_K_M, 3.5 for Q2_K"
+        ),
     )
     trace: list[str] = Field(
         default_factory=list, description="Rules that fired, each with its source URL"
@@ -183,6 +191,15 @@ class Plan(BaseModel):
 
     def to_json(self, **kwargs: Any) -> str:
         return self.model_dump_json(**kwargs)
+
+    def render(self, **inputs: Any) -> list[Any]:
+        """The plan's commands, one RenderedStep per step that has a recipe.
+
+        File names default to ones derived from the model, so a plan renders on its own;
+        pass any recipe input to override (``quantize_bin="/opt/llama/llama-quantize"``)."""
+        from rightsize.rules.render_plan import render_plan
+
+        return render_plan(self, **inputs)
 
     @classmethod
     def schema_json(cls) -> str:

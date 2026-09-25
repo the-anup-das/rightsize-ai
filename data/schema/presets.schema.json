@@ -85,6 +85,11 @@
           "default": null,
           "title": "System Ram Gib"
         },
+        "unified_memory": {
+          "default": false,
+          "title": "Unified Memory",
+          "type": "boolean"
+        },
         "usable_fraction": {
           "default": 1.0,
           "exclusiveMinimum": 0,

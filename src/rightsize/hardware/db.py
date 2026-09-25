@@ -44,6 +44,7 @@ def _to_device(rec: dict) -> Device:
         backends=list(rec.get("backends", [])),
         os=rec.get("os", "unknown"),
         usable_fraction=rec.get("usable_fraction", 1.0),
+        unified_memory=bool(rec.get("unified_memory", False)),
         provenance=Provenance(
             source_url=prov["source_url"], fetched_at=str(prov["fetched_at"]), note=prov.get("note")
         )
@@ -140,6 +141,7 @@ def catalog() -> dict[str, Device]:
     out: dict[str, Device] = {}
     for rec in data["devices"]:
         vendor = rec.get("vendor", "other")
+        unified = _is_unified(rec)
         for mem in rec.get("memory_gib") or []:
             gbps, hit = _bandwidth_for(rec["name"], vendor, mem)
             prov = (hit or {}).get("provenance") or rec.get("provenance")
@@ -154,7 +156,8 @@ def catalog() -> dict[str, Device]:
                 compute_arch=rec.get("gfx_version") or _arch(rec),
                 compute_capability=rec.get("compute_capability"),
                 backends=list(_BACKENDS.get(vendor, [])),
-                usable_fraction=_USABLE.get(vendor, 0.9),
+                usable_fraction=_USABLE["apple"] if unified else _USABLE.get(vendor, 0.9),
+                unified_memory=unified,
                 provenance=Provenance(
                     source_url=prov["source_url"],
                     fetched_at=str(prov["fetched_at"]),
@@ -164,6 +167,14 @@ def catalog() -> dict[str, Device]:
                 else None,
             )
     return out
+
+
+def _is_unified(rec: dict) -> bool:
+    """Memory the GPU shares with the CPU and the operating system. Apple silicon, and on
+    NVIDIA's side the Jetson modules and the GB10 superchip: treating a Jetson Orin Nano's
+    8 GB as a discrete card's, 92% usable, "fit" plans that the OS alone would squeeze out."""
+    name = str(rec.get("name", ""))
+    return rec.get("kind") == "apple" or name.startswith("Jetson") or name in ("GB10",)
 
 
 def _arch(rec: dict) -> str | None:

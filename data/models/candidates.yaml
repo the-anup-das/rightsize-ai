@@ -601,7 +601,7 @@ models:
   license: other
   facts:
     params_total: 123611033088
-    params_active: 5311411578
+    params_active: 12000000000
     num_layers: 88
     num_kv_heads: 2
     head_dim: 128
@@ -786,7 +786,7 @@ models:
   license: apache-2.0
   facts:
     params_total: 30532122624
-    params_active: 3353032704
+    params_active: 3000000000
     num_layers: 48
     num_kv_heads: 4
     head_dim: 128
@@ -1050,7 +1050,7 @@ models:
   license: apache-2.0
   facts:
     params_total: 30532122624
-    params_active: 3353032704
+    params_active: 3000000000
     num_layers: 48
     num_kv_heads: 4
     head_dim: 128
@@ -1382,7 +1382,7 @@ models:
   license: other
   facts:
     params_total: 32913266240
-    params_active: 1542809355
+    params_active: 3000000000
     num_layers: 52
     num_kv_heads: 2
     head_dim: 128
@@ -1447,7 +1447,7 @@ models:
   license: apache-2.0
   facts:
     params_total: 81324862720
-    params_active: 5525400832
+    params_active: 3000000000
     num_layers: 48
     num_kv_heads: 2
     head_dim: 256

@@ -1,6 +1,6 @@
 """Record what llama.cpp itself measured about each GGUF file type (F3, F4).
 
-    uv run python scripts/ingest_quant_quality.py
+    uv run python scripts/ingest_quant_quality.py [--reference path/to/16-bit.gguf]
 
 Two sources, both from the llama.cpp tag we pin:
 
@@ -12,6 +12,10 @@ Two sources, both from the llama.cpp tag we pin:
 
 Interpolating the i-quants' quality has to use effective bits on both sides; mixing nominal
 and effective bits once put IQ4_XS below Q3_K_L.
+
+With ``--reference`` pointing at any 16-bit GGUF, it also asks ``llama-quantize --dry-run``
+which types refuse to run without an importance matrix. That is not "the i-quants": IQ3_S,
+IQ3_M and the IQ4s run without one, and Q2_K_S, which is not an i-quant, does not.
 """
 
 from __future__ import annotations
@@ -64,10 +68,25 @@ def bpw_from_readme(tag: str) -> dict[str, float]:
     return out
 
 
+def needs_imatrix(quantize_bin: Path, reference: Path, qtype: str) -> bool:
+    """llama-quantize's own answer, from a dry run that writes nothing (about 80 ms)."""
+    proc = subprocess.run(
+        [str(quantize_bin), "--dry-run", str(reference), qtype],
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=False,
+    )
+    return "will require an imatrix" in (proc.stdout + proc.stderr)
+
+
 def main() -> int:
     tools = find_tools()
     ppl = ppl_from_help(tools.quantize)
     bpw = bpw_from_readme(tools.version)
+    reference = None
+    if "--reference" in sys.argv:
+        reference = Path(sys.argv[sys.argv.index("--reference") + 1])
     if not ppl or not bpw:
         print(f"parsed {len(ppl)} ppl lines and {len(bpw)} bpw values; has a format changed?")
         return 1
@@ -78,6 +97,8 @@ def main() -> int:
             rec["bpw"] = bpw[name]
         if name in ppl:
             rec.update(ppl[name])
+        if reference and name not in ("F16", "BF16", "F32"):
+            rec["requires_imatrix"] = needs_imatrix(tools.quantize, reference, name)
         types[name] = rec
     doc = {
         "llama_cpp": tools.version,
@@ -92,6 +113,17 @@ def main() -> int:
                 "fetched_at": dt.date.today().isoformat(),
                 "note": "effective bits per weight measured on Llama-3.1-8B",
             },
+            **(
+                {
+                    "requires_imatrix": {
+                        "source_url": f"https://github.com/ggml-org/llama.cpp/blob/{tools.version}/src/llama-quant.cpp",
+                        "fetched_at": dt.date.today().isoformat(),
+                        "note": "asked of `llama-quantize --dry-run` (tensor_requires_imatrix)",
+                    }
+                }
+                if reference
+                else {}
+            ),
         },
         "file_types": types,
     }

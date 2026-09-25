@@ -6,8 +6,6 @@ import json
 import subprocess
 import sys
 
-import pytest
-
 import rightsize
 from rightsize import (
     Device,
@@ -37,23 +35,30 @@ def test_cli_version_subprocess() -> None:
     assert out.stdout.strip() == f"rightsize {rightsize.__version__}"
 
 
-def test_cli_recommend_points_at_plan(capsys) -> None:
-    assert main(["recommend"]) == 0
-    captured = capsys.readouterr().out
-    assert "F04-rules-engine.md" in captured
+def test_cli_recommend_ranks_plans(capsys) -> None:
+    assert main(["--no-color", "recommend", "--device", "RTX 4090", "--top", "3"]) == 0
+    out = capsys.readouterr().out
+    assert "RTX 4090" in out and "vram GB" in out
 
 
 def test_cli_json_flag(capsys) -> None:
-    assert main(["--json", "recommend"]) == 0
+    assert main(["--json", "recommend", "--device", "RTX 4090", "--top", "2"]) == 0
+    plans = json.loads(capsys.readouterr().out)
+    assert len(plans) == 2 and plans[0]["rank"] == 1
+    assert plans[0]["steps"][-1]["stage"] == "serve"
+
+
+def test_commands_still_waiting_on_their_feature_say_where(capsys) -> None:
+    assert main(["--json", "plan", "render", "x.json"]) == 0
     payload = json.loads(capsys.readouterr().out)
     assert payload["status"] == "not_implemented"
-    assert payload["plan"].endswith("F04-rules-engine.md")
+    assert payload["plan"].endswith("F05-framework-registry.md")
 
 
-def test_public_functions_raise_not_implemented_yet() -> None:
-    with pytest.raises(rightsize.NotImplementedYet) as info:
-        rightsize.recommend()
-    assert "F04" in str(info.value)
+def test_public_recommend_returns_plans() -> None:
+    plans = rightsize.recommend("chat", "RTX 4090", top_k=2)
+    assert [p.rank for p in plans] == [1, 2]
+    assert isinstance(plans[0], rightsize.Plan)
 
 
 def _sample_plan() -> Plan:

@@ -132,6 +132,11 @@ def estimate(
             notes.append("speed assumes partial offload (large penalty)")
         if speed < _SLOW_TOK_S:
             notes.append(f"below {_SLOW_TOK_S:g} tok/s; fits but will feel slow")
+        if facts.params_active:
+            # The efficiency constant was measured on a dense model. Routing tokens to
+            # experts costs llama.cpp bandwidth efficiency, so for MoE this is a ceiling.
+            notes.append("mixture of experts: speed is an upper bound; expert routing is "
+                         "usually less bandwidth-efficient than the dense model it was fit on")
     else:
         # Say so rather than showing a blank column. Some devices have no published
         # bandwidth at all - NVIDIA gives laptop GPUs a bus width but no bandwidth,

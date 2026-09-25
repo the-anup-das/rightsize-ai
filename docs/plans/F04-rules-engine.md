@@ -84,12 +84,20 @@ About 40 rules; LLM quant penalty from Unsloth KL tables; non-LLM families ranke
 
 ## TODO
 
-- [ ] `data/schema/rule.schema.json`; loader; test-case requirement enforced
-- [ ] Safe condition evaluator with parser tests
-- [ ] Seed 40 rules with sources and tests
-- [ ] Candidate generation for both flows
-- [ ] Quant penalty table from Unsloth KL data; base quality table with sources
-- [ ] Ranking, quality floor, pinned framework
-- [ ] `Plan.trace` population; formula ids included
-- [ ] Golden ranking cases
-- [ ] Wire `rightsize.recommend` / `recommend_for_model` and the CLI
+- [x] `data/schema/rules.schema.json`; loader; test-case requirement enforced by the schema
+- [x] Safe condition evaluator, three-valued (an unknown never fires a rule), with parser tests
+- [ ] Seed 40 rules with sources and tests - **31**, each source fetched and quoted, rather than
+      padding to 40. The research corrected seven of the plan's own claims: MLX and SGLang are no
+      longer Apple-only / Linux-only, vLLM's quantization table lags its code (AWQ and GPTQ run on
+      AMD Instinct), NVFP4 runs weight-only from Turing, i-quants are slow on Apple and ARM rather
+      than on "CPU", and the ~70% Apple GPU memory share has no primary source.
+- [x] Candidate generation for both flows, from a pool built out of the Hub's download
+      rankings (`scripts/ingest_candidates.py`), not a hand-written list
+- [ ] Quant penalty table from Unsloth KL data; base quality table with sources - the penalty
+      comes from llama.cpp's own per-type perplexity figures instead; no licensed cross-model
+      quality benchmark yet, so size (with a conservative recency term) stands in, and the trace
+      says so
+- [x] Ranking (`rank.size_vs_quant.v0`), quality floor; pinned framework not yet
+- [x] `Plan.trace` population; formula ids included; `Plan.render()` gives the commands
+- [x] Golden ranking cases, as invariants over a pool that changes
+- [x] Wire `rightsize.recommend` / `recommend_for_model` and the CLI

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import struct
 import time
 from pathlib import Path
@@ -93,7 +94,7 @@ def _cache_path(repo: str, revision: str) -> Path:
 #: Bump whenever facts() starts keeping something new. A cached entry from an older
 #: version is refetched rather than trusted: without this, adding the attention fields left
 #: every warm cache describing LFM2 as all-attention, 166% over what llama.cpp allocates.
-CACHE_VERSION = 4
+CACHE_VERSION = 5
 
 
 def _read_cache(path: Path, ttl_s: float) -> dict[str, Any] | None:
@@ -163,7 +164,7 @@ def _family(cfg: dict[str, Any], pipeline_tag: str | None) -> Family:
 
 def _moe_active(
     total: int, tc: dict[str, Any], experts: int, k: int, hidden: int | None
-) -> tuple[int, str]:
+) -> tuple[int | None, str]:
     """Parameters that run for each token of a mixture-of-experts model.
 
     Only the routed experts are sparse. Attention, embeddings, the router and any shared
@@ -191,7 +192,23 @@ def _moe_active(
             if mtp:
                 how += f" and {mtp} prediction layer{'s' if mtp > 1 else ''}"
             return int(total - idle), how
-    return int(total * k / experts), "approximate: total x active/experts (expert size unknown)"
+    # The expert layout did not add up (latent-space experts, two-matrix MLPs, experts on
+    # only some layers). Scaling the total by k / experts would under-count badly - it put
+    # Nemotron-3-Super at 5.3B active against a stated 12B - and an under-count makes the
+    # model look fast. Leave it unset: speed then assumes every weight is read, which errs
+    # slow.
+    return None, "unknown: the expert layout did not add up, so speed assumes a dense read"
+
+
+_ACTIVE_IN_NAME = re.compile(r"[-_]A(\d+(?:\.\d+)?)B(?:[-_]|$)")
+
+
+def _active_from_name(repo: str) -> int | None:
+    """Publishers write the active size into mixture-of-experts names: 30B-A3B, 120B-A12B.
+    It is rounded, but it is their number, and it survives architectures the formula below
+    has not met."""
+    m = _ACTIVE_IN_NAME.search(repo.split("/")[-1])
+    return int(float(m.group(1)) * 1e9) if m else None
 
 
 def facts(
@@ -284,9 +301,14 @@ def facts(
         },
     )
     if experts and active_experts and total:
-        active, how = _moe_active(total, tc, experts, active_experts, hidden)
-        facts_.params_active = active
-        facts_.extra["params_active_note"] = how
+        stated = _active_from_name(repo)
+        if stated:
+            facts_.params_active = stated
+            facts_.extra["params_active_note"] = "stated in the model name"
+        else:
+            active, how = _moe_active(total, tc, experts, active_experts, hidden)
+            facts_.params_active = active
+            facts_.extra["params_active_note"] = how
     if transport is None:
         _write_cache(cache, facts_.model_dump(mode="json"))
     return facts_

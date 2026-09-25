@@ -77,6 +77,18 @@
           ],
           "default": null,
           "title": "Ppl Reference"
+        },
+        "requires_imatrix": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Requires Imatrix"
         }
       },
       "title": "_TypeMeasures",

@@ -70,14 +70,24 @@ def _not_yet(feature: str, plan: str):
     raise NotImplementedYet(feature, plan)
 
 
-def recommend(*args, **kwargs):
-    """Hardware-first planning. Lands with F4. See docs/plans/F04-rules-engine.md."""
-    _not_yet("recommend", "docs/plans/F04-rules-engine.md")
+def recommend(task: str = "chat", target_device="detect", **kwargs):
+    """Hardware-first: the best models for a device, one ranked Plan each (F4).
+
+        rightsize.recommend("coding", "RTX 3060 12GB")
+        rightsize.recommend("chat", "detect", finetune_device="T4", mode="qlora")
+
+    Each Plan's ``trace`` explains the fit, the score and every rule that fired, with its
+    source; ``plan.render()`` gives the commands. See rules.recommend for every option."""
+    from rightsize.rules.recommend import recommend as _recommend
+
+    return _recommend(task, target_device, **kwargs)
 
 
-def recommend_for_model(*args, **kwargs):
-    """Model-first planning. Lands with F4. See docs/plans/F04-rules-engine.md."""
-    _not_yet("recommend_for_model", "docs/plans/F04-rules-engine.md")
+def recommend_for_model(model, target_device="detect", **kwargs):
+    """Model-first: every quantization of one model that works on a device, best first."""
+    from rightsize.rules.recommend import recommend_for_model as _for_model
+
+    return _for_model(model, target_device, **kwargs).plans
 
 
 def estimate(

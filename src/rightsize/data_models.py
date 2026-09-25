@@ -83,6 +83,7 @@ class PresetRecord(_Strict):
     compute_capability: float | None = None
     backends: list[str] = Field(default_factory=list)
     usable_fraction: float = Field(default=1.0, gt=0, le=1)
+    unified_memory: bool = False
     os: str | None = None
     system_ram_gib: float | None = Field(default=None, gt=0)
     provenance: Source
@@ -187,6 +188,7 @@ class _TypeMeasures(_Strict):
     bpw: float | None = Field(default=None, ge=1, le=32)
     ppl_delta: float | None = None
     ppl_reference: str | None = None
+    requires_imatrix: bool | None = None
 
 
 class GgufTypesFile(_Strict):
@@ -218,6 +220,56 @@ class FinetuneFloorsFile(_Strict):
             if b.qlora_gb < a.qlora_gb or b.lora_gb < a.lora_gb:
                 raise ValueError(f"memory falls between {a.params_b}B and {b.params_b}B")
         return v
+
+
+# ---------------------------------------------------------------- rules
+
+
+class _RuleTest(_Strict):
+    fires: dict[str, Any]
+    silent: dict[str, Any]
+
+
+class RuleRecord(_Strict):
+    id: str = Field(pattern=r"^[a-z0-9_]+$")
+    applies_to: dict[str, Any] = Field(default_factory=dict)
+    condition: str | None = None
+    effect: Literal["block", "penalize", "require", "note"]
+    penalty: float | None = Field(default=None, gt=0, lt=1)
+    requires: str | None = None
+    message: str
+    source_url: str
+    test: _RuleTest
+
+    @field_validator("source_url")
+    @classmethod
+    def _https(cls, v: str) -> str:
+        if not v.startswith("https://"):
+            raise ValueError("source_url must be an https:// link someone can open")
+        return v
+
+    @field_validator("condition")
+    @classmethod
+    def _parses(cls, v: str | None) -> str | None:
+        if v is not None:
+            from rightsize.rules.expr import Condition
+
+            Condition(v)  # raises ExprError, a ValueError, on anything not allowed
+        return v
+
+    @model_validator(mode="after")
+    def _effect_fields(self) -> RuleRecord:
+        if (self.effect == "penalize") != (self.penalty is not None):
+            raise ValueError("penalty goes with effect: penalize, and only with it")
+        if (self.effect == "require") != (self.requires is not None):
+            raise ValueError("requires goes with effect: require, and only with it")
+        return self
+
+
+class RulesFile(_Strict):
+    """data/rules/*.yaml: gates, penalties and requirements, each with a source and tests."""
+
+    rules: list[RuleRecord] = Field(min_length=1)
 
 
 # ---------------------------------------------------------------- models
@@ -335,6 +387,7 @@ DATA_FILES: dict[str, tuple[str, Any]] = {
     "quality/gguf_types.yaml": ("gguf_types", GgufTypesFile),
     "finetune/unsloth_vram.yaml": ("finetune_floors", FinetuneFloorsFile),
     "models/candidates.yaml": ("candidates", CandidatesFile),
+    "rules/*.yaml": ("rules", RulesFile),
     "runtimes/*/kv_cache.yaml": ("kv_cache", KvCacheFile),
     "recipes/*/*.yaml": ("recipe", _recipe_model),
 }

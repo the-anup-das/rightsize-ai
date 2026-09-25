@@ -1,0 +1,125 @@
+{
+  "$defs": {
+    "RuleRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "applies_to": {
+          "additionalProperties": true,
+          "title": "Applies To",
+          "type": "object"
+        },
+        "condition": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Condition"
+        },
+        "effect": {
+          "enum": [
+            "block",
+            "penalize",
+            "require",
+            "note"
+          ],
+          "title": "Effect",
+          "type": "string"
+        },
+        "id": {
+          "pattern": "^[a-z0-9_]+$",
+          "title": "Id",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "penalty": {
+          "anyOf": [
+            {
+              "exclusiveMaximum": 1,
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Penalty"
+        },
+        "requires": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Requires"
+        },
+        "source_url": {
+          "title": "Source Url",
+          "type": "string"
+        },
+        "test": {
+          "$ref": "#/$defs/_RuleTest"
+        }
+      },
+      "required": [
+        "id",
+        "effect",
+        "message",
+        "source_url",
+        "test"
+      ],
+      "title": "RuleRecord",
+      "type": "object"
+    },
+    "_RuleTest": {
+      "additionalProperties": false,
+      "properties": {
+        "fires": {
+          "additionalProperties": true,
+          "title": "Fires",
+          "type": "object"
+        },
+        "silent": {
+          "additionalProperties": true,
+          "title": "Silent",
+          "type": "object"
+        }
+      },
+      "required": [
+        "fires",
+        "silent"
+      ],
+      "title": "_RuleTest",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "data/rules/*.yaml: gates, penalties and requirements, each with a source and tests.",
+  "properties": {
+    "rules": {
+      "items": {
+        "$ref": "#/$defs/RuleRecord"
+      },
+      "minItems": 1,
+      "title": "Rules",
+      "type": "array"
+    }
+  },
+  "required": [
+    "rules"
+  ],
+  "title": "RulesFile",
+  "type": "object"
+}

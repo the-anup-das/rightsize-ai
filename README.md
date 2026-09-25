@@ -35,6 +35,9 @@ Read [Choosing a model format](docs/guide/choosing-a-model-format.md): what GGUF
 ```bash
 git clone https://github.com/the-anup-das/rightsize-ai && cd rightsize-ai
 uv sync --group dev                       # core only: detect, estimate, recipes
+rightsize recommend                       # the best models for this machine, ranked
+rightsize recommend --task coding --device "RTX 3060 12GB" --commands
+rightsize recommend --finetune-device T4 --mode qlora     # fine-tune on one box, serve on this
 rightsize detect                          # what machine is this?
 rightsize estimate Qwen/Qwen3-4B --quant Q4_K_M --quant Q8_0   # no download, reads Hub headers
 rightsize estimate Qwen/Qwen3-4B --device "RTX 5080"           # or any of 259 catalogued devices
@@ -108,9 +111,9 @@ every verdict on that card 7% pessimistic.
 | F1 Model catalog | [F01](docs/plans/F01-model-catalog.md) | first slice: facts from Hub headers |
 | F2 Hardware DB + detection | [F02](docs/plans/F02-hardware.md) | 259 devices ingested, bandwidth for ~200, detection, `bench`, HF profile import |
 | F3 Fit engine | [F03](docs/plans/F03-fit-engine.md) | first slice: GGUF inference memory and speed |
-| F4 Rules + ranking | [F04](docs/plans/F04-rules-engine.md) | planned |
+| F4 Rules + ranking | [F04](docs/plans/F04-rules-engine.md) | `recommend` both flows, 31 sourced rules, plans that render to commands |
 | F5 Framework registry + recipes | [F05](docs/plans/F05-framework-registry.md) | first slice: five llama.cpp recipes |
-| F6 SDK / CLI / MCP | [F06](docs/plans/F06-surfaces.md) | CLI: detect, estimate, frameworks, quantize, bench, tools install. MCP not started |
+| F6 SDK / CLI / MCP | [F06](docs/plans/F06-surfaces.md) | CLI: recommend, estimate, detect, frameworks, quantize, bench, tools install. MCP not started |
 | F7 Cloud fallback | [F07](docs/plans/F07-cloud-fallback.md) | planned |
 | F8 Execution + eval gate | [F08](docs/plans/F08-execution-eval.md) | first slice: llama.cpp adapter with KL-divergence gate |
 | F9 Calibration loop | [F09](docs/plans/F09-calibration.md) | phase 2; runs already record predicted vs measured, and `bench` checks the speed constant |

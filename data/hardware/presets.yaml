@@ -105,6 +105,7 @@ presets:
     usable_fraction: 0.96
     provenance: { source_url: https://www.amd.com/en/products/accelerators/instinct/mi300/mi300x.html, fetched_at: "2026-09-25", hand: true }
   - name: M4 Max 64GB
+    unified_memory: true
     vendor: apple
     memory_gib: 64
     bandwidth_gbps: 546
@@ -113,6 +114,7 @@ presets:
     usable_fraction: 0.70
     provenance: { source_url: https://www.apple.com/newsroom/2024/10/apple-introduces-m4-pro-and-m4-max/, fetched_at: "2026-09-25", hand: true }
   - name: M4 Pro 24GB
+    unified_memory: true
     vendor: apple
     memory_gib: 24
     bandwidth_gbps: 273
@@ -121,6 +123,7 @@ presets:
     usable_fraction: 0.70
     provenance: { source_url: https://www.apple.com/newsroom/2024/10/apple-introduces-m4-pro-and-m4-max/, fetched_at: "2026-09-25", hand: true }
   - name: M4 16GB
+    unified_memory: true
     vendor: apple
     memory_gib: 16
     bandwidth_gbps: 120
@@ -129,6 +132,7 @@ presets:
     usable_fraction: 0.70
     provenance: { source_url: https://www.apple.com/newsroom/2024/05/apple-introduces-m4-chip/, fetched_at: "2026-09-25", hand: true }
   - name: DGX Spark 128GB
+    unified_memory: true
     vendor: nvidia
     memory_gib: 128
     bandwidth_gbps: 273
