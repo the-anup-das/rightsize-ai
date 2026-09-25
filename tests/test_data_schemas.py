@@ -62,3 +62,12 @@ def test_schemas_are_usable_json_schema() -> None:
     for name, schema in json_schemas().items():
         assert schema.get("type") == "object" and schema.get("properties"), name
         json.dumps(schema)  # serialisable without custom encoders
+
+
+def test_plan_schema_is_current() -> None:
+    """schema/plan.schema.json is the contract the web platform generates its types from."""
+    from export_schemas import PLAN_SCHEMA, plan_schema
+
+    assert PLAN_SCHEMA.read_text(encoding="utf-8") == render(plan_schema()), (
+        "schema/plan.schema.json is stale: run scripts/export_schemas.py"
+    )

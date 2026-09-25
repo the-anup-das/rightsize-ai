@@ -1,0 +1,208 @@
+{
+  "detect_hardware": {
+    "properties": {},
+    "title": "detect_hardwareArguments",
+    "type": "object"
+  },
+  "estimate_memory": {
+    "properties": {
+      "bandwidth_gbps": {
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Bandwidth Gbps"
+      },
+      "ctx": {
+        "default": 8192,
+        "title": "Ctx",
+        "type": "integer"
+      },
+      "device": {
+        "default": "detect",
+        "title": "Device",
+        "type": "string"
+      },
+      "mode": {
+        "default": "infer",
+        "title": "Mode",
+        "type": "string"
+      },
+      "model": {
+        "title": "Model",
+        "type": "string"
+      },
+      "quant": {
+        "default": "Q4_K_M",
+        "title": "Quant",
+        "type": "string"
+      }
+    },
+    "required": [
+      "model"
+    ],
+    "title": "estimate_memoryArguments",
+    "type": "object"
+  },
+  "list_frameworks": {
+    "properties": {
+      "framework": {
+        "default": "",
+        "title": "Framework",
+        "type": "string"
+      }
+    },
+    "title": "list_frameworksArguments",
+    "type": "object"
+  },
+  "list_hardware": {
+    "properties": {
+      "limit": {
+        "default": 50,
+        "title": "Limit",
+        "type": "integer"
+      },
+      "query": {
+        "default": "",
+        "title": "Query",
+        "type": "string"
+      }
+    },
+    "title": "list_hardwareArguments",
+    "type": "object"
+  },
+  "recommend": {
+    "properties": {
+      "allow_slow": {
+        "default": false,
+        "title": "Allow Slow",
+        "type": "boolean"
+      },
+      "ctx": {
+        "default": 8192,
+        "title": "Ctx",
+        "type": "integer"
+      },
+      "device": {
+        "default": "detect",
+        "title": "Device",
+        "type": "string"
+      },
+      "finetune_device": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Finetune Device"
+      },
+      "mode": {
+        "default": "infer",
+        "title": "Mode",
+        "type": "string"
+      },
+      "quality": {
+        "default": "noticeable",
+        "title": "Quality",
+        "type": "string"
+      },
+      "task": {
+        "default": "chat",
+        "title": "Task",
+        "type": "string"
+      },
+      "top_k": {
+        "default": 5,
+        "title": "Top K",
+        "type": "integer"
+      }
+    },
+    "title": "recommendArguments",
+    "type": "object"
+  },
+  "recommend_for_model": {
+    "properties": {
+      "ctx": {
+        "default": 8192,
+        "title": "Ctx",
+        "type": "integer"
+      },
+      "device": {
+        "default": "detect",
+        "title": "Device",
+        "type": "string"
+      },
+      "finetune_device": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Finetune Device"
+      },
+      "mode": {
+        "default": "infer",
+        "title": "Mode",
+        "type": "string"
+      },
+      "model": {
+        "title": "Model",
+        "type": "string"
+      },
+      "quality": {
+        "default": "any",
+        "title": "Quality",
+        "type": "string"
+      },
+      "top_k": {
+        "default": 10,
+        "title": "Top K",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "model"
+    ],
+    "title": "recommend_for_modelArguments",
+    "type": "object"
+  },
+  "render_recipe": {
+    "properties": {
+      "inputs": {
+        "anyOf": [
+          {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Inputs"
+      },
+      "recipe_id": {
+        "title": "Recipe Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "recipe_id"
+    ],
+    "title": "render_recipeArguments",
+    "type": "object"
+  }
+}

@@ -52,6 +52,27 @@ rightsize bench Qwen/Qwen3-1.7B           # measure this machine's real memory b
 
 `pip install rightsize` works too, but until the next release it installs the 0.0.1 placeholder.
 
+### From an agent (MCP)
+
+`rightsize mcp` serves the same functions as MCP tools over stdio: `recommend`,
+`recommend_for_model`, `estimate_memory`, `list_hardware`, `detect_hardware`,
+`list_frameworks` and `render_recipe`. Each plan comes back with its trace and the commands
+to carry it out. Most MCP clients take a config like this:
+
+```json
+{
+  "mcpServers": {
+    "rightsize": {
+      "command": "uv",
+      "args": ["run", "--directory", "/path/to/rightsize-ai", "--extra", "mcp", "rightsize", "mcp"]
+    }
+  }
+}
+```
+
+The Plan contract is published as JSON Schema in [schema/plan.schema.json](schema/plan.schema.json)
+for anything that wants typed plans without Python.
+
 
 ## Where the hardware numbers come from
 
@@ -113,7 +134,7 @@ every verdict on that card 7% pessimistic.
 | F3 Fit engine | [F03](docs/plans/F03-fit-engine.md) | first slice: GGUF inference memory and speed |
 | F4 Rules + ranking | [F04](docs/plans/F04-rules-engine.md) | `recommend` both flows, 31 sourced rules, plans that render to commands |
 | F5 Framework registry + recipes | [F05](docs/plans/F05-framework-registry.md) | first slice: five llama.cpp recipes |
-| F6 SDK / CLI / MCP | [F06](docs/plans/F06-surfaces.md) | CLI: recommend, estimate, detect, frameworks, quantize, bench, tools install. MCP not started |
+| F6 SDK / CLI / MCP | [F06](docs/plans/F06-surfaces.md) | SDK, CLI and MCP server (seven tools, stdio) over the same functions; Plan JSON Schema in `schema/` |
 | F7 Cloud fallback | [F07](docs/plans/F07-cloud-fallback.md) | planned |
 | F8 Execution + eval gate | [F08](docs/plans/F08-execution-eval.md) | first slice: llama.cpp adapter with KL-divergence gate |
 | F9 Calibration loop | [F09](docs/plans/F09-calibration.md) | phase 2; runs already record predicted vs measured, and `bench` checks the speed constant |

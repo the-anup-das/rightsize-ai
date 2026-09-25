@@ -1,0 +1,674 @@
+{
+  "$defs": {
+    "Device": {
+      "additionalProperties": false,
+      "description": "A fine-tuning box or a target device (F2).\n\nTwo units live here on purpose, because the two things a user compares against use\ndifferent ones. Memory is authored in **GiB** (1024**3 bytes): that is what the card\nholds, what nvidia-smi and llama.cpp print, and what the box says on the shelf. Model\nsizes everywhere else in rightsize are **decimal GB** (1e9 bytes), matching Hugging\nFace's file listings and the published numbers our golden tests are checked against.\nThe ``_gb`` properties below convert, so the fit engine only ever compares GB with GB.\nA 16 GiB card is 17.18 GB, and getting that wrong makes every verdict 7% pessimistic.",
+      "properties": {
+        "backends": {
+          "description": "cuda, rocm, metal, vulkan, ...",
+          "items": {
+            "type": "string"
+          },
+          "title": "Backends",
+          "type": "array"
+        },
+        "bandwidth_gbps": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Memory bandwidth, GB/s",
+          "title": "Bandwidth Gbps"
+        },
+        "compute_arch": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "e.g. ada, hopper, blackwell, rdna3, m4, sm_89",
+          "title": "Compute Arch"
+        },
+        "compute_capability": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "CUDA compute capability, e.g. 8.9; what most NVIDIA gates key on",
+          "title": "Compute Capability"
+        },
+        "memory_gib": {
+          "description": "VRAM, or unified memory on Apple, in GiB",
+          "exclusiveMinimum": 0,
+          "title": "Memory Gib",
+          "type": "number"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "os": {
+          "default": "unknown",
+          "enum": [
+            "linux",
+            "windows",
+            "macos",
+            "ios",
+            "android",
+            "unknown"
+          ],
+          "title": "Os",
+          "type": "string"
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Provenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "system_ram_gib": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "System Ram Gib"
+        },
+        "unified_memory": {
+          "default": false,
+          "description": "memory shared with the CPU and OS (Apple silicon, Jetson, GB10)",
+          "title": "Unified Memory",
+          "type": "boolean"
+        },
+        "usable_fraction": {
+          "default": 1.0,
+          "exclusiveMinimum": 0,
+          "maximum": 1.0,
+          "title": "Usable Fraction",
+          "type": "number"
+        },
+        "vendor": {
+          "default": "other",
+          "enum": [
+            "nvidia",
+            "amd",
+            "intel",
+            "apple",
+            "qualcomm",
+            "cpu",
+            "other"
+          ],
+          "title": "Vendor",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "memory_gib"
+      ],
+      "title": "Device",
+      "type": "object"
+    },
+    "Family": {
+      "description": "Model family. Each has its own estimator (F3).",
+      "enum": [
+        "llm",
+        "diffusion",
+        "audio",
+        "vision",
+        "embedding"
+      ],
+      "title": "Family",
+      "type": "string"
+    },
+    "FitResult": {
+      "description": "Output of one estimate (F3). Always explainable.",
+      "properties": {
+        "breakdown": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "description": "weights, kv_cache, activations, overhead, ...",
+          "title": "Breakdown",
+          "type": "object"
+        },
+        "confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "formula_id": {
+          "description": "Which estimator/formula produced this",
+          "title": "Formula Id",
+          "type": "string"
+        },
+        "notes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Notes",
+          "type": "array"
+        },
+        "ram_gb": {
+          "default": 0.0,
+          "title": "Ram Gb",
+          "type": "number"
+        },
+        "speed": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "tok/s for LLMs, s/image for diffusion",
+          "title": "Speed"
+        },
+        "speed_unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Speed Unit"
+        },
+        "verdict": {
+          "$ref": "#/$defs/Verdict"
+        },
+        "vram_gb": {
+          "title": "Vram Gb",
+          "type": "number"
+        }
+      },
+      "required": [
+        "verdict",
+        "vram_gb",
+        "confidence",
+        "formula_id"
+      ],
+      "title": "FitResult",
+      "type": "object"
+    },
+    "Mode": {
+      "description": "What the hardware is asked to do.",
+      "enum": [
+        "infer",
+        "lora",
+        "qlora",
+        "full"
+      ],
+      "title": "Mode",
+      "type": "string"
+    },
+    "ModelFacts": {
+      "description": "What the catalog knows about a model without downloading it (F1).",
+      "properties": {
+        "base_model": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Base Model"
+        },
+        "confidence": {
+          "default": 1.0,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "context_max": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Context Max"
+        },
+        "dtype": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dtype"
+        },
+        "extra": {
+          "additionalProperties": true,
+          "title": "Extra",
+          "type": "object"
+        },
+        "family": {
+          "$ref": "#/$defs/Family"
+        },
+        "head_dim": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Head Dim"
+        },
+        "license": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "License"
+        },
+        "num_kv_heads": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Num Kv Heads"
+        },
+        "num_layers": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Num Layers"
+        },
+        "params_active": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "MoE active parameters",
+          "title": "Params Active"
+        },
+        "params_total": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Params Total"
+        },
+        "ref": {
+          "$ref": "#/$defs/ModelRef"
+        }
+      },
+      "required": [
+        "ref",
+        "family"
+      ],
+      "title": "ModelFacts",
+      "type": "object"
+    },
+    "ModelRef": {
+      "description": "A pointer to a model repo or file (F1).",
+      "properties": {
+        "file": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "For GGUF/MLX: the specific file",
+          "title": "File"
+        },
+        "repo": {
+          "description": "Hub id, e.g. Qwen/Qwen3-14B",
+          "title": "Repo",
+          "type": "string"
+        },
+        "revision": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Revision"
+        }
+      },
+      "required": [
+        "repo"
+      ],
+      "title": "ModelRef",
+      "type": "object"
+    },
+    "PlanStep": {
+      "description": "One stage of a plan: finetune, quantize, export or serve (F4, F5).",
+      "properties": {
+        "device": {
+          "$ref": "#/$defs/Device"
+        },
+        "fit": {
+          "$ref": "#/$defs/FitResult"
+        },
+        "framework": {
+          "title": "Framework",
+          "type": "string"
+        },
+        "quant": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QuantSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "recipe_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Renderable recipe (F5)",
+          "title": "Recipe Id"
+        },
+        "runtime": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RuntimeSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "stage": {
+          "enum": [
+            "finetune",
+            "quantize",
+            "export",
+            "serve"
+          ],
+          "title": "Stage",
+          "type": "string"
+        }
+      },
+      "required": [
+        "stage",
+        "framework",
+        "device",
+        "fit"
+      ],
+      "title": "PlanStep",
+      "type": "object"
+    },
+    "Provenance": {
+      "description": "Where a number came from. Required on every data record (lightweight rule 2).",
+      "properties": {
+        "fetched_at": {
+          "description": "ISO-8601 date the value was taken from the source",
+          "title": "Fetched At",
+          "type": "string"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        },
+        "source_url": {
+          "title": "Source Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_url",
+        "fetched_at"
+      ],
+      "title": "Provenance",
+      "type": "object"
+    },
+    "QuantSpec": {
+      "description": "A quantization the fit engine and recipes agree on (F3, F5).",
+      "properties": {
+        "bits_per_weight": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Real bpw, not nominal",
+          "title": "Bits Per Weight"
+        },
+        "method": {
+          "description": "gguf, bnb, awq, gptq, fp8, mlx, torchao, ...",
+          "title": "Method",
+          "type": "string"
+        },
+        "variant": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "e.g. Q4_K_M, nf4, int8",
+          "title": "Variant"
+        }
+      },
+      "required": [
+        "method"
+      ],
+      "title": "QuantSpec",
+      "type": "object"
+    },
+    "RuntimeSpec": {
+      "properties": {
+        "ctx": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "context length the plan was sized for",
+          "title": "Ctx"
+        },
+        "name": {
+          "description": "llama.cpp, ollama, vllm, mlx_lm, diffusers, whisper.cpp, ...",
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "RuntimeSpec",
+      "type": "object"
+    },
+    "Verdict": {
+      "enum": [
+        "fits",
+        "tight",
+        "offload",
+        "no_fit"
+      ],
+      "title": "Verdict",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "A ranked, explained answer (F4). JSON-serialisable and shareable.",
+  "properties": {
+    "cloud_fallback": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "F7 rent-this offer",
+      "title": "Cloud Fallback"
+    },
+    "mode": {
+      "$ref": "#/$defs/Mode"
+    },
+    "model": {
+      "$ref": "#/$defs/ModelFacts"
+    },
+    "quality_penalty": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Perplexity the quantization adds over 16-bit, in llama.cpp's own units (measured on Llama-3-8B); 0.18 for Q4_K_M, 3.5 for Q2_K",
+      "title": "Quality Penalty"
+    },
+    "rank": {
+      "minimum": 1,
+      "title": "Rank",
+      "type": "integer"
+    },
+    "score": {
+      "description": "Ranking score; higher is better",
+      "title": "Score",
+      "type": "number"
+    },
+    "steps": {
+      "items": {
+        "$ref": "#/$defs/PlanStep"
+      },
+      "title": "Steps",
+      "type": "array"
+    },
+    "trace": {
+      "description": "Rules that fired, each with its source URL",
+      "items": {
+        "type": "string"
+      },
+      "title": "Trace",
+      "type": "array"
+    }
+  },
+  "required": [
+    "rank",
+    "model",
+    "mode",
+    "steps",
+    "score"
+  ],
+  "title": "Plan",
+  "type": "object"
+}

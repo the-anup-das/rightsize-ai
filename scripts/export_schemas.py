@@ -22,12 +22,25 @@ def render(schema: dict) -> str:
     return json.dumps(schema, indent=2, sort_keys=True) + "\n"
 
 
+#: The Plan contract the web platform generates its types from (F6).
+PLAN_SCHEMA = Path(__file__).resolve().parents[1] / "schema" / "plan.schema.json"
+
+
+def plan_schema() -> dict:
+    from rightsize.types import Plan
+
+    return Plan.model_json_schema()
+
+
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     for name, schema in json_schemas().items():
         path = OUT / f"{name}.schema.json"
         path.write_text(render(schema), encoding="utf-8")
         print(f"wrote {path.relative_to(OUT.parents[1])}")
+    PLAN_SCHEMA.parent.mkdir(parents=True, exist_ok=True)
+    PLAN_SCHEMA.write_text(render(plan_schema()), encoding="utf-8")
+    print(f"wrote {PLAN_SCHEMA.relative_to(OUT.parents[1])}")
     return 0
 
 

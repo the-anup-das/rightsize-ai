@@ -67,6 +67,7 @@ dev = [
 
 [project.scripts]
 rightsize = "rightsize.cli:main"
+rightsize-mcp = "rightsize.mcp_server:main"
 
 [project.entry-points."rightsize.adapters"]
 # Third-party execution adapters register here (F8).
@@ -95,6 +96,7 @@ packages = ["src/rightsize"]
 include = [
   "src/rightsize",
   "data",
+  "schema",
   "tests",
   "scripts",
   "docs",

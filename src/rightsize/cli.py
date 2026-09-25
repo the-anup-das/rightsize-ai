@@ -121,6 +121,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     ti.add_argument("--dest", default=".tools/llama.cpp")
 
+    sub.add_parser("mcp", help="run the MCP server on stdio (needs the mcp extra)")
+
     pl = sub.add_parser("plan", help="work with saved plans")
     pl_sub = pl.add_subparsers(dest="plan_command")
     pr = pl_sub.add_parser("render")
@@ -351,6 +353,12 @@ def _closest_misses(rejected) -> list[str]:
     ]
 
 
+def cmd_mcp(args: argparse.Namespace) -> int:
+    from rightsize.mcp_server import main as serve
+
+    return serve()
+
+
 def cmd_frameworks(args: argparse.Namespace) -> int:
     from rightsize.registry import all_recipes
 
@@ -507,6 +515,7 @@ def main(argv: list[str] | None = None) -> int:
         parser.print_help()
         return 0
     handlers = {
+        "mcp": cmd_mcp,
         "recommend": cmd_recommend,
         "detect": cmd_detect,
         "estimate": cmd_estimate,
