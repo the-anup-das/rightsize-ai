@@ -91,3 +91,25 @@ def test_plan_schema_is_exportable() -> None:
     schema = json.loads(Plan.schema_json())
     assert schema["title"] == "Plan"
     assert "steps" in schema["properties"]
+
+
+def test_top_level_estimate_and_detect_are_real() -> None:
+    """These raised NotImplementedYet long after the CLI had working versions, so anyone
+    using the Python API got stubs. Offline: facts and device passed in directly."""
+    from rightsize.types import Family, ModelFacts, ModelRef
+
+    fx = ModelFacts(
+        ref=ModelRef(repo="Qwen/Qwen3-4B"),
+        family=Family.llm,
+        params_total=4_022_468_096,
+        num_layers=36,
+        num_kv_heads=8,
+        head_dim=128,
+    )
+    r = rightsize.estimate(fx, "q4_k_m", "RTX 4090")
+    assert r.verdict.value == "fits" and r.speed and r.formula_id
+    slow = rightsize.estimate(fx, "Q4_K_M", "Jetson Orin Nano 8GB")
+    assert slow.speed is None, "no bandwidth for it in any table"
+    given = rightsize.estimate(fx, "Q4_K_M", "Jetson Orin Nano 8GB", bandwidth_gbps=102)
+    assert given.speed and given.speed < r.speed
+    assert isinstance(rightsize.detect(), rightsize.Device)

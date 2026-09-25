@@ -80,11 +80,40 @@ def recommend_for_model(*args, **kwargs):
     _not_yet("recommend_for_model", "docs/plans/F04-rules-engine.md")
 
 
-def estimate(*args, **kwargs):
-    """Memory and speed estimate for one (model, quant, runtime, device). Lands with F3."""
-    _not_yet("estimate", "docs/plans/F03-fit-engine.md")
+def estimate(
+    model,
+    quant: str = "Q4_K_M",
+    device="detect",
+    *,
+    ctx: int = 8192,
+    runtime: str = "llama.cpp",
+    revision: str = "main",
+    bandwidth_gbps: float | None = None,
+):
+    """Memory and speed for one model at one quantization on one device (F3).
+
+        rightsize.estimate("Qwen/Qwen3-4B", "Q4_K_M", "RTX 4090")
+
+    ``model`` is a Hub id or a ``ModelFacts``. ``device`` is a ``Device``, a preset or
+    catalogue name, ``"@hf-username"`` for the hardware saved on that profile, or
+    ``"detect"``. ``bandwidth_gbps`` fills in a device we have no bandwidth for, which is
+    the difference between a speed estimate and none.
+    """
+    from rightsize.catalog import facts
+    from rightsize.fit import estimate as _estimate
+    from rightsize.hardware import resolve
+    from rightsize.types import ModelFacts
+
+    fx = model if isinstance(model, ModelFacts) else facts(model, revision)
+    dev = resolve(device)
+    if bandwidth_gbps:
+        dev = dev.model_copy(update={"bandwidth_gbps": bandwidth_gbps})
+    return _estimate(fx, quant.upper(), dev, runtime=runtime, ctx=ctx)
 
 
 def detect():
-    """Detect the local machine as a Device. Lands with F2. See docs/plans/F02-hardware.md."""
-    _not_yet("detect", "docs/plans/F02-hardware.md")
+    """This machine as a ``Device``, with a measured bandwidth if ``rightsize bench`` has
+    recorded one (F2)."""
+    from rightsize.hardware import resolve
+
+    return resolve("detect")

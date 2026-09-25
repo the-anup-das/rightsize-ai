@@ -51,10 +51,18 @@ Unsloth QLoRA adapter (fine-tune -> merged or GGUF), llama.cpp quantize adapter,
 ## TODO
 
 - [ ] `Adapter` protocol, `RunManifest`, `EvalReport` types
+      (partial: `RunManifest` and `RunStep`; the gate reports a dict, and there is one adapter,
+      so no protocol yet)
 - [ ] Entry-point registration and lazy loading with `MissingExtraError`
 - [ ] Unsloth adapter ported from `finetune.py`
-- [ ] llama.cpp quantize adapter
-- [ ] Memory and speed measurement helpers
+- [x] llama.cpp quantize adapter: convert, imatrix, quantize, and `rightsize tools install`
+      for pinned binaries plus the matching converter
+- [x] Memory and speed measurement helpers: VRAM sampling, file sizes, a GPU preflight
+      that names what else holds the card, and `rightsize bench`
 - [ ] Evaluation gate ported from `evaluate.py`; `data/quality/thresholds.yaml`
+      (partial: a KL-divergence gate against the 16-bit reference, thresholds in
+      `data/quality/gate_thresholds.yaml`, parser checked against llama.cpp's real output
+      format. It has not yet completed on a real model: the Qwen3-1.7B run lost the GPU.)
 - [ ] Extras populated in `pyproject.toml` (`unsloth`, `llamacpp`)
-- [ ] Mocked tests; one `slow` GPU test
+      (partial: `llamacpp` done; `unsloth` still empty)
+- [x] Mocked tests; one `slow` GPU test (Qwen3-0.6B end to end)

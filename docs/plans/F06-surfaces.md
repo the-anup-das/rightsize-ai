@@ -65,8 +65,10 @@ All three surfaces over F1–F5; `data update`; README quickstart with three exa
 - [x] argparse CLI with all subcommands as placeholders, `--json`, `--version`
 - [x] Budget tests and CI lightweight job
 - [ ] Wire real functions as F3 / F4 land; device argument coercion (preset name, `"detect"`)
-- [ ] Human-readable table output; exit codes
+      (partial: `estimate` and `detect` are real at the top level and in the CLI; devices
+      coerce from a preset or catalogue name, `"detect"` or `"@hf-username"`; `recommend` waits on F4)
+- [x] Human-readable table output; exit codes (colour and progress through the optional `rich`)
 - [ ] `rightsize data update` and `--offline`
 - [ ] MCP server with six tools; schema snapshot test
 - [ ] `Plan.schema_json()` published as `schema/plan.schema.json` in releases
-- [ ] README quickstart with three examples
+- [x] README quickstart with three examples

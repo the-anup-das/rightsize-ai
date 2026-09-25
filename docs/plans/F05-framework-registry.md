@@ -118,12 +118,15 @@ The 14 MVP recipes above plus 4 serve recipes; docs generation; entry point disc
 ## TODO
 
 - [ ] `data/schema/recipe.schema.json`; `FrameworkInfo`, `RenderedStep` types
-- [ ] Minimal template renderer with tests
+- [x] Minimal template renderer with tests (token-by-token, so Windows paths survive)
 - [ ] Loader for bundled recipes + entry-point discovery
+      (partial: bundled loader works; no entry points)
 - [ ] 14 MVP quantize / fine-tune recipes + 4 serve recipes, each with `source_doc_url` and `version_tested`
+      (partial: five llama.cpp recipes - convert, imatrix, quantize, KLD base, KLD eval)
 - [ ] TensorRT Model Optimizer recipes: FP8, INT8 SmoothQuant, INT4 AWQ, NVFP4 (`mtq.quantize` + `export_hf_checkpoint`) with serve targets vLLM / SGLang / TensorRT-LLM
 - [ ] AutoQuantize recipe with `effective_bits` supplied by F3's budget-to-bits helper
 - [ ] `render()` and `Plan.render()`
+      (partial: `render()` works; `Plan.render()` lands with F4, which produces Plans)
 - [ ] `docs.py` generator; CI diff check
 - [ ] Nightly dry-run workflow
 - [ ] Verify the two **(verify)** items

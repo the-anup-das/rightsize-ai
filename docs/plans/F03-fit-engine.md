@@ -79,10 +79,15 @@ LLM analytic + oobabooga path + speed; fine-tune components with Unsloth floors;
 ## TODO
 
 - [ ] `FitResult`, `QuantSpec`, `RuntimeSpec` finalised; `Estimator` protocol; family registry
+      (partial: the types are final; no `Estimator` protocol until a second family exists)
 - [ ] `data/quants/gguf_bpw.yaml` ingested from `quant-descriptions.ts` with provenance; bnb / AWQ / GPTQ / MLX bpw rows
+      (partial: GGUF rows derived from llama.cpp's block formulas and checked against
+      `llama-quantize --help`; bnb / AWQ / GPTQ / MLX rows not yet)
 - [ ] LLM weights + KV (GQA, overrides) + runtime overhead constants
 - [ ] oobabooga regression port + router
-- [ ] Speed model (bandwidth / bytes per token; MoE active params; offload penalty)
+- [x] Speed model (bandwidth / bytes per token; MoE active params; offload penalty).
+      Validated on an RTX 4070 Ti SUPER: `rightsize bench` measured 70% of peak, the
+      efficiency the model assumes.
 - [ ] Fine-tune component model + Unsloth floor lookup
 - [ ] Diffusion table schema + FLUX / SDXL / SD3.5 rows + estimator
 - [ ] Audio table + estimator
@@ -90,4 +95,7 @@ LLM analytic + oobabooga path + speed; fine-tune components with Unsloth floors;
 - [ ] Multi-GPU and offload split
 - [ ] `bits_that_fit(model, device, ctx, runtime)` helper: the effective bits-per-weight a budget allows after KV and overhead; feeds ModelOpt AutoQuantize and GGUF mix candidates (F4, F5)
 - [ ] Golden tests listed above
+      (partial: Llama 3.1 70B KV at 128K, Qwen3-4B Q4_K_M file size, measured Qwen3-1.7B
+      file sizes within 3%; the fine-tune, diffusion and audio goldens wait on those estimators)
 - [ ] `confidence` and `formula_id` on every result; docs page explaining each formula
+      (partial: on every result; no docs page yet)
