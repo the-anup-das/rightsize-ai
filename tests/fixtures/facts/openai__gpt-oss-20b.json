@@ -67,6 +67,7 @@
   "tie_word_embeddings": false,
   "vocab_size": 201088,
   "hidden_size": 2880,
+  "intermediate_size": 2880,
   "num_attention_heads": 64,
   "params_active_note": "approximate: total x active/experts"
  }

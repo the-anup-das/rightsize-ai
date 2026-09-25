@@ -1,0 +1,26 @@
+# Unsloth's published minimum VRAM for fine-tuning, by model size (F3).
+#
+# Used as a floor, not as the estimate: the fit engine computes its own breakdown (weights,
+# trainable state, activations, overhead) and never reports less than the minimum Unsloth
+# says the next size up needs. Unsloth calls these "absolute minimum" figures and warns that
+# batch size is the usual reason for running out of memory; they state no sequence length.
+#
+# Interpolated linearly between the rows either side; outside the table there is no floor.
+provenance:
+  source_url: https://unsloth.ai/docs/get-started/fine-tuning-for-beginners/unsloth-requirements
+  fetched_at: "2026-09-25"
+  note: QLoRA is 4-bit base weights, LoRA is 16-bit; both with Unsloth's defaults
+rows:
+  - {params_b: 3, qlora_gb: 3.5, lora_gb: 8}
+  - {params_b: 7, qlora_gb: 5, lora_gb: 19}
+  - {params_b: 8, qlora_gb: 6, lora_gb: 22}
+  - {params_b: 9, qlora_gb: 6.5, lora_gb: 24}
+  - {params_b: 11, qlora_gb: 7.5, lora_gb: 29}
+  - {params_b: 14, qlora_gb: 8.5, lora_gb: 33}
+  - {params_b: 27, qlora_gb: 22, lora_gb: 64}
+  - {params_b: 32, qlora_gb: 26, lora_gb: 76}
+  - {params_b: 40, qlora_gb: 30, lora_gb: 96}
+  - {params_b: 70, qlora_gb: 41, lora_gb: 164}
+  - {params_b: 81, qlora_gb: 48, lora_gb: 192}
+  - {params_b: 90, qlora_gb: 53, lora_gb: 212}
+  - {params_b: 405, qlora_gb: 237, lora_gb: 950}

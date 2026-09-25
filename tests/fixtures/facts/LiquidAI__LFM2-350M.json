@@ -46,6 +46,7 @@
   "tie_word_embeddings": null,
   "vocab_size": 65536,
   "hidden_size": 1024,
+  "intermediate_size": null,
   "num_attention_heads": 16
  }
 }

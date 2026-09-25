@@ -38,9 +38,12 @@ def test_kv_cache_llama31_70b_at_128k_is_about_43gb() -> None:
 
 
 def test_real_bpw_not_nominal() -> None:
-    assert gguf_bpw("Q4_K_M")[0] == pytest.approx(4.899, abs=0.001)
-    assert gguf_bpw("Q4_K")[0] == 4.5
-    assert gguf_bpw("Q8_0")[0] == pytest.approx(8.515, abs=0.001)
+    # llama.cpp's measured effective bits on Llama-3.1-8B (tools/quantize/README.md)
+    assert gguf_bpw("Q4_K_M") == (4.8944, "measured by llama.cpp")
+    assert gguf_bpw("Q8_0")[0] == pytest.approx(8.5008, abs=1e-4)
+    # an i-quant's nominal bits undercount its mix: IQ4_XS is 4.46 effective, not 4.25
+    assert gguf_bpw("IQ4_XS")[0] == pytest.approx(4.4597, abs=1e-4)
+    assert gguf_bpw("Q4_K")[0] == 4.5  # a tensor type, not a file type: from the block formula
     assert gguf_bpw("q6_k")[0] > gguf_bpw("q5_k_m")[0] > gguf_bpw("q4_k_m")[0]
 
 

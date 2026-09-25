@@ -183,6 +183,43 @@ class GateThresholdsFile(_Strict):
         return self
 
 
+class _TypeMeasures(_Strict):
+    bpw: float | None = Field(default=None, ge=1, le=32)
+    ppl_delta: float | None = None
+    ppl_reference: str | None = None
+
+
+class GgufTypesFile(_Strict):
+    """data/quality/gguf_types.yaml, generated from llama.cpp's own measurements."""
+
+    llama_cpp: str
+    sources: dict[str, Source]
+    file_types: dict[str, _TypeMeasures]
+
+
+class _FloorRow(_Strict):
+    params_b: float = Field(gt=0)
+    qlora_gb: float = Field(gt=0)
+    lora_gb: float = Field(gt=0)
+
+
+class FinetuneFloorsFile(_Strict):
+    """data/finetune/unsloth_vram.yaml: published minimum VRAM for LoRA and QLoRA."""
+
+    provenance: Source
+    rows: list[_FloorRow]
+
+    @field_validator("rows")
+    @classmethod
+    def _monotonic(cls, v: list[_FloorRow]) -> list[_FloorRow]:
+        # interpolation between rows assumes memory never falls as models grow
+        ordered = sorted(v, key=lambda r: r.params_b)
+        for a, b in zip(ordered, ordered[1:], strict=False):
+            if b.qlora_gb < a.qlora_gb or b.lora_gb < a.lora_gb:
+                raise ValueError(f"memory falls between {a.params_b}B and {b.params_b}B")
+        return v
+
+
 # ---------------------------------------------------------------- runtimes
 
 
@@ -261,6 +298,8 @@ DATA_FILES: dict[str, tuple[str, Any]] = {
     "hardware/gpus.yaml": ("gpu_catalog", GpuCatalogFile),
     "hardware/bandwidth*.yaml": ("bandwidth", BandwidthFile),
     "quality/gate_thresholds.yaml": ("gate_thresholds", GateThresholdsFile),
+    "quality/gguf_types.yaml": ("gguf_types", GgufTypesFile),
+    "finetune/unsloth_vram.yaml": ("finetune_floors", FinetuneFloorsFile),
     "runtimes/*/kv_cache.yaml": ("kv_cache", KvCacheFile),
     "recipes/*/*.yaml": ("recipe", _recipe_model),
 }

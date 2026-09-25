@@ -44,6 +44,14 @@ def build_parser() -> argparse.ArgumentParser:
     e.add_argument("--device", default="detect", help="preset name or 'detect' (default)")
     e.add_argument("--quant", action="append", help="GGUF type, repeatable (default Q4_K_M)")
     e.add_argument("--runtime", default="llama.cpp")
+    e.add_argument(
+        "--mode",
+        default="infer",
+        choices=["infer", "lora", "qlora", "full"],
+        help="infer (default), or the memory to fine-tune it",
+    )
+    e.add_argument("--seq-len", type=int, default=2048, help="training sequence length")
+    e.add_argument("--batch", type=int, default=1, help="training batch size")
     e.add_argument("--ctx", type=int, default=8192)
     e.add_argument("--revision", default="main")
     e.add_argument(
@@ -168,6 +176,8 @@ def cmd_estimate(args: argparse.Namespace) -> int:
 
     fx = facts(args.model, args.revision)
     dev = _device(args)
+    if args.mode != "infer":
+        return _estimate_training(args, fx, dev)
     quants = [q.upper() for q in (args.quant or ["Q4_K_M"])]
     results = {q: estimate(fx, q, dev, runtime=args.runtime, ctx=args.ctx) for q in quants}
     if args.json:
@@ -224,6 +234,45 @@ def _device(args: argparse.Namespace):
     if getattr(args, "bandwidth", None):
         dev = dev.model_copy(update={"bandwidth_gbps": args.bandwidth})
     return dev
+
+
+def _estimate_training(args: argparse.Namespace, fx, dev) -> int:
+    """Fine-tuning memory: one row per mode, so LoRA against QLoRA is one glance."""
+    from rightsize._console import verdict_style
+    from rightsize.fit import estimate_finetune
+
+    modes = ["qlora", "lora", "full"] if args.mode == "full" else [args.mode]
+    results = {
+        m: estimate_finetune(fx, dev, m, seq_len=args.seq_len, batch=args.batch) for m in modes
+    }
+    if args.json:
+        print(json.dumps({m: r.model_dump(mode="json") for m, r in results.items()}, indent=2))
+        return 0
+    con = _console(args)
+    con.title(f"fine-tune {args.model} on {dev.name}")
+    rows, styles = [], []
+    for m, r in results.items():
+        b = r.breakdown
+        rows.append(
+            [
+                m,
+                f"{b['weights']:.2f}",
+                f"{b['trainable_state']:.2f}",
+                f"{b['activations']:.2f}",
+                f"{b.get('published_minimum', 0) or '':}",
+                f"{r.vram_gb:.2f}",
+                r.verdict.value,
+            ]
+        )
+        styles.append(verdict_style(r.verdict.value))
+    con.table(
+        ["mode", "weights", "trainable", "activations", "published min", "vram GB", "verdict"],
+        rows,
+        styles=styles,
+    )
+    for note in next(iter(results.values())).notes:
+        con.debug(note)
+    return 0
 
 
 def cmd_frameworks(args: argparse.Namespace) -> int:

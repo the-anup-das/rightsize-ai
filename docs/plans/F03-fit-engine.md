@@ -90,7 +90,9 @@ LLM analytic + oobabooga path + speed; fine-tune components with Unsloth floors;
 - [x] Speed model (bandwidth / bytes per token; MoE active params; offload penalty).
       Validated on an RTX 4070 Ti SUPER: `rightsize bench` measured 70% of peak, the
       efficiency the model assumes.
-- [ ] Fine-tune component model + Unsloth floor lookup
+- [x] Fine-tune component model + Unsloth floor, interpolated between published rows
+      (a step lookup made 16-bit LoRA on a 4B model a 19 GB no_fit on a 16 GB card).
+      `rightsize estimate --mode qlora|lora|full`.
 - [ ] Diffusion table schema + FLUX / SDXL / SD3.5 rows + estimator
 - [ ] Audio table + estimator
 - [ ] Vision / embedding weight-only estimator

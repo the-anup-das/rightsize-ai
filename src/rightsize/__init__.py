@@ -89,6 +89,7 @@ def estimate(
     runtime: str = "llama.cpp",
     revision: str = "main",
     bandwidth_gbps: float | None = None,
+    mode: str = "infer",
 ):
     """Memory and speed for one model at one quantization on one device (F3).
 
@@ -97,18 +98,19 @@ def estimate(
     ``model`` is a Hub id or a ``ModelFacts``. ``device`` is a ``Device``, a preset or
     catalogue name, ``"@hf-username"`` for the hardware saved on that profile, or
     ``"detect"``. ``bandwidth_gbps`` fills in a device we have no bandwidth for, which is
-    the difference between a speed estimate and none.
+    the difference between a speed estimate and none. ``mode`` is ``"infer"``, or
+    ``"lora"``, ``"qlora"`` or ``"full"`` for the memory to fine-tune it.
     """
     from rightsize.catalog import facts
     from rightsize.fit import estimate as _estimate
     from rightsize.hardware import resolve
-    from rightsize.types import ModelFacts
+    from rightsize.types import Mode, ModelFacts
 
     fx = model if isinstance(model, ModelFacts) else facts(model, revision)
     dev = resolve(device)
     if bandwidth_gbps:
         dev = dev.model_copy(update={"bandwidth_gbps": bandwidth_gbps})
-    return _estimate(fx, quant.upper(), dev, runtime=runtime, ctx=ctx)
+    return _estimate(fx, quant.upper(), dev, runtime=runtime, ctx=ctx, mode=Mode(mode))
 
 
 def detect():

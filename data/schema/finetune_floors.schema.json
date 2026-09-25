@@ -1,0 +1,88 @@
+{
+  "$defs": {
+    "Source": {
+      "additionalProperties": false,
+      "description": "Where a number came from. Required on every record (lightweight rule 2).",
+      "properties": {
+        "fetched_at": {
+          "title": "Fetched At",
+          "type": "string"
+        },
+        "hand": {
+          "default": false,
+          "title": "Hand",
+          "type": "boolean"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        },
+        "source_url": {
+          "title": "Source Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_url",
+        "fetched_at"
+      ],
+      "title": "Source",
+      "type": "object"
+    },
+    "_FloorRow": {
+      "additionalProperties": false,
+      "properties": {
+        "lora_gb": {
+          "exclusiveMinimum": 0,
+          "title": "Lora Gb",
+          "type": "number"
+        },
+        "params_b": {
+          "exclusiveMinimum": 0,
+          "title": "Params B",
+          "type": "number"
+        },
+        "qlora_gb": {
+          "exclusiveMinimum": 0,
+          "title": "Qlora Gb",
+          "type": "number"
+        }
+      },
+      "required": [
+        "params_b",
+        "qlora_gb",
+        "lora_gb"
+      ],
+      "title": "_FloorRow",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "data/finetune/unsloth_vram.yaml: published minimum VRAM for LoRA and QLoRA.",
+  "properties": {
+    "provenance": {
+      "$ref": "#/$defs/Source"
+    },
+    "rows": {
+      "items": {
+        "$ref": "#/$defs/_FloorRow"
+      },
+      "title": "Rows",
+      "type": "array"
+    }
+  },
+  "required": [
+    "provenance",
+    "rows"
+  ],
+  "title": "FinetuneFloorsFile",
+  "type": "object"
+}

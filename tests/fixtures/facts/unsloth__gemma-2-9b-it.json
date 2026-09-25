@@ -41,6 +41,7 @@
   "tie_word_embeddings": null,
   "vocab_size": 256000,
   "hidden_size": 3584,
+  "intermediate_size": 14336,
   "num_attention_heads": 16
  }
 }

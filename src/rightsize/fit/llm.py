@@ -31,9 +31,18 @@ _SLOW_TOK_S = 5.0
 
 
 def gguf_bpw(quant: str) -> tuple[float, str]:
-    """Effective bits-per-weight for a GGUF file type or tensor type, and where it came from."""
-    table = load_yaml("quants/gguf_bpw.yaml")
+    """Effective bits-per-weight for a GGUF file type or tensor type, and where it came from.
+
+    llama.cpp's own measurement comes first (data/quality/gguf_types.yaml, effective bits on
+    Llama-3.1-8B for every type). Before it was consulted, the i-quants were sized by their
+    nominal bits - IQ4_XS at 4.25 against a real 4.46, five percent small - while the
+    quality ranking used the effective figure, so two tables disagreed about one number.
+    """
     q = quant.upper()
+    measured = (load_yaml("quality/gguf_types.yaml").get("file_types") or {}).get(q) or {}
+    if measured.get("bpw"):
+        return float(measured["bpw"]), "measured by llama.cpp"
+    table = load_yaml("quants/gguf_bpw.yaml")
     ft = table.get("file_types") or {}
     if q in ft:
         return float(ft[q]), "file_types"
@@ -72,7 +81,10 @@ def estimate(
     kv_bytes: float = 2.0,
 ) -> FitResult:
     if mode is not Mode.infer:
-        raise NotImplementedError("fine-tune modes land with the full F3; this slice is inference")
+        # training memory does not depend on the serving quantization; see fit/finetune.py
+        from rightsize.fit.finetune import estimate_finetune
+
+        return estimate_finetune(facts, device, mode, batch=batch)
     qname = quant.variant or quant.method if isinstance(quant, QuantSpec) else str(quant)
     rname = runtime.name if isinstance(runtime, RuntimeSpec) else str(runtime)
     fixed, frac = _OVERHEAD.get(rname.lower(), _OVERHEAD["llama.cpp"])
