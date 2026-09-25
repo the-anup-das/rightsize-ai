@@ -84,7 +84,7 @@ def _cache_path(repo: str, revision: str) -> Path:
 #: Bump whenever facts() starts keeping something new. A cached entry from an older
 #: version is refetched rather than trusted: without this, adding the attention fields left
 #: every warm cache describing LFM2 as all-attention, 166% over what llama.cpp allocates.
-CACHE_VERSION = 6
+CACHE_VERSION = 7
 
 
 def _read_cache(path: Path, ttl_s: float) -> dict[str, Any] | None:
@@ -305,6 +305,7 @@ def facts(
             "pipeline_tag": meta.get("pipeline_tag"),
             "pipeline": pipeline,
             "gated": meta.get("gated", False),
+            "private": meta.get("private"),
             "num_experts": experts,
             "num_experts_per_tok": active_experts,
             "sliding_window": tc.get("sliding_window"),

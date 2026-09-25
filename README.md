@@ -52,6 +52,7 @@ uv sync --group dev --extra llamacpp     # torch CPU + transformers for the conv
 rightsize tools install llama.cpp        # pinned binaries + converter into .tools/llama.cpp (auto-picks CUDA/CPU/Metal)
 rightsize quantize Qwen/Qwen3-1.7B --quant Q4_K_M --imatrix --eval
 rightsize bench Qwen/Qwen3-1.7B           # measure this machine's real memory bandwidth
+rightsize calibrate                       # predicted vs measured for what Ollama / LM Studio has loaded
 ```
 
 `pip install rightsize` works too, but until the next release it installs the 0.0.1 placeholder.
@@ -141,7 +142,7 @@ every verdict on that card 7% pessimistic.
 | F6 SDK / CLI / MCP | [F06](docs/plans/F06-surfaces.md) | SDK, CLI and MCP server (seven tools, stdio) over the same functions; Plan JSON Schema in `schema/` |
 | F7 Cloud fallback | [F07](docs/plans/F07-cloud-fallback.md) | cheapest rental GPU for a fine-tune that does not fit, from SkyPilot's open price catalog; job time and cost per 10M tokens (low confidence) |
 | F8 Execution + eval gate | [F08](docs/plans/F08-execution-eval.md) | first slice: llama.cpp adapter with KL-divergence gate |
-| F9 Calibration loop | [F09](docs/plans/F09-calibration.md) | phase 2; runs already record predicted vs measured, and `bench` checks the speed constant |
+| F9 Calibration loop | [F09](docs/plans/F09-calibration.md) | `rightsize calibrate` compares predictions with what Ollama or LM Studio models hold; opt-in local records; refit script for the overhead constants |
 | F10 Cloud provider connectors | [F10](docs/plans/F10-cloud-connectors.md) | phase 3 |
 
 ## Where this project is at, and where it is going

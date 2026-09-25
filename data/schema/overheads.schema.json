@@ -1,0 +1,89 @@
+{
+  "$defs": {
+    "RuntimeOverhead": {
+      "additionalProperties": false,
+      "properties": {
+        "fixed_gb": {
+          "maximum": 10,
+          "minimum": 0,
+          "title": "Fixed Gb",
+          "type": "number"
+        },
+        "fraction": {
+          "exclusiveMaximum": 1,
+          "minimum": 0,
+          "title": "Fraction",
+          "type": "number"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/Source"
+        }
+      },
+      "required": [
+        "name",
+        "fixed_gb",
+        "fraction",
+        "source"
+      ],
+      "title": "RuntimeOverhead",
+      "type": "object"
+    },
+    "Source": {
+      "additionalProperties": false,
+      "description": "Where a number came from. Required on every record (lightweight rule 2).",
+      "properties": {
+        "fetched_at": {
+          "title": "Fetched At",
+          "type": "string"
+        },
+        "hand": {
+          "default": false,
+          "title": "Hand",
+          "type": "boolean"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        },
+        "source_url": {
+          "title": "Source Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_url",
+        "fetched_at"
+      ],
+      "title": "Source",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "data/runtimes/overheads.yaml: memory a runtime adds beyond weights and KV cache.",
+  "properties": {
+    "runtimes": {
+      "items": {
+        "$ref": "#/$defs/RuntimeOverhead"
+      },
+      "title": "Runtimes",
+      "type": "array"
+    }
+  },
+  "required": [
+    "runtimes"
+  ],
+  "title": "OverheadsFile",
+  "type": "object"
+}

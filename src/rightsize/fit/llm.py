@@ -19,12 +19,16 @@ from rightsize.types import Device, FitResult, Mode, ModelFacts, QuantSpec, Runt
 
 FORMULA_ID = "llm.gguf.analytic.v0"
 
-# Runtime overhead constants (calibration data; refit by F9). GB fixed + fraction of weights.
-_OVERHEAD = {
-    "llama.cpp": (0.75, 0.02),
-    "ollama": (0.90, 0.03),
-    "lm studio": (0.80, 0.02),
-}
+
+
+def overhead_constants(runtime: str) -> tuple[float, float]:
+    """(fixed GB, fraction of weights) a runtime adds, from data/runtimes/overheads.yaml,
+    which scripts/refit_constants.py refits from measurements. Unknown runtimes get
+    llama.cpp's, since most local runtimes wrap it."""
+    rows = {r["name"]: r for r in load_yaml("runtimes/overheads.yaml")["runtimes"]}
+    row = rows.get(runtime.lower()) or rows["llama.cpp"]
+    return float(row["fixed_gb"]), float(row["fraction"])
+
 _HEADROOM = 0.10  # verdict "tight" inside this fraction of usable memory
 _DECODE_EFFICIENCY = 0.70  # fraction of peak bandwidth a llama.cpp decode loop reaches
 _SLOW_TOK_S = 5.0
@@ -99,7 +103,7 @@ def estimate(
         return estimate_finetune(facts, device, mode, batch=batch)
     qname = quant.variant or quant.method if isinstance(quant, QuantSpec) else str(quant)
     rname = runtime.name if isinstance(runtime, RuntimeSpec) else str(runtime)
-    fixed, frac = _OVERHEAD.get(rname.lower(), _OVERHEAD["llama.cpp"])
+    fixed, frac = overhead_constants(rname)
 
     bpw, bpw_source = gguf_bpw(qname)
     weights = facts.params_total * bpw / 8 / 1e9

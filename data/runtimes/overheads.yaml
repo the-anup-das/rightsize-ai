@@ -1,0 +1,31 @@
+# Memory a runtime adds on top of weights and KV cache: CUDA context, compute buffers,
+# scratch. overhead_gb = fixed_gb + fraction x weights_gb (fit/llm.py).
+#
+# These began as hand estimates and are what scripts/refit_constants.py proposes new values
+# for, from calibration records (rightsize calibrate) and run manifests. A refit is a
+# reviewed change to this file, with the before/after error in the commit that makes it.
+runtimes:
+  - name: llama.cpp
+    fixed_gb: 0.75
+    fraction: 0.02
+    source:
+      source_url: https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md
+      fetched_at: "2026-09-25"
+      hand: true
+      note: first estimate; refit from measurements (F9)
+  - name: ollama
+    fixed_gb: 0.90
+    fraction: 0.03
+    source:
+      source_url: https://github.com/ollama/ollama/blob/main/docs/api.md
+      fetched_at: "2026-09-25"
+      hand: true
+      note: first estimate; refit from measurements (F9)
+  - name: lm studio
+    fixed_gb: 0.80
+    fraction: 0.02
+    source:
+      source_url: https://lmstudio.ai/docs/app/api/endpoints/rest
+      fetched_at: "2026-09-25"
+      hand: true
+      note: first estimate; refit from measurements (F9)

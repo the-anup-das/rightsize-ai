@@ -17,7 +17,7 @@ One file per major feature. Each has the same sections: Goal, Why it beats what 
 | F6 | [Surfaces: SDK, CLI, MCP](F06-surfaces.md) | 1 | SDK, CLI and MCP server over the same functions; Plan JSON Schema |
 | F7 | [Cloud rental fallback](F07-cloud-fallback.md) | 1 | offers from SkyPilot's catalog; job estimate; plans that rent |
 | F8 | [Execution and evaluation gate](F08-execution-eval.md) | 2 | llama.cpp adapter and KL gate, built ahead of schedule |
-| F9 | [Calibration loop](F09-calibration.md) | 2 | runs record predicted vs measured; `bench` checks the speed constant |
+| F9 | [Calibration loop](F09-calibration.md) | 2 | `calibrate` against Ollama / LM Studio; opt-in local records; overhead refit |
 | F10 | [Cloud provider connectors](F10-cloud-connectors.md) | 3 | planned (local-only until then) |
 
 ## Build order

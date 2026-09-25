@@ -475,6 +475,22 @@ class WhisperMemoryFile(_Strict):
     measurements: _WhisperMeasurements
 
 
+# ---------------------------------------------------------------- runtime overheads (F3, F9)
+
+
+class RuntimeOverhead(_Strict):
+    name: str
+    fixed_gb: float = Field(ge=0, le=10)
+    fraction: float = Field(ge=0, lt=1)
+    source: Source
+
+
+class OverheadsFile(_Strict):
+    """data/runtimes/overheads.yaml: memory a runtime adds beyond weights and KV cache."""
+
+    runtimes: list[RuntimeOverhead]
+
+
 # ---------------------------------------------------------------- cloud (F7)
 
 
@@ -526,6 +542,7 @@ DATA_FILES: dict[str, tuple[str, Any]] = {
     "runtimes/diffusers/memory.yaml": ("diffusers_memory", DiffusersMemoryFile),
     "runtimes/whisper/memory.yaml": ("whisper_memory", WhisperMemoryFile),
     "cloud/gpu_tflops.yaml": ("gpu_tflops", GpuTflopsFile),
+    "runtimes/overheads.yaml": ("overheads", OverheadsFile),
     "hardware/presets.yaml": ("presets", PresetsFile),
     "hardware/gpus.yaml": ("gpu_catalog", GpuCatalogFile),
     "hardware/bandwidth*.yaml": ("bandwidth", BandwidthFile),

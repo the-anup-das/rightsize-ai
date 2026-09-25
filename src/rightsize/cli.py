@@ -50,6 +50,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="plan a fine-tune that does not fit on the cheapest rental GPU it fits",
     )
 
+    ca = sub.add_parser(
+        "calibrate",
+        help="compare predictions with what Ollama or LM Studio models hold on the GPU",
+    )
+    ca.add_argument("--device", default="detect")
+    ca.add_argument("--no-record", action="store_true", help="compare only; never write")
+
+    te = sub.add_parser("telemetry", help="local calibration records: status, on, off, export")
+    te.add_argument("action", choices=["status", "on", "off", "show", "export"])
+    te.add_argument("file", nargs="?", help="export: where to write the records")
+    te.add_argument("--yes", action="store_true", help="on: accept without the prompt")
+
     cl = sub.add_parser("cloud", help="the cheapest rental GPUs for a memory need or a fine-tune")
     cl.add_argument("--vram", type=float, default=None, help="GB the job needs")
     cl.add_argument("--model", default=None, help="size the need from this model's fine-tune")
@@ -546,6 +558,88 @@ def cmd_cloud(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_calibrate(args: argparse.Namespace) -> int:
+    from rightsize.hardware import resolve
+    from rightsize.telemetry import enabled
+    from rightsize.telemetry.calibrate import calibrate
+
+    dev = resolve(args.device)
+    rows = calibrate(dev, write=not args.no_record)
+    if args.json:
+        print(json.dumps([{
+            "runtime": c.runtime, "model": c.model, "quant": c.quant, "ctx": c.ctx,
+            "predicted_gb": c.predicted_gb, "measured_gb": c.measured_gb, "error": c.error,
+            "note": c.note,
+        } for c in rows], indent=2))
+        return 0 if rows else 1
+    con = _console(args)
+    con.title(f"predicted vs measured on {dev.name}")
+    if not rows:
+        con.fail("nothing loaded: start a model in Ollama or LM Studio, then run this again")
+        return 1
+    con.table(
+        ["runtime", "model", "quant", "ctx", "predicted GB", "measured GB", "error", "note"],
+        [[c.runtime, c.model, c.quant or "", str(c.ctx or ""),
+          f"{c.predicted_gb:.2f}" if c.predicted_gb else "?",
+          f"{c.measured_gb:.2f}" if c.measured_gb else "?",
+          f"{c.error:+.1%}" if c.error is not None else "", c.note] for c in rows],
+    )
+    recorded = sum(1 for c in rows if c.record)
+    if enabled() and not args.no_record:
+        con.info(f"recorded {recorded} comparison(s) locally (rightsize telemetry show)")
+    elif recorded:
+        con.info("not recorded: 'rightsize telemetry on' keeps these, locally, to refit the "
+                 "constants; nothing is sent")
+    return 0
+
+
+def cmd_telemetry(args: argparse.Namespace) -> int:
+    from rightsize import telemetry
+    from rightsize.telemetry import record
+
+    if args.action == "on":
+        print(telemetry.WHAT_IS_RECORDED)
+        if not args.yes:
+            if not sys.stdin.isatty():
+                print()
+                print("run again with --yes to turn recording on", file=sys.stderr)
+                return 2
+            print()
+            try:  # Windows reports NUL as a terminal, so stdin can still be empty here
+                answer = input("Turn recording on? [y/N] ")
+            except EOFError:
+                answer = ""
+            if answer.strip().lower() not in ("y", "yes"):
+                print("left off")
+                return 1
+        telemetry.enable()
+        print(f"recording on; records go to {telemetry.store_path()}")
+        return 0
+    if args.action == "off":
+        telemetry.disable()
+        print("recording off; existing records are kept until you delete the file")
+        return 0
+    if args.action == "export":
+        if not args.file:
+            print("rightsize telemetry export FILE", file=sys.stderr)
+            return 2
+        n = record.export(args.file)
+        print(f"wrote {n} record(s) to {args.file}; read it before sharing it")
+        return 0
+    if args.action == "show":
+        for r in record.read():
+            print(r.model_dump_json())
+        return 0
+    st = telemetry.status()
+    if args.json:
+        print(json.dumps(st, indent=2))
+    else:
+        state = f"on since {st['since']}" if st["enabled"] else "off (the default)"
+        print(f"recording: {state}")
+        print(f"store: {st['store']} ({st['records']} records)")
+    return 0
+
+
 def cmd_mcp(args: argparse.Namespace) -> int:
     from rightsize.mcp_server import main as serve
 
@@ -710,6 +804,8 @@ def main(argv: list[str] | None = None) -> int:
     handlers = {
         "mcp": cmd_mcp,
         "cloud": cmd_cloud,
+        "calibrate": cmd_calibrate,
+        "telemetry": cmd_telemetry,
         "recommend": cmd_recommend,
         "detect": cmd_detect,
         "estimate": cmd_estimate,
