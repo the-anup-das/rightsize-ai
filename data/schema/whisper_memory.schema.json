@@ -1,0 +1,189 @@
+{
+  "$defs": {
+    "Source": {
+      "additionalProperties": false,
+      "description": "Where a number came from. Required on every record (lightweight rule 2).",
+      "properties": {
+        "fetched_at": {
+          "title": "Fetched At",
+          "type": "string"
+        },
+        "hand": {
+          "default": false,
+          "title": "Hand",
+          "type": "boolean"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        },
+        "source_url": {
+          "title": "Source Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_url",
+        "fetched_at"
+      ],
+      "title": "Source",
+      "type": "object"
+    },
+    "WhisperRow": {
+      "additionalProperties": false,
+      "properties": {
+        "batch": {
+          "minimum": 1,
+          "title": "Batch",
+          "type": "integer"
+        },
+        "device": {
+          "enum": [
+            "gpu",
+            "cpu"
+          ],
+          "title": "Device",
+          "type": "string"
+        },
+        "memory_mb": {
+          "exclusiveMinimum": 0,
+          "title": "Memory Mb",
+          "type": "number"
+        },
+        "model": {
+          "title": "Model",
+          "type": "string"
+        },
+        "params": {
+          "exclusiveMinimum": 0,
+          "title": "Params",
+          "type": "integer"
+        },
+        "precision": {
+          "title": "Precision",
+          "type": "string"
+        },
+        "runtime": {
+          "enum": [
+            "whisper.cpp",
+            "faster-whisper",
+            "transformers",
+            "openai-whisper"
+          ],
+          "title": "Runtime",
+          "type": "string"
+        }
+      },
+      "required": [
+        "runtime",
+        "model",
+        "params",
+        "device",
+        "precision",
+        "batch",
+        "memory_mb"
+      ],
+      "title": "WhisperRow",
+      "type": "object"
+    },
+    "_WhisperCurve": {
+      "additionalProperties": false,
+      "properties": {
+        "rows": {
+          "items": {
+            "$ref": "#/$defs/_WhisperCurveRow"
+          },
+          "title": "Rows",
+          "type": "array"
+        },
+        "source": {
+          "$ref": "#/$defs/Source"
+        }
+      },
+      "required": [
+        "source",
+        "rows"
+      ],
+      "title": "_WhisperCurve",
+      "type": "object"
+    },
+    "_WhisperCurveRow": {
+      "additionalProperties": false,
+      "properties": {
+        "disk_mib": {
+          "exclusiveMinimum": 0,
+          "title": "Disk Mib",
+          "type": "number"
+        },
+        "memory_mb": {
+          "exclusiveMinimum": 0,
+          "title": "Memory Mb",
+          "type": "number"
+        },
+        "model": {
+          "title": "Model",
+          "type": "string"
+        }
+      },
+      "required": [
+        "model",
+        "disk_mib",
+        "memory_mb"
+      ],
+      "title": "_WhisperCurveRow",
+      "type": "object"
+    },
+    "_WhisperMeasurements": {
+      "additionalProperties": false,
+      "properties": {
+        "rows": {
+          "items": {
+            "$ref": "#/$defs/WhisperRow"
+          },
+          "title": "Rows",
+          "type": "array"
+        },
+        "source": {
+          "$ref": "#/$defs/Source"
+        }
+      },
+      "required": [
+        "source",
+        "rows"
+      ],
+      "title": "_WhisperMeasurements",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "data/runtimes/whisper/memory.yaml: Whisper memory per runtime, and its evidence.",
+  "properties": {
+    "measurements": {
+      "$ref": "#/$defs/_WhisperMeasurements"
+    },
+    "size_curve": {
+      "$ref": "#/$defs/_WhisperCurve"
+    },
+    "size_exponent": {
+      "exclusiveMaximum": 1,
+      "exclusiveMinimum": 0,
+      "title": "Size Exponent",
+      "type": "number"
+    }
+  },
+  "required": [
+    "size_exponent",
+    "size_curve",
+    "measurements"
+  ],
+  "title": "WhisperMemoryFile",
+  "type": "object"
+}

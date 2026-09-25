@@ -1,0 +1,112 @@
+{
+ "ref": {
+  "repo": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+  "revision": "main",
+  "file": null
+ },
+ "family": "diffusion",
+ "params_total": 7226799667,
+ "params_active": null,
+ "dtype": "F32",
+ "num_layers": null,
+ "num_kv_heads": null,
+ "head_dim": null,
+ "context_max": null,
+ "license": "apache-2.0",
+ "base_model": null,
+ "confidence": 1.0,
+ "extra": {
+  "model_type": null,
+  "architectures": null,
+  "params_by_dtype": {
+   "F32": 7226799667
+  },
+  "params_counted_from": "pipeline components",
+  "shards": [],
+  "library": "diffusers",
+  "pipeline_tag": "text-to-video",
+  "pipeline": {
+   "class": "WanPipeline",
+   "index_readable": true,
+   "components": {
+    "text_encoder": {
+     "role": "text_encoder",
+     "class": "UMT5EncoderModel",
+     "params": 5680910336,
+     "params_by_dtype": {
+      "F32": 5680910336
+     },
+     "bytes": 22723671744,
+     "files": [
+      "text_encoder/model-00001-of-00005.safetensors",
+      "text_encoder/model-00002-of-00005.safetensors",
+      "text_encoder/model-00003-of-00005.safetensors",
+      "text_encoder/model-00004-of-00005.safetensors",
+      "text_encoder/model-00005-of-00005.safetensors"
+     ],
+     "counted_from": "safetensors headers",
+     "config": {
+      "num_layers": 24,
+      "d_model": 4096,
+      "torch_dtype": "float32"
+     }
+    },
+    "transformer": {
+     "role": "denoiser",
+     "class": "WanTransformer3DModel",
+     "params": 1418996800,
+     "params_by_dtype": {
+      "F32": 1418996800
+     },
+     "bytes": 5676070648,
+     "files": [
+      "transformer/diffusion_pytorch_model-00001-of-00002.safetensors",
+      "transformer/diffusion_pytorch_model-00002-of-00002.safetensors"
+     ],
+     "counted_from": "safetensors headers",
+     "config": {
+      "_class_name": "WanTransformer3DModel",
+      "num_layers": 30,
+      "num_attention_heads": 12,
+      "attention_head_dim": 128,
+      "patch_size": [
+       1,
+       2,
+       2
+      ],
+      "in_channels": 16
+     }
+    },
+    "vae": {
+     "role": "vae",
+     "class": "AutoencoderKLWan",
+     "params": 126892531,
+     "params_by_dtype": {
+      "F32": 126892531
+     },
+     "bytes": 507591892,
+     "files": [
+      "vae/diffusion_pytorch_model.safetensors"
+     ],
+     "counted_from": "safetensors headers",
+     "config": {
+      "_class_name": "AutoencoderKLWan",
+      "z_dim": 16
+     }
+    }
+   }
+  },
+  "gated": false,
+  "num_experts": null,
+  "num_experts_per_tok": null,
+  "sliding_window": null,
+  "attention": {},
+  "tie_word_embeddings": null,
+  "vocab_size": null,
+  "hidden_size": null,
+  "intermediate_size": null,
+  "num_attention_heads": null,
+  "image_size": null,
+  "patch_size": null
+ }
+}

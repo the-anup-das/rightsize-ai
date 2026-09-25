@@ -18,6 +18,18 @@
         "default": null,
         "title": "Bandwidth Gbps"
       },
+      "batch": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Batch"
+      },
       "ctx": {
         "default": 8192,
         "title": "Ctx",
@@ -28,6 +40,18 @@
         "title": "Device",
         "type": "string"
       },
+      "frames": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Frames"
+      },
       "mode": {
         "default": "infer",
         "title": "Mode",
@@ -37,10 +61,51 @@
         "title": "Model",
         "type": "string"
       },
-      "quant": {
-        "default": "Q4_K_M",
-        "title": "Quant",
+      "offload": {
+        "default": "none",
+        "title": "Offload",
         "type": "string"
+      },
+      "quant": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Quant"
+      },
+      "resolution": {
+        "default": "1024x1024",
+        "title": "Resolution",
+        "type": "string"
+      },
+      "runtime": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Runtime"
+      },
+      "text_encoder_quant": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Text Encoder Quant"
       }
     },
     "required": [

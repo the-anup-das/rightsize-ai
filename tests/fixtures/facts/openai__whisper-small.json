@@ -1,0 +1,46 @@
+{
+ "ref": {
+  "repo": "openai/whisper-small",
+  "revision": "main",
+  "file": null
+ },
+ "family": "audio",
+ "params_total": 241734912,
+ "params_active": null,
+ "dtype": "F32",
+ "num_layers": 12,
+ "num_kv_heads": null,
+ "head_dim": null,
+ "context_max": null,
+ "license": "apache-2.0",
+ "base_model": null,
+ "confidence": 1.0,
+ "extra": {
+  "model_type": "whisper",
+  "architectures": [
+   "WhisperForConditionalGeneration"
+  ],
+  "params_by_dtype": {
+   "F32": 241734912
+  },
+  "params_counted_from": "Hub parameter summary",
+  "shards": [],
+  "library": "transformers",
+  "pipeline_tag": "automatic-speech-recognition",
+  "pipeline": null,
+  "gated": false,
+  "num_experts": null,
+  "num_experts_per_tok": null,
+  "sliding_window": null,
+  "attention": {
+   "model_type": "whisper"
+  },
+  "tie_word_embeddings": null,
+  "vocab_size": 51865,
+  "hidden_size": null,
+  "intermediate_size": null,
+  "num_attention_heads": null,
+  "image_size": null,
+  "patch_size": null
+ }
+}

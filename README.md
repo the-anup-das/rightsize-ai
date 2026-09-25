@@ -42,6 +42,8 @@ rightsize detect                          # what machine is this?
 rightsize estimate Qwen/Qwen3-4B --quant Q4_K_M --quant Q8_0   # no download, reads Hub headers
 rightsize estimate Qwen/Qwen3-4B --device "RTX 5080"           # or any of 259 catalogued devices
 rightsize estimate Qwen/Qwen3-4B --device @your-hf-username    # or the hardware on your HF profile
+rightsize estimate black-forest-labs/FLUX.1-dev --quant nf4 --te-quant nf4 --offload none --offload model
+rightsize estimate openai/whisper-large-v3-turbo --quant int8 --quant q5_0   # audio, vision, embeddings too
 
 # To actually produce files:
 uv sync --group dev --extra llamacpp     # torch CPU + transformers for the conversion step
@@ -131,7 +133,7 @@ every verdict on that card 7% pessimistic.
 | Competitor landscape | [00-competitors](docs/plans/00-competitors.md) | research done |
 | F1 Model catalog | [F01](docs/plans/F01-model-catalog.md) | first slice: facts from Hub headers |
 | F2 Hardware DB + detection | [F02](docs/plans/F02-hardware.md) | 259 devices ingested, bandwidth for ~200, detection, `bench`, HF profile import |
-| F3 Fit engine | [F03](docs/plans/F03-fit-engine.md) | first slice: GGUF inference memory and speed |
+| F3 Fit engine | [F03](docs/plans/F03-fit-engine.md) | LLM memory, KV and speed; fine-tune memory; diffusion (offload phases), Whisper, vision and embedding memory, each checked against published measurements |
 | F4 Rules + ranking | [F04](docs/plans/F04-rules-engine.md) | `recommend` both flows, 31 sourced rules, plans that render to commands |
 | F5 Framework registry + recipes | [F05](docs/plans/F05-framework-registry.md) | first slice: five llama.cpp recipes |
 | F6 SDK / CLI / MCP | [F06](docs/plans/F06-surfaces.md) | SDK, CLI and MCP server (seven tools, stdio) over the same functions; Plan JSON Schema in `schema/` |

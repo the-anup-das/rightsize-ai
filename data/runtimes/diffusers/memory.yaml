@@ -1,0 +1,278 @@
+# Memory model for diffusers pipelines (fit/diffusion.py), and the published measurements
+# it is checked against. tests/test_families.py replays every measurement below; F9 refits
+# the constants from these rows and from users' runs.
+#
+# A pipeline runs in phases - encode the prompt, denoise, decode the latents - and the
+# peak is the worst phase: the weights resident in it plus that phase's activations.
+# Offloading changes which weights are resident, not the activations.
+constants:
+  # VAE decode of one image, per output pixel. AutoencoderKL-family decoders (SD, SDXL,
+  # FLUX, SD3) work at full resolution in their last blocks; SDXL's rows put one 1024x1024
+  # image at 3.8-5 GiB and FLUX's at up to 4.7 GiB, so 4000 B/px (4.2 GB per megapixel).
+  vae_decode_bytes_per_pixel: 4000
+  # UNet activations per latent pixel per sample (classifier-free guidance doubles the
+  # samples). From the SDXL rows with VAE slicing: 8 samples at 128x128 latents.
+  unet_bytes_per_latent_pixel: 73728
+  # Transformer (DiT/MMDiT) activations: tokens x hidden x 2 bytes x this factor. Not
+  # separable in the published rows (the VAE decode sets FLUX's peak); a round figure
+  # that makes one FLUX step at 1024x1024 cost ~0.7 GB.
+  dit_activation_factor: 24
+  text_encode_gb: 0.25
+  default_text_tokens: 512
+  # Weights on the GPU at once under sequential offloading: about one layer.
+  sequential_resident_gb: 0.25
+  # Not counted by torch's memory counters, but held on the card: the CUDA context and
+  # library workspaces. A typical figure, not measured here.
+  cuda_context_gb: 0.6
+  # The caching allocator's fragmentation, as a fraction of the peak.
+  allocator_slack: 0.05
+constants_source:
+  source_url: https://huggingface.co/blog/diffusers-quantization
+  fetched_at: "2026-09-25"
+  hand: true
+  note: fitted by hand to the measurements below; SDXL rows from the SDXL optimisation post
+
+measurements:
+  # FLUX.1-dev on 1x H100 80GB, 1024x1024, 50 steps, guidance 3.5, max_sequence_length 512.
+  # Measured with torch.cuda.max_memory_reserved() / 1024**3, so the "GB" in the post is
+  # GiB, and reserved memory includes the allocator's cache. Components: transformer
+  # 23.8 GB, T5 9.52 GB, CLIP 246 MB, VAE 168 MB in BF16 (stated in the post).
+  - id: flux-dev-bf16
+    source_url: https://huggingface.co/blog/diffusers-quantization
+    model: black-forest-labs/FLUX.1-dev
+    hardware: H100 80GB
+    metric: max_memory_reserved
+    resolution: [1024, 1024]
+    batch: 1
+    offload: none
+    quant: {}
+    after_loading_gib: 31.447
+    peak_gib: 36.166
+    tolerance: 0.08
+  - id: flux-dev-bnb-nf4
+    source_url: https://huggingface.co/blog/diffusers-quantization
+    model: black-forest-labs/FLUX.1-dev
+    hardware: H100 80GB
+    metric: max_memory_reserved
+    resolution: [1024, 1024]
+    batch: 1
+    offload: none
+    quant: {transformer: nf4, text_encoder_2: nf4}
+    after_loading_gib: 12.584
+    peak_gib: 17.281
+    tolerance: 0.22
+    note: >-
+      bitsandbytes quantizes while loading, and both bnb rows sit ~3.3 GiB above their
+      weights in reserved memory; the estimate is low by about that much
+  - id: flux-dev-bnb-int8
+    source_url: https://huggingface.co/blog/diffusers-quantization
+    model: black-forest-labs/FLUX.1-dev
+    hardware: H100 80GB
+    metric: max_memory_reserved
+    resolution: [1024, 1024]
+    batch: 1
+    offload: none
+    quant: {transformer: int8, text_encoder_2: int8}
+    after_loading_gib: 19.273
+    peak_gib: 24.432
+    tolerance: 0.15
+    note: see flux-dev-bnb-nf4
+  - id: flux-dev-torchao-int4
+    source_url: https://huggingface.co/blog/diffusers-quantization
+    model: black-forest-labs/FLUX.1-dev
+    hardware: H100 80GB
+    metric: max_memory_reserved
+    resolution: [1024, 1024]
+    batch: 1
+    offload: none
+    quant: {transformer: int4, text_encoder_2: int4}
+    after_loading_gib: 10.635
+    peak_gib: 14.654
+    tolerance: 0.12
+    note: >-
+      torchao also quantizes on the GPU while loading; reserved memory after loading is
+      2 GiB above the int4 weights
+  - id: flux-dev-torchao-int8
+    source_url: https://huggingface.co/blog/diffusers-quantization
+    model: black-forest-labs/FLUX.1-dev
+    hardware: H100 80GB
+    metric: max_memory_reserved
+    resolution: [1024, 1024]
+    batch: 1
+    offload: none
+    quant: {transformer: int8, text_encoder_2: int8}
+    after_loading_gib: 17.020
+    peak_gib: 21.482
+    tolerance: 0.08
+  - id: flux-dev-torchao-fp8
+    source_url: https://huggingface.co/blog/diffusers-quantization
+    model: black-forest-labs/FLUX.1-dev
+    hardware: H100 80GB
+    metric: max_memory_reserved
+    resolution: [1024, 1024]
+    batch: 1
+    offload: none
+    quant: {transformer: fp8, text_encoder_2: fp8}
+    after_loading_gib: 17.016
+    peak_gib: 21.488
+    tolerance: 0.08
+  - id: flux-dev-quanto-int8
+    source_url: https://huggingface.co/blog/diffusers-quantization
+    model: black-forest-labs/FLUX.1-dev
+    hardware: H100 80GB
+    metric: max_memory_reserved
+    resolution: [1024, 1024]
+    batch: 1
+    offload: none
+    quant: {transformer: int8, text_encoder_2: int8}
+    after_loading_gib: 17.330
+    peak_gib: 21.814
+    tolerance: 0.08
+  - id: flux-dev-quanto-fp8
+    source_url: https://huggingface.co/blog/diffusers-quantization
+    model: black-forest-labs/FLUX.1-dev
+    hardware: H100 80GB
+    metric: max_memory_reserved
+    resolution: [1024, 1024]
+    batch: 1
+    offload: none
+    quant: {transformer: fp8, text_encoder_2: fp8}
+    after_loading_gib: 16.395
+    peak_gib: 20.898
+    tolerance: 0.08
+  - id: flux-dev-gguf-q2_k
+    source_url: https://huggingface.co/blog/diffusers-quantization
+    model: black-forest-labs/FLUX.1-dev
+    hardware: H100 80GB
+    metric: max_memory_reserved
+    resolution: [1024, 1024]
+    batch: 1
+    offload: none
+    quant: {transformer: Q2_K}
+    after_loading_gib: 13.264
+    peak_gib: 17.752
+    tolerance: 0.08
+    note: transformer from city96/FLUX.1-dev-gguf; the text encoders stay BF16
+  - id: flux-dev-gguf-q4_1
+    source_url: https://huggingface.co/blog/diffusers-quantization
+    model: black-forest-labs/FLUX.1-dev
+    hardware: H100 80GB
+    metric: max_memory_reserved
+    resolution: [1024, 1024]
+    batch: 1
+    offload: none
+    quant: {transformer: Q4_1}
+    after_loading_gib: 16.838
+    peak_gib: 21.326
+    tolerance: 0.08
+  - id: flux-dev-gguf-q8_0
+    source_url: https://huggingface.co/blog/diffusers-quantization
+    model: black-forest-labs/FLUX.1-dev
+    hardware: H100 80GB
+    metric: max_memory_reserved
+    resolution: [1024, 1024]
+    batch: 1
+    offload: none
+    quant: {transformer: Q8_0}
+    after_loading_gib: 21.502
+    peak_gib: 25.973
+    tolerance: 0.08
+  - id: flux-dev-fp8-layerwise
+    source_url: https://huggingface.co/blog/diffusers-quantization
+    model: black-forest-labs/FLUX.1-dev
+    hardware: H100 80GB
+    metric: max_memory_reserved
+    resolution: [1024, 1024]
+    batch: 1
+    offload: none
+    quant: {transformer: fp8}
+    after_loading_gib: 23.682
+    peak_gib: 28.451
+    tolerance: 0.12
+    note: >-
+      layerwise casting stores FP8 and upcasts per layer; the row sits ~3.3 GiB above its
+      weights after loading, like the bnb rows
+  - id: flux-dev-bnb-nf4-model-offload
+    source_url: https://huggingface.co/blog/diffusers-quantization
+    model: black-forest-labs/FLUX.1-dev
+    hardware: H100 80GB
+    metric: max_memory_reserved
+    resolution: [1024, 1024]
+    batch: 1
+    offload: model
+    quant: {transformer: nf4, text_encoder_2: nf4}
+    after_loading_gib: 12.383
+    peak_gib: 12.383
+    tolerance: 0.27
+    note: >-
+      the peak is at load time, when bitsandbytes has every quantized component on the GPU
+      before offloading starts; the estimate models that phase but not the ~3.1 GiB of
+      allocator cache the load leaves behind. The post's 8-bit row (23.4 GiB, about the
+      same as without offloading) suggests bnb int8 weights stayed on the GPU; not replayed
+  # SDXL base 1.0 on an A100 40GB: 4 images per prompt at the default 1024x1024, FP16
+  # with SDPA. The post reports "Memory (GB)" without the counter it used; read as GiB,
+  # the convention of the other diffusers posts. The SDXL VAE upcasts to FP32 to decode.
+  - id: sdxl-fp16
+    source_url: https://huggingface.co/blog/simple_sdxl_optimizations
+    model: stabilityai/stable-diffusion-xl-base-1.0
+    hardware: A100 40GB
+    metric: unspecified
+    resolution: [1024, 1024]
+    batch: 4
+    offload: none
+    quant: {}
+    peak_gib: 21.72
+    tolerance: 0.15
+  - id: sdxl-fp16-model-offload
+    source_url: https://huggingface.co/blog/simple_sdxl_optimizations
+    model: stabilityai/stable-diffusion-xl-base-1.0
+    hardware: A100 40GB
+    metric: unspecified
+    resolution: [1024, 1024]
+    batch: 4
+    offload: model
+    quant: {}
+    peak_gib: 20.21
+    tolerance: 0.20
+    note: >-
+      saved only the text encoders (1.5 GB) over no offloading, so the UNet seems to have
+      stayed resident through the decode in that diffusers version; the estimate does not
+      assume that, and is low
+  - id: sdxl-fp16-sequential
+    source_url: https://huggingface.co/blog/simple_sdxl_optimizations
+    model: stabilityai/stable-diffusion-xl-base-1.0
+    hardware: A100 40GB
+    metric: unspecified
+    resolution: [1024, 1024]
+    batch: 4
+    offload: sequential
+    quant: {}
+    peak_gib: 19.91
+    tolerance: 0.20
+  - id: sdxl-fp16-vae-slicing
+    source_url: https://huggingface.co/blog/simple_sdxl_optimizations
+    model: stabilityai/stable-diffusion-xl-base-1.0
+    hardware: A100 40GB
+    metric: unspecified
+    resolution: [1024, 1024]
+    batch: 4
+    offload: none
+    vae_slicing: true
+    quant: {}
+    peak_gib: 15.40
+    tolerance: 0.15
+  - id: sdxl-fp16-vae-slicing-sequential
+    source_url: https://huggingface.co/blog/simple_sdxl_optimizations
+    model: stabilityai/stable-diffusion-xl-base-1.0
+    hardware: A100 40GB
+    metric: unspecified
+    resolution: [1024, 1024]
+    batch: 4
+    offload: sequential
+    vae_slicing: true
+    quant: {}
+    peak_gib: 11.47
+    tolerance: 0.18
+    note: >-
+      with the weights offloaded, the peak is the UNet's activations for 8 samples; this
+      row puts them ~16% above the constant, the no-offload rows ~6% below it

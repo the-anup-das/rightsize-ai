@@ -46,19 +46,52 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--allow-slow", action="store_true", help="include plans under 5 tok/s")
     r.add_argument("--commands", action="store_true", help="print the top plan's commands")
 
-    e = sub.add_parser("estimate", help="memory and speed for one model on one device")
-    e.add_argument("model", help="Hub id, e.g. Qwen/Qwen3-4B")
+    e = sub.add_parser(
+        "estimate",
+        help="memory and speed for one model on one device: LLM, diffusion, audio, "
+        "vision or embedding",
+    )
+    e.add_argument("model", help="Hub id, e.g. Qwen/Qwen3-4B or black-forest-labs/FLUX.1-dev")
     e.add_argument("--device", default="detect", help="preset name or 'detect' (default)")
-    e.add_argument("--quant", action="append", help="GGUF type, repeatable (default Q4_K_M)")
-    e.add_argument("--runtime", default="llama.cpp")
+    e.add_argument(
+        "--quant",
+        action="append",
+        help="GGUF type or format (bf16, fp8, nf4, int8, int4, awq, mlx-4bit, ...), "
+        "repeatable; default Q4_K_M for LLMs, bf16 for diffusion",
+    )
+    e.add_argument(
+        "--runtime",
+        default=None,
+        help="llama.cpp (LLM default), ollama; whisper.cpp, faster-whisper, transformers (audio)",
+    )
     e.add_argument(
         "--mode",
         default="infer",
         choices=["infer", "lora", "qlora", "full"],
         help="infer (default), or the memory to fine-tune it",
     )
-    e.add_argument("--seq-len", type=int, default=2048, help="training sequence length")
-    e.add_argument("--batch", type=int, default=1, help="training batch size")
+    e.add_argument(
+        "--seq-len", type=int, default=None,
+        help="training sequence length (default 2048), or embedding input length (512)",
+    )
+    e.add_argument(
+        "--batch", type=int, default=None,
+        help="training batch (default 1), images per prompt, or embedding batch (32)",
+    )
+    e.add_argument(
+        "--offload",
+        action="append",
+        choices=["none", "model", "sequential"],
+        help="diffusion: which weights stay on the GPU, repeatable to compare (default none)",
+    )
+    e.add_argument("--resolution", default="1024x1024", help="diffusion: WIDTHxHEIGHT")
+    e.add_argument("--frames", type=int, default=None, help="diffusion: frames, for video")
+    e.add_argument(
+        "--te-quant", default=None, help="diffusion: format for the text encoders (e.g. nf4)"
+    )
+    e.add_argument(
+        "--vae-slicing", action="store_true", help="diffusion: decode one image at a time"
+    )
     e.add_argument("--ctx", type=int, default=8192)
     e.add_argument("--revision", default="main")
     e.add_argument(
@@ -185,6 +218,8 @@ def cmd_estimate(args: argparse.Namespace) -> int:
 
     fx = facts(args.model, args.revision)
     dev = _device(args)
+    if fx.family.value != "llm":
+        return _estimate_other(args, fx, dev)
     if args.mode != "infer":
         return _estimate_training(args, fx, dev)
     quants = [q.upper() for q in (args.quant or ["Q4_K_M"])]
@@ -252,7 +287,8 @@ def _estimate_training(args: argparse.Namespace, fx, dev) -> int:
 
     modes = ["qlora", "lora", "full"] if args.mode == "full" else [args.mode]
     results = {
-        m: estimate_finetune(fx, dev, m, seq_len=args.seq_len, batch=args.batch) for m in modes
+        m: estimate_finetune(fx, dev, m, seq_len=args.seq_len or 2048, batch=args.batch or 1)
+        for m in modes
     }
     if args.json:
         print(json.dumps({m: r.model_dump(mode="json") for m, r in results.items()}, indent=2))
@@ -281,6 +317,69 @@ def _estimate_training(args: argparse.Namespace, fx, dev) -> int:
     )
     for note in next(iter(results.values())).notes:
         con.debug(note)
+    return 0
+
+
+def _estimate_other(args: argparse.Namespace, fx, dev) -> int:
+    """Diffusion, audio, vision and embedding models: one row per quant (and per offload
+    strategy for diffusion), with the columns that family's estimate has."""
+    from rightsize import _resolution
+    from rightsize._console import verdict_style
+    from rightsize.fit import estimate
+
+    if args.mode != "infer":
+        print(f"rightsize estimate: fine-tuning memory for {fx.family.value} models is not "
+              "modelled yet (docs/plans/F03-fit-engine.md)", file=sys.stderr)
+        return 1
+    diffusion = fx.family.value == "diffusion"
+    offloads = args.offload or ["none"] if diffusion else [None]
+    quants = args.quant or [None]
+    results = {}
+    for q in quants:
+        for off in offloads:
+            r = estimate(
+                fx, q, dev, runtime=args.runtime, batch=args.batch, offload=off,
+                resolution=_resolution(args.resolution), frames=args.frames,
+                text_encoder_quant=args.te_quant, vae_slicing=args.vae_slicing or None,
+                seq_len=args.seq_len,
+            )
+            label = (q or "default") + (f"/{off}" if diffusion else "")
+            results[label] = r
+    if args.json:
+        payload = {
+            "model": fx.model_dump(mode="json"),
+            "device": dev.model_dump(mode="json"),
+            "results": {k: r.model_dump(mode="json") for k, r in results.items()},
+        }
+        print(json.dumps(payload, indent=2))
+        return 0
+    con = _console(args)
+    con.title(f"{args.model} on {dev.name}")
+    con.info(
+        f"{fx.family.value}, {fx.params_total / 1e9:.2f}B params  |  {dev.memory_gib} GiB"
+        + (f"  |  {args.resolution}" if diffusion else "")
+    )
+    rows, styles = [], []
+    for label, r in results.items():
+        b = r.breakdown
+        if diffusion:
+            rows.append([label, f"{b['weights']:.2f}", f"{b['activations']:.2f}",
+                         f"{r.vram_gb:.2f}", f"{r.ram_gb:.1f}", r.verdict.value,
+                         f"{r.confidence:.1f}"])
+        else:
+            rows.append([label, f"{b['weights']:.2f}",
+                         f"{b.get('activations', b.get('overhead', 0)):.2f}",
+                         f"{r.vram_gb:.2f}", r.verdict.value, f"{r.confidence:.1f}"])
+        styles.append(verdict_style(r.verdict.value))
+    headers = (["quant/offload", "weights", "activations", "vram GB", "ram GB", "verdict",
+                "conf"] if diffusion else
+               ["quant", "weights", "overhead", "vram GB", "verdict", "conf"])
+    con.table(headers, rows, styles=styles)
+    first = next(iter(results.values()))
+    con.debug(f"formula {first.formula_id}")
+    for r in results.values():
+        for note in r.notes:
+            con.debug(note)
     return 0
 
 

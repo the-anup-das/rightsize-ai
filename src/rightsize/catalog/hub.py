@@ -1,7 +1,9 @@
-"""Model facts from the Hugging Face Hub without downloading weights (F1, first slice).
+"""Model facts from the Hugging Face Hub without downloading weights (F1).
 
 Reads ``config.json``, the safetensors index and each shard's header (8-byte length prefix +
 JSON) over HTTP Range requests. httpx only; ``HF_TOKEN`` is honoured for gated repos.
+Diffusers pipelines are counted component by component (catalog/weights.py), and repos
+that ship only PyTorch files are sized from the files.
 """
 
 from __future__ import annotations
@@ -9,34 +11,22 @@ from __future__ import annotations
 import json
 import os
 import re
-import struct
 import time
 from pathlib import Path
 from typing import Any
 
 import httpx
 
+from rightsize.catalog.weights import (
+    count_files,
+    pick_variant,
+    pipeline_components,
+    torch_weights,
+    variant_groups,
+)
 from rightsize.types import Family, ModelFacts, ModelRef
 
 HUB = "https://huggingface.co"
-_DTYPE_BYTES = {
-    "F64": 8,
-    "I64": 8,
-    "F32": 4,
-    "I32": 4,
-    "F16": 2,
-    "BF16": 2,
-    "I16": 2,
-    "U16": 2,
-    "F8_E4M3": 1,
-    "F8_E5M2": 1,
-    "I8": 1,
-    "U8": 1,
-    "BOOL": 1,
-    "F4": 0.5,
-    "I4": 0.5,
-    "U4": 0.5,
-}
 _TEXT_MODEL_KEYS = ("text_config", "language_config", "llm_config")
 
 #: Config keys that decide how much KV cache a model really needs, beyond plain GQA:
@@ -94,7 +84,7 @@ def _cache_path(repo: str, revision: str) -> Path:
 #: Bump whenever facts() starts keeping something new. A cached entry from an older
 #: version is refetched rather than trusted: without this, adding the attention fields left
 #: every warm cache describing LFM2 as all-attention, 166% over what llama.cpp allocates.
-CACHE_VERSION = 5
+CACHE_VERSION = 6
 
 
 def _read_cache(path: Path, ttl_s: float) -> dict[str, Any] | None:
@@ -117,30 +107,6 @@ def _write_cache(path: Path, payload: dict[str, Any]) -> None:
         pass
 
 
-def safetensors_header(client: httpx.Client, url: str) -> dict[str, Any]:
-    """Fetch only the JSON header of a safetensors file (two small Range requests)."""
-    r = client.get(url, headers={"Range": "bytes=0-7"})
-    r.raise_for_status()
-    (n,) = struct.unpack("<Q", r.content[:8])
-    r = client.get(url, headers={"Range": f"bytes=8-{8 + n - 1}"})
-    r.raise_for_status()
-    return json.loads(r.content[:n])
-
-
-def _count_params(header: dict[str, Any]) -> tuple[int, dict[str, int]]:
-    total = 0
-    by_dtype: dict[str, int] = {}
-    for name, info in header.items():
-        if name == "__metadata__":
-            continue
-        n = 1
-        for d in info["shape"]:
-            n *= d
-        total += n
-        by_dtype[info["dtype"]] = by_dtype.get(info["dtype"], 0) + n
-    return total, by_dtype
-
-
 def _text_config(cfg: dict[str, Any]) -> dict[str, Any]:
     for key in _TEXT_MODEL_KEYS:
         if isinstance(cfg.get(key), dict):
@@ -148,16 +114,36 @@ def _text_config(cfg: dict[str, Any]) -> dict[str, Any]:
     return cfg
 
 
-def _family(cfg: dict[str, Any], pipeline_tag: str | None) -> Family:
+_DIFFUSION_TAGS = {
+    "text-to-image", "image-to-image", "text-to-video", "image-to-video", "video-to-video",
+    "unconditional-image-generation",
+}
+_AUDIO_TAGS = {
+    "automatic-speech-recognition", "text-to-speech", "text-to-audio", "audio-to-audio",
+    "audio-classification", "voice-activity-detection",
+}
+_EMBEDDING_TAGS = {"feature-extraction", "sentence-similarity", "text-ranking"}
+_VISION_TAGS = {
+    "object-detection", "image-classification", "image-segmentation", "mask-generation",
+    "depth-estimation", "zero-shot-image-classification", "zero-shot-object-detection",
+    "image-feature-extraction", "keypoint-detection", "video-classification",
+}
+
+
+def _family(
+    cfg: dict[str, Any], pipeline_tag: str | None, library: str | None = None,
+    pipeline: bool = False,
+) -> Family:
     mt = str(cfg.get("model_type", "")).lower()
     tag = (pipeline_tag or "").lower()
-    if "diffusion" in mt or tag in {"text-to-image", "image-to-image", "text-to-video"}:
+    lib = (library or "").lower()
+    if pipeline or lib == "diffusers" or "diffusion" in mt or tag in _DIFFUSION_TAGS:
         return Family.diffusion
-    if "whisper" in mt or tag in {"automatic-speech-recognition", "text-to-speech"}:
+    if "whisper" in mt or tag in _AUDIO_TAGS:
         return Family.audio
-    if tag in {"feature-extraction", "sentence-similarity"}:
+    if lib == "sentence-transformers" or tag in _EMBEDDING_TAGS:
         return Family.embedding
-    if tag in {"object-detection", "image-classification", "image-segmentation"}:
+    if tag in _VISION_TAGS:
         return Family.vision
     return Family.llm
 
@@ -232,34 +218,59 @@ def facts(
     with httpx.Client(
         headers=_headers(token), timeout=timeout, follow_redirects=True, transport=transport
     ) as c:
-        info = c.get(f"{HUB}/api/models/{repo}", params={"revision": revision})
+        info = c.get(
+            f"{HUB}/api/models/{repo}", params={"revision": revision, "blobs": "true"}
+        )
         info.raise_for_status()
         meta = info.json()
-        siblings = [s["rfilename"] for s in meta.get("siblings", [])]
+        sizes = {s["rfilename"]: s.get("size") for s in meta.get("siblings", [])}
+        siblings = list(sizes)
         base = f"{HUB}/{repo}/resolve/{revision}"
 
         cfg: dict[str, Any] = {}
         if "config.json" in siblings:
             r = c.get(f"{base}/config.json")
-            r.raise_for_status()
-            cfg = r.json()
+            if r.status_code not in (401, 403):  # a gated repo still lists its files
+                r.raise_for_status()
+                cfg = r.json()
 
-        shards = sorted(s for s in siblings if s.endswith(".safetensors") and "/" not in s)
+        pipeline = pipeline_components(c, base, sizes) if "model_index.json" in sizes else None
+        shards: list[str] = []
         total = 0
         by_dtype: dict[str, int] = {}
+        counted_from = None
         summary = (meta.get("safetensors") or {}).get("parameters")
-        if isinstance(summary, dict) and summary:
+        if pipeline and pipeline["components"]:
+            # The Hub's summary covers one set of files, not the pipeline: for FLUX it is
+            # the single-file transformer at the root, for SDXL the UNet alone.
+            for comp in pipeline["components"].values():
+                total += comp["params"]
+                for k, v in comp["params_by_dtype"].items():
+                    by_dtype[k] = by_dtype.get(k, 0) + v
+            counted_from = "pipeline components"
+            if any("file sizes" in comp["counted_from"]
+                   for comp in pipeline["components"].values()):
+                counted_from += ", from file sizes (the headers are gated)"
+        elif isinstance(summary, dict) and summary:
             # The Hub already counts parameters per dtype in the response we just fetched.
             # Reading every shard header instead cost DeepSeek-V3 163 requests and minutes.
             by_dtype = {str(k): int(v) for k, v in summary.items()}
             total = sum(by_dtype.values())
+            counted_from = "Hub parameter summary"
         else:
-            for shard in shards:
-                hdr = safetensors_header(c, f"{base}/{shard}")
-                n, d = _count_params(hdr)
-                total += n
-                for k, v in d.items():
-                    by_dtype[k] = by_dtype.get(k, 0) + v
+            root = [f for f in siblings if f.endswith(".safetensors") and "/" not in f]
+            shards, chosen = pick_variant(root)
+            if shards:
+                total, by_dtype, counted_from = count_files(
+                    c, base, shards, sizes, variant_groups(root), chosen
+                )
+            else:
+                torch = torch_weights(sizes, cfg.get("torch_dtype"))
+                if torch:
+                    total = torch["params"]
+                    by_dtype = {str(cfg.get("torch_dtype") or "float32").upper(): total}
+                    counted_from = torch["counted_from"]
+                    shards = torch["files"]
 
     tc = _text_config(cfg)
     hidden = tc.get("hidden_size")
@@ -272,7 +283,8 @@ def facts(
 
     facts_ = ModelFacts(
         ref=ModelRef(repo=repo, revision=revision),
-        family=_family(cfg, meta.get("pipeline_tag")),
+        family=_family(cfg, meta.get("pipeline_tag"), meta.get("library_name"),
+                       pipeline=bool(pipeline and pipeline["components"])),
         params_total=total or None,
         params_active=None,
         dtype=str(dominant).upper() if dominant else None,
@@ -282,12 +294,16 @@ def facts(
         context_max=tc.get("max_position_embeddings"),
         license=(meta.get("cardData") or {}).get("license"),
         base_model=_base_model(meta),
-        confidence=1.0 if total else 0.5,
+        confidence=_confidence(total, counted_from),
         extra={
             "model_type": cfg.get("model_type"),
             "architectures": cfg.get("architectures"),
             "params_by_dtype": by_dtype,
+            "params_counted_from": counted_from,
             "shards": shards,
+            "library": meta.get("library_name"),
+            "pipeline_tag": meta.get("pipeline_tag"),
+            "pipeline": pipeline,
             "gated": meta.get("gated", False),
             "num_experts": experts,
             "num_experts_per_tok": active_experts,
@@ -298,6 +314,8 @@ def facts(
             "hidden_size": hidden,
             "intermediate_size": tc.get("intermediate_size"),
             "num_attention_heads": heads,
+            "image_size": tc.get("image_size"),
+            "patch_size": tc.get("patch_size"),
         },
     )
     if experts and active_experts and total:
@@ -312,6 +330,16 @@ def facts(
     if transport is None:
         _write_cache(cache, facts_.model_dump(mode="json"))
     return facts_
+
+
+def _confidence(total: int, counted_from: str | None) -> float:
+    """1.0 when the parameters were counted from the weights themselves; less when they
+    were inferred from file sizes, which means assuming a dtype."""
+    if not total:
+        return 0.5
+    if counted_from and "file sizes" in counted_from:
+        return 0.7
+    return 1.0
 
 
 def _base_model(meta: dict[str, Any]) -> str | None:

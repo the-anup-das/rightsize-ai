@@ -1,0 +1,138 @@
+{
+ "ref": {
+  "repo": "stabilityai/stable-diffusion-xl-base-1.0",
+  "revision": "main",
+  "file": null
+ },
+ "family": "diffusion",
+ "params_total": 3468837867,
+ "params_active": null,
+ "dtype": "F32",
+ "num_layers": null,
+ "num_kv_heads": null,
+ "head_dim": null,
+ "context_max": null,
+ "license": "openrail++",
+ "base_model": null,
+ "confidence": 1.0,
+ "extra": {
+  "model_type": null,
+  "architectures": null,
+  "params_by_dtype": {
+   "F32": 3468837867
+  },
+  "params_counted_from": "pipeline components",
+  "shards": [],
+  "library": "diffusers",
+  "pipeline_tag": "text-to-image",
+  "pipeline": {
+   "class": "StableDiffusionXLPipeline",
+   "index_readable": true,
+   "components": {
+    "text_encoder": {
+     "role": "text_encoder",
+     "class": "CLIPTextModel",
+     "params": 123060480,
+     "params_by_dtype": {
+      "F32": 123060480
+     },
+     "bytes": 492265168,
+     "files": [
+      "text_encoder/model.safetensors"
+     ],
+     "counted_from": "safetensors headers",
+     "config": {
+      "num_attention_heads": 12,
+      "hidden_size": 768,
+      "torch_dtype": "float16"
+     }
+    },
+    "text_encoder_2": {
+     "role": "text_encoder",
+     "class": "CLIPTextModelWithProjection",
+     "params": 694659840,
+     "params_by_dtype": {
+      "F32": 694659840
+     },
+     "bytes": 2778702264,
+     "files": [
+      "text_encoder_2/model.safetensors"
+     ],
+     "counted_from": "safetensors headers",
+     "config": {
+      "num_attention_heads": 20,
+      "hidden_size": 1280,
+      "torch_dtype": "float16"
+     }
+    },
+    "unet": {
+     "role": "denoiser",
+     "class": "UNet2DConditionModel",
+     "params": 2567463684,
+     "params_by_dtype": {
+      "F32": 2567463684
+     },
+     "bytes": 10270077736,
+     "files": [
+      "unet/diffusion_pytorch_model.safetensors"
+     ],
+     "counted_from": "safetensors headers",
+     "config": {
+      "_class_name": "UNet2DConditionModel",
+      "num_attention_heads": null,
+      "attention_head_dim": [
+       5,
+       10,
+       20
+      ],
+      "in_channels": 4,
+      "block_out_channels": [
+       320,
+       640,
+       1280
+      ],
+      "sample_size": 128
+     }
+    },
+    "vae": {
+     "role": "vae",
+     "class": "AutoencoderKL",
+     "params": 83653863,
+     "params_by_dtype": {
+      "F32": 83653863
+     },
+     "bytes": 334643268,
+     "files": [
+      "vae/diffusion_pytorch_model.safetensors"
+     ],
+     "counted_from": "safetensors headers",
+     "config": {
+      "_class_name": "AutoencoderKL",
+      "in_channels": 3,
+      "latent_channels": 4,
+      "block_out_channels": [
+       128,
+       256,
+       512,
+       512
+      ],
+      "sample_size": 1024,
+      "force_upcast": true
+     }
+    }
+   }
+  },
+  "gated": false,
+  "num_experts": null,
+  "num_experts_per_tok": null,
+  "sliding_window": null,
+  "attention": {},
+  "tie_word_embeddings": null,
+  "vocab_size": null,
+  "hidden_size": null,
+  "intermediate_size": null,
+  "num_attention_heads": null,
+  "image_size": null,
+  "patch_size": null
+ }
+}

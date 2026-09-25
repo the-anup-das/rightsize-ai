@@ -77,8 +77,17 @@ LLM and VLM full facts. Diffusion, audio, vision, embeddings: per-subfolder size
 - [ ] Disk cache with TTL and ETag; `offline` flag; `HF_TOKEN` support
       (partial: TTL, offline and `HF_TOKEN` work; no ETag revalidation yet)
 - [ ] Curated type lists per family and task (names only)
-- [x] Fixtures for 11 repos (`scripts/record_fixtures.py`), one per KV layout; fake transport;
+- [x] Fixtures for 20 repos (`scripts/record_fixtures.py`), one per KV layout plus the
+      other families (FLUX.1-dev, SDXL, Wan 2.1, four Whispers, bge-m3, ViT); fake transport;
       tests. Parameter counts come from the Hub's own summary, so recording all 11 takes
       8 seconds instead of minutes.
-- [ ] Per-subfolder sums for multi-component pipelines
+- [x] Per-subfolder sums for multi-component pipelines (catalog/weights.py): the folders
+      model_index.json names, one variant each (the default, else fp16); the root
+      single-file checkpoint, spare VAEs and ONNX/OpenVINO exports are skipped. The Hub's
+      parameter summary covers one file set (FLUX's transformer, SDXL's UNet), so it is not
+      used for pipelines. Gated repos list their files but serve no headers: components are
+      then counted from file size at 2 bytes per parameter (4 when the default files are
+      twice their fp16 variant), confidence 0.7. Repos with only PyTorch files (bge-m3,
+      Kokoro) are sized from `pytorch_model*.bin` or the largest .pth. Family now also
+      comes from `library_name` and more pipeline tags.
 - [ ] Docs page: how facts are derived and what `confidence` means

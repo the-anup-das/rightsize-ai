@@ -1,0 +1,112 @@
+# Bits per weight for weight formats other than GGUF, scales and zero-points included,
+# at each tool's default settings: bpw = bits + (scale bits + zero bits) / group size.
+#
+# Layers a quantizer leaves alone (norms, biases, often the embeddings) are counted at the
+# quantized size by the estimators, which say so in their notes: for the models checked
+# (FLUX.1-dev, SDXL, Llama) that error is a few percent. GGUF and ggml types (whisper.cpp
+# too) live in quants/gguf_bpw.yaml.
+formats:
+  - id: fp32
+    bpw: 32.0
+    aliases: [float32, f32]
+    layout: IEEE single precision
+    source:
+      source_url: https://docs.pytorch.org/docs/stable/tensor_attributes.html
+      fetched_at: "2026-09-25"
+  - id: fp16
+    bpw: 16.0
+    aliases: [float16, f16, half]
+    layout: IEEE half precision
+    source:
+      source_url: https://docs.pytorch.org/docs/stable/tensor_attributes.html
+      fetched_at: "2026-09-25"
+  - id: bf16
+    bpw: 16.0
+    aliases: [bfloat16]
+    layout: brain float, 8-bit exponent
+    source:
+      source_url: https://docs.pytorch.org/docs/stable/tensor_attributes.html
+      fetched_at: "2026-09-25"
+  - id: fp8
+    bpw: 8.0
+    aliases: [float8, fp8_e4m3, float8_e4m3fn, e4m3, float8_weight_only]
+    layout: E4M3 weights with one scale per tensor or per output channel (negligible)
+    source:
+      source_url: https://arxiv.org/abs/2209.05433
+      fetched_at: "2026-09-25"
+  - id: int8
+    bpw: 8.0
+    aliases: [bnb-8bit, 8bit, llm.int8, int8_weight_only, qint8, int8_float16]
+    layout: int8 weights with one scale per row (LLM.int8(), torchao, quanto, CTranslate2)
+    source:
+      source_url: https://arxiv.org/abs/2208.07339
+      fetched_at: "2026-09-25"
+  - id: nf4
+    bpw: 4.5
+    aliases: [bnb-4bit, bnb-nf4, 4bit, fp4, bnb-fp4]
+    layout: bitsandbytes 4-bit, block 64, one fp32 absmax per block = 4 + 32/64
+    source:
+      source_url: https://arxiv.org/abs/2305.14314
+      fetched_at: "2026-09-25"
+      note: QLoRA section 3, blocksize 64 for W; same layout for fp4
+  - id: nf4-dq
+    bpw: 4.127
+    aliases: [bnb-4bit-dq, nf4-double-quant]
+    layout: nf4 with double quantization = 4 + 8/64 + 32/(64 x 256)
+    source:
+      source_url: https://arxiv.org/abs/2305.14314
+      fetched_at: "2026-09-25"
+      note: QLoRA section 3, Double Quantization, 0.127 bits per parameter for the constants
+  - id: int4
+    bpw: 4.25
+    aliases: [int4_weight_only, torchao-int4]
+    layout: int4, group 128, bf16 scale and bf16 zero per group = 4 + 32/128
+    source:
+      source_url: https://github.com/pytorch/ao/blob/main/torchao/quantization/quant_api.py
+      fetched_at: "2026-09-25"
+      note: Int4WeightOnlyConfig group_size defaults to 128
+  - id: awq
+    bpw: 4.156
+    aliases: [awq-int4]
+    layout: int4, group 128, fp16 scale and int4 zero per group = 4 + (16 + 4)/128
+    source:
+      source_url: https://github.com/casper-hansen/AutoAWQ
+      fetched_at: "2026-09-25"
+      note: default quant_config q_group_size 128, w_bit 4, zero_point true
+  - id: gptq
+    bpw: 4.156
+    aliases: [gptq-int4]
+    layout: int4, group 128, fp16 scale and int4 zero per group = 4 + (16 + 4)/128
+    source:
+      source_url: https://huggingface.co/docs/transformers/main_classes/quantization
+      fetched_at: "2026-09-25"
+      note: GPTQConfig group_size defaults to 128; the g_idx row index is negligible
+  - id: mlx-4bit
+    bpw: 4.5
+    aliases: [mlx-4, mlx4]
+    layout: MLX affine, group 64, scale and bias in the model dtype = 4 + 32/64
+    source:
+      source_url: https://github.com/ml-explore/mlx/blob/main/python/src/ops.cpp
+      fetched_at: "2026-09-25"
+      note: quantize() table of modes, affine defaults group 64 and 4 bits
+  - id: mlx-8bit
+    bpw: 8.5
+    aliases: [mlx-8, mlx8]
+    layout: MLX affine, 8 bits, group 64 = 8 + 32/64
+    source:
+      source_url: https://github.com/ml-explore/mlx/blob/main/python/src/ops.cpp
+      fetched_at: "2026-09-25"
+  - id: nvfp4
+    bpw: 4.5
+    aliases: []
+    layout: FP4 E2M1, block 16, one FP8 E4M3 scale per block = 4 + 8/16 (plus one fp32 per tensor)
+    source:
+      source_url: https://developer.nvidia.com/blog/introducing-nvfp4-for-efficient-and-accurate-low-precision-inference/
+      fetched_at: "2026-09-25"
+  - id: mxfp4
+    bpw: 4.25
+    aliases: []
+    layout: FP4 E2M1, block 32, one E8M0 scale per block = 4 + 8/32
+    source:
+      source_url: https://www.opencompute.org/documents/ocp-microscaling-formats-mx-v1-0-spec-final-pdf
+      fetched_at: "2026-09-25"

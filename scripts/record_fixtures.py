@@ -1,6 +1,7 @@
 """Record ModelFacts fixtures from the live Hub for the offline tests (F1).
 
-    uv run python scripts/record_fixtures.py
+    uv run python scripts/record_fixtures.py                   # every repo below
+    uv run python scripts/record_fixtures.py openai/whisper-small  # just these
 
 One model per layout the fit engine has to get right, fetched through the catalog itself
 so the fixtures also pin what the catalog keeps from each config. Re-run after changing
@@ -28,13 +29,23 @@ REPOS = {
     "ibm-granite/granite-4.0-h-350m": "hybrid: Mamba2, validated against llama.cpp",
     "ibm-granite/granite-4.0-h-small": "hybrid: Mamba2 MoE",
     "tiiuae/Falcon-H1-1.5B-Instruct": "hybrid: attention and Mamba2 in every layer",
+    "black-forest-labs/FLUX.1-dev": "diffusion pipeline, gated: counted from file sizes",
+    "stabilityai/stable-diffusion-xl-base-1.0": "diffusion pipeline, UNet, fp16 variants",
+    "Wan-AI/Wan2.1-T2V-1.3B-Diffusers": "video pipeline, fp32 files",
+    "openai/whisper-large-v2": "Whisper, the size faster-whisper measured on GPU",
+    "openai/whisper-large-v3": "Whisper large-v3",
+    "openai/whisper-large-v3-turbo": "Whisper turbo: four decoder layers",
+    "openai/whisper-small": "Whisper, the size faster-whisper measured on CPU",
+    "BAAI/bge-m3": "embedding model shipped as pytorch_model.bin only",
+    "google/vit-base-patch16-224": "vision transformer",
 }
 
 
-def main() -> int:
+def main(argv: list[str]) -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     failed = 0
-    for repo, why in REPOS.items():
+    wanted = {r: REPOS.get(r, "requested") for r in argv} or REPOS
+    for repo, why in wanted.items():
         try:
             fx = facts(repo, ttl_s=0)
         except Exception as exc:  # a gated or renamed repo should not stop the rest
@@ -48,4 +59,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main(sys.argv[1:]))

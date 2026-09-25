@@ -273,6 +273,33 @@ llama70 = ModelFacts(ref=ModelRef(repo="meta-llama/Llama-3.1-70B"), family=Famil
                      params_total=70_553_706_496, num_layers=80, num_kv_heads=8, head_dim=128)
 kv_cache_gb(llama70, 131072)
 """),
+    md("""
+## Diffusion: which weights are on the GPU, and when
+
+A pipeline loads, encodes the prompt, denoises and decodes, and its peak is the worst of
+those phases. Offloading changes which weights are resident in each; bitsandbytes adds a
+load phase because it quantizes on the GPU before any offloading starts.
+"""),
+    code("""
+import rightsize
+for offload in ["none", "model", "sequential"]:
+    r = rightsize.estimate("black-forest-labs/FLUX.1-dev", "nf4", "RTX 4070 12GB",
+                           text_encoder_quant="nf4", offload=offload)
+    print(f"{offload:10s} {r.vram_gb:5.1f} GB on the GPU, {r.ram_gb:5.1f} GB of RAM  {r.verdict.value}")
+"""),
+    code("""
+{k: v for k, v in r.breakdown.items() if k.startswith(("phase.", "weights."))}
+"""),
+    md("## Speech recognition: the runtime sets the overhead"),
+    code("""
+for runtime, quant in [("faster-whisper", "fp16"), ("faster-whisper", "int8"), ("whisper.cpp", "q5_0")]:
+    r = rightsize.estimate("openai/whisper-large-v3-turbo", quant, "RTX 3060 12GB", runtime=runtime)
+    print(f"{runtime:15s} {quant:5s} {r.vram_gb:.2f} GB (weights {r.breakdown['weights']:.2f})")
+"""),
+    md("## Embeddings and vision: the weights plus one batch"),
+    code("""
+rightsize.estimate("BAAI/bge-m3", "fp16", "CPU only 32GB", batch=64, seq_len=1024)
+"""),
 ]
 
 NOTEBOOKS["05-recipes.ipynb"] = [

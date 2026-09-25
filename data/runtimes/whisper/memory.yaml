@@ -1,0 +1,42 @@
+# Memory for Whisper-family speech recognition (fit/audio.py), per runtime, and the
+# measurements behind it. Total = weights at the chosen precision + a runtime overhead
+# (compute buffers, KV caches for beam search, the CUDA context on a GPU). The overhead
+# is taken from the measured rows below at their model size and scaled to other sizes.
+#
+# How the overhead grows with model size comes from whisper.cpp's own table (tiny to
+# large); its absolute figures predate the ggml-backend rewrite and run high, so only the
+# shape is used: overhead ~ params ** size_exponent.
+size_exponent: 0.36  # least-squares slope of log(memory - disk) on log(params) over the five rows
+size_curve:
+  source:
+    source_url: https://github.com/ggml-org/whisper.cpp#memory-usage
+    fetched_at: "2026-09-25"
+    note: f16 models; disk in MiB, memory in MB as the README states them
+  rows:
+    - {model: tiny, disk_mib: 75, memory_mb: 273}
+    - {model: base, disk_mib: 142, memory_mb: 388}
+    - {model: small, disk_mib: 466, memory_mb: 852}
+    - {model: medium, disk_mib: 1536, memory_mb: 2100}
+    - {model: large, disk_mib: 2970, memory_mb: 3900}
+
+# faster-whisper's benchmark: 13 minutes of audio, beam size 5. GPU rows on an RTX 3070 Ti
+# 8GB with CUDA 12.4; CPU rows on an i7-12700K with 8 threads. openai/whisper v20240930,
+# whisper.cpp v1.7.2, transformers v4.46.3, faster-whisper v1.1.0.
+measurements:
+  source:
+    source_url: https://github.com/SYSTRAN/faster-whisper#benchmark
+    fetched_at: "2026-09-25"
+  rows:
+    - {runtime: faster-whisper, model: openai/whisper-large-v2, params: 1543304960, device: gpu, precision: fp16, batch: 1, memory_mb: 4525}
+    - {runtime: faster-whisper, model: openai/whisper-large-v2, params: 1543304960, device: gpu, precision: int8, batch: 1, memory_mb: 2926}
+    - {runtime: faster-whisper, model: openai/whisper-large-v2, params: 1543304960, device: gpu, precision: fp16, batch: 8, memory_mb: 6090}
+    - {runtime: faster-whisper, model: openai/whisper-large-v2, params: 1543304960, device: gpu, precision: int8, batch: 8, memory_mb: 4500}
+    - {runtime: whisper.cpp, model: openai/whisper-large-v2, params: 1543304960, device: gpu, precision: fp16, batch: 1, memory_mb: 4127}
+    - {runtime: transformers, model: openai/whisper-large-v2, params: 1543304960, device: gpu, precision: fp16, batch: 1, memory_mb: 4960}
+    - {runtime: openai-whisper, model: openai/whisper-large-v2, params: 1543304960, device: gpu, precision: fp16, batch: 1, memory_mb: 4708}
+    - {runtime: faster-whisper, model: openai/whisper-small, params: 241734912, device: cpu, precision: fp32, batch: 1, memory_mb: 2257}
+    - {runtime: faster-whisper, model: openai/whisper-small, params: 241734912, device: cpu, precision: int8, batch: 1, memory_mb: 1477}
+    - {runtime: faster-whisper, model: openai/whisper-small, params: 241734912, device: cpu, precision: fp32, batch: 8, memory_mb: 4230}
+    - {runtime: faster-whisper, model: openai/whisper-small, params: 241734912, device: cpu, precision: int8, batch: 8, memory_mb: 3608}
+    - {runtime: whisper.cpp, model: openai/whisper-small, params: 241734912, device: cpu, precision: fp32, batch: 1, memory_mb: 1049}
+    - {runtime: openai-whisper, model: openai/whisper-small, params: 241734912, device: cpu, precision: fp32, batch: 1, memory_mb: 2335}

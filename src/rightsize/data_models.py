@@ -367,6 +367,114 @@ class KvCacheFile(_Strict):
         return v
 
 
+# ---------------------------------------------------------------- other families (F3)
+
+
+class FormatRecord(_Strict):
+    id: str
+    bpw: float = Field(ge=1.0, le=32.0)
+    aliases: list[str] = Field(default_factory=list)
+    layout: str = Field(description="how the bits add up, so the figure can be checked")
+    source: Source
+
+
+class FormatsFile(_Strict):
+    """data/quants/formats.yaml: bits per weight for weight formats other than GGUF."""
+
+    formats: list[FormatRecord]
+
+    @field_validator("formats")
+    @classmethod
+    def _unique_names(cls, v: list[FormatRecord]) -> list[FormatRecord]:
+        seen: set[str] = set()
+        for f in v:
+            for name in (f.id, *f.aliases):
+                key = name.lower()
+                if key in seen:
+                    raise ValueError(f"format name used twice: {name}")
+                seen.add(key)
+        return v
+
+
+class _DiffusersConstants(_Strict):
+    vae_decode_bytes_per_pixel: float = Field(gt=0)
+    unet_bytes_per_latent_pixel: float = Field(gt=0)
+    dit_activation_factor: float = Field(gt=0)
+    text_encode_gb: float = Field(ge=0)
+    default_text_tokens: int = Field(gt=0)
+    sequential_resident_gb: float = Field(gt=0)
+    cuda_context_gb: float = Field(ge=0)
+    allocator_slack: float = Field(ge=0, lt=1)
+
+
+class DiffusionMeasurement(_Strict):
+    """One published peak-memory figure for a pipeline, replayed by the tests."""
+
+    id: str
+    source_url: str
+    model: str
+    hardware: str
+    metric: Literal["max_memory_reserved", "max_memory_allocated", "unspecified"]
+    resolution: tuple[int, int]
+    batch: int = Field(ge=1)
+    offload: Literal["none", "model", "sequential"]
+    vae_slicing: bool = False
+    quant: dict[str, str] = Field(description="component -> format; others stay 16-bit")
+    after_loading_gib: float | None = Field(default=None, gt=0)
+    peak_gib: float = Field(gt=0)
+    tolerance: float = Field(gt=0, le=0.5, description="relative error the estimate may have")
+    note: str | None = None
+
+    @field_validator("source_url")
+    @classmethod
+    def _https(cls, v: str) -> str:
+        if not v.startswith("https://"):
+            raise ValueError("source_url must be an https:// link someone can open")
+        return v
+
+
+class DiffusersMemoryFile(_Strict):
+    """data/runtimes/diffusers/memory.yaml: the diffusion memory model and its evidence."""
+
+    constants: _DiffusersConstants
+    constants_source: Source
+    measurements: list[DiffusionMeasurement]
+
+
+class _WhisperCurveRow(_Strict):
+    model: str
+    disk_mib: float = Field(gt=0)
+    memory_mb: float = Field(gt=0)
+
+
+class _WhisperCurve(_Strict):
+    source: Source
+    rows: list[_WhisperCurveRow]
+
+
+class WhisperRow(_Strict):
+    runtime: Literal["whisper.cpp", "faster-whisper", "transformers", "openai-whisper"]
+    model: str
+    params: int = Field(gt=0)
+    device: Literal["gpu", "cpu"]
+    precision: str
+    batch: int = Field(ge=1)
+    memory_mb: float = Field(gt=0)
+
+
+class _WhisperMeasurements(_Strict):
+    source: Source
+    rows: list[WhisperRow]
+
+
+class WhisperMemoryFile(_Strict):
+    """data/runtimes/whisper/memory.yaml: Whisper memory per runtime, and its evidence."""
+
+    size_exponent: float = Field(gt=0, lt=1)
+    size_curve: _WhisperCurve
+    measurements: _WhisperMeasurements
+
+
 # ---------------------------------------------------------------- registry
 
 
@@ -380,6 +488,9 @@ def _recipe_model() -> type[BaseModel]:
 #: one of these; tests fail on a file nothing covers.
 DATA_FILES: dict[str, tuple[str, Any]] = {
     "quants/gguf_bpw.yaml": ("gguf_bpw", GgufBpwFile),
+    "quants/formats.yaml": ("formats", FormatsFile),
+    "runtimes/diffusers/memory.yaml": ("diffusers_memory", DiffusersMemoryFile),
+    "runtimes/whisper/memory.yaml": ("whisper_memory", WhisperMemoryFile),
     "hardware/presets.yaml": ("presets", PresetsFile),
     "hardware/gpus.yaml": ("gpu_catalog", GpuCatalogFile),
     "hardware/bandwidth*.yaml": ("bandwidth", BandwidthFile),

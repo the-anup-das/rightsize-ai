@@ -108,21 +108,37 @@ def build_server():
                        quality=quality, top_k=top_k)
         )
 
-    @server.tool(description="Memory and speed for one model at one quantization on a device.")
+    @server.tool(
+        description="Memory, and speed where modelled, for one model on a device: LLM, "
+        "diffusion, audio, vision or embedding."
+    )
     def estimate_memory(
         model: str,
-        quant: str = "Q4_K_M",
+        quant: str | None = None,
         device: str = "detect",
         ctx: int = 8192,
         mode: str = "infer",
         bandwidth_gbps: float | None = None,
+        runtime: str | None = None,
+        batch: int | None = None,
+        offload: str = "none",
+        resolution: str = "1024x1024",
+        frames: int | None = None,
+        text_encoder_quant: str | None = None,
     ) -> dict[str, Any]:
-        """mode: infer, or lora / qlora / full for fine-tuning memory. bandwidth_gbps fills
-        in a device with no known bandwidth, the difference between a speed and none."""
+        """quant: a GGUF type (Q4_K_M) or a format (bf16, fp8, nf4, int8, int4, awq,
+        mlx-4bit); left out, the model family's default. mode: infer, or lora / qlora /
+        full for an LLM's fine-tuning memory. bandwidth_gbps fills in a device with no
+        known bandwidth. Diffusion: offload none / model / sequential, resolution
+        WIDTHxHEIGHT, frames for video, text_encoder_quant. Audio: runtime whisper.cpp /
+        faster-whisper / transformers. Arguments for another family are ignored."""
         import rightsize
 
-        r = rightsize.estimate(model, quant, device, ctx=ctx, mode=mode,
-                               bandwidth_gbps=bandwidth_gbps)
+        r = rightsize.estimate(
+            model, quant, device, ctx=ctx, mode=mode, bandwidth_gbps=bandwidth_gbps,
+            runtime=runtime, batch=batch, offload=offload, resolution=resolution,
+            frames=frames, text_encoder_quant=text_encoder_quant,
+        )
         return r.model_dump(mode="json")
 
     @server.tool(description="Devices rightsize knows, filtered by a name fragment.")
