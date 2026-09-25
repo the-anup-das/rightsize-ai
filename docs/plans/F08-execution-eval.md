@@ -59,10 +59,28 @@ Unsloth QLoRA adapter (fine-tune -> merged or GGUF), llama.cpp quantize adapter,
       for pinned binaries plus the matching converter
 - [x] Memory and speed measurement helpers: VRAM sampling, file sizes, a GPU preflight
       that names what else holds the card, and `rightsize bench`
-- [ ] Evaluation gate ported from `evaluate.py`; `data/quality/thresholds.yaml`
-      (partial: a KL-divergence gate against the 16-bit reference, thresholds in
-      `data/quality/gate_thresholds.yaml`, parser checked against llama.cpp's real output
-      format. It has not yet completed on a real model: the Qwen3-1.7B run lost the GPU.)
+- [x] Evaluation gate: the gate mechanics of `evaluate.py` (a thresholds file, pass / warn /
+      fail per candidate), measuring what applies to any model rather than that project's
+      task fields: mean KL divergence and top-1 agreement against the 16-bit reference, from
+      `llama-perplexity --kl-divergence` over 100 chunks of wikitext-2, thresholds in
+      `data/quality/gate_thresholds.yaml`. Completed on Qwen3-1.7B on an RTX 4070 Ti SUPER
+      (2026-09-25):
+
+      | Quant | File, predicted / measured | Mean KLD | Top-1 agreement | Gate |
+      |---|---|---|---|---|
+      | Q4_K_M | 1.243 / 1.282 GB (+3.1%) | 0.059 | 0.900 | warn |
+      | Q5_K_M | 1.449 / 1.472 GB (+1.6%) | 0.023 | 0.935 | pass |
+      | Q8_0 | 2.159 / 2.165 GB (+0.3%) | 0.003 | 0.975 | pass |
+
+      The 16-bit reference pass took 11 s with the GPU to itself; the earlier attempt shared
+      it with LM Studio and failed after 18 minutes, 40% through.
+- [ ] llama.cpp VRAM estimates run high. The VRAM sampler recorded what the whole card held,
+      desktop included (about 1.5 GB when this run started); less that, the evaluation
+      passes used about 1.9 (Q4_K_M), 2.0 (Q5_K_M) and 2.6 GB (Q8_0) against 2.08, 2.29 and
+      3.01 GB predicted, 10-14% under. llama.cpp keeps the input embedding table in system
+      RAM (src/llama-model.cpp: "always keep it on the CPU"); taking it out of the estimate,
+      then refitting the overheads, is the likely fix (F3). The sampler has to measure the
+      rise over its starting point first
 - [ ] Extras populated in `pyproject.toml` (`unsloth`, `llamacpp`)
       (partial: `llamacpp` done; `unsloth` still empty)
 - [x] Mocked tests; one `slow` GPU test (Qwen3-0.6B end to end)
