@@ -9,7 +9,7 @@ One file per major feature. Each has the same sections: Goal, Why it beats what 
 | 00 | [Competitor landscape](00-competitors.md) | research | revised 2026-09-24 (two passes) |
 | 01 | [Library and toolkit inventory](01-libraries.md) | research | done 2026-09-25 |
 | 02 | [Quantization concepts and method selection](02-quantization-concepts.md) | reference | done 2026-09-25 |
-| F1 | [Model catalog](F01-model-catalog.md) | 1 | facts from Hub headers, cache, offline; pipelines per component; PyTorch-only repos |
+| F1 | [Model catalog](F01-model-catalog.md) | 1 | facts from config, safetensors and GGUF headers; published quantizations (`variants`); curated lists and `search` for all five families; cache revalidated by commit |
 | F2 | [Hardware database and detection](F02-hardware.md) | 1 | 259 devices, bandwidth for 201, detection, `bench`, HF profile import |
 | F3 | [Fit engine](F03-fit-engine.md) | 1 | LLM weights, KV, speed, fine-tune memory; diffusion, audio, vision, embeddings |
 | F4 | [Rules and ranking](F04-rules-engine.md) | 1 | recommend both flows, 31 rules |
