@@ -142,3 +142,47 @@ def test_log_tail_returns_the_last_words_of_a_crash(tmp_path: Path) -> None:
     tail = llamacpp.log_tail(p, lines=2)
     assert tail.endswith("CUDA error: out of memory") and "[19]" in tail
     assert llamacpp.log_tail(tmp_path / "missing.log") == ""
+
+
+#: Exactly what llama-perplexity b11177 prints, from the format strings in
+#: tools/perplexity/perplexity.cpp: "Mean    KLD: %10.6lf ± %10.6lf" (line 1949),
+#: "Mean ln(PPL(Q)/PPL(base))     : %10.6lf ± %10.6lf" (1934) with its padding before the
+#: colon, "Same top p: %6.3lf ± %5.3lf %%" (2005) as a percentage, and the per-chunk table
+#: header (1858) that must not be mistaken for the summary.
+_CHUNK_HEADER = (
+    "chunk             PPL               ln(PPL(Q)/PPL(base))"
+    "          KL Divergence              Δp RMS            Same top p"
+)
+_CHUNK_ROW = (
+    "    1      15.7006 ±    0.1234     0.004567 ±  0.001234"
+    "      0.012345 ±  0.000123    1.234 ±  0.045 %    96.123 ±  0.050 %"
+)
+REAL_B11177 = f"""
+{_CHUNK_HEADER}
+{_CHUNK_ROW}
+Final estimate: PPL = 15.8871 +/- 0.24680
+
+====== Perplexity statistics ======
+Mean  PPL(Q)                   :  15.887100 ±   0.246800
+Mean ln(PPL(Q)/PPL(base))     :   0.011872 ±   0.000456
+Cor(ln(PPL(Q)), ln(PPL(base))):  99.87%
+
+====== KL divergence statistics ======
+Mean    KLD:   0.009876 ±   0.000234
+Maximum KLD:   2.345678
+99.9%   KLD:   0.456789
+Median  KLD:   0.003210
+Minimum KLD:   0.000001
+
+====== Token probability statistics ======
+Same top p: 97.410 ± 0.048 %
+"""
+
+
+def test_parses_the_real_b11177_output_format() -> None:
+    m = parse_perplexity_output(REAL_B11177)
+    assert m["ppl"] == 15.8871
+    assert m["kld_mean"] == 0.009876, "Mean and KLD are separated by padding, not one space"
+    assert m["top1_agreement"] == 0.9741, "printed as a percentage, the gate wants a fraction"
+    assert m["ln_ppl_ratio"] == 0.011872, "the label is padded before its colon"
+    assert gate(m)["verdict"] == "pass"
