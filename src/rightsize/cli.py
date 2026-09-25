@@ -45,6 +45,21 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--top", type=int, default=5)
     r.add_argument("--allow-slow", action="store_true", help="include plans under 5 tok/s")
     r.add_argument("--commands", action="store_true", help="print the top plan's commands")
+    r.add_argument(
+        "--cloud", action="store_true",
+        help="plan a fine-tune that does not fit on the cheapest rental GPU it fits",
+    )
+
+    cl = sub.add_parser("cloud", help="the cheapest rental GPUs for a memory need or a fine-tune")
+    cl.add_argument("--vram", type=float, default=None, help="GB the job needs")
+    cl.add_argument("--model", default=None, help="size the need from this model's fine-tune")
+    cl.add_argument("--mode", default="qlora", choices=["lora", "qlora", "full"])
+    cl.add_argument("--tokens", default="10M", help="training tokens per epoch (10M, 250k, ...)")
+    cl.add_argument("--epochs", type=int, default=1)
+    cl.add_argument("--provider", action="append", help="limit to these (runpod, lambda, aws, ...)")
+    cl.add_argument("--spot", action="store_true", help="spot / interruptible prices")
+    cl.add_argument("--top", type=int, default=10)
+    cl.add_argument("--offline", action="store_true", help="use cached prices only")
 
     e = sub.add_parser(
         "estimate",
@@ -389,7 +404,7 @@ def cmd_recommend(args: argparse.Namespace) -> int:
 
     common = dict(
         finetune_device=args.finetune_device, mode=args.mode, ctx=args.ctx,
-        allow_slow=args.allow_slow, top_k=args.top,
+        allow_slow=args.allow_slow, top_k=args.top, cloud=args.cloud,
     )
     if args.model:
         result = recommend_for_model(
@@ -426,10 +441,19 @@ def cmd_recommend(args: argparse.Namespace) -> int:
             f"{p.score:.2f}",
         ])
         styles.append(verdict_style(f.verdict.value))
-    con.table(["#", "model", "quant", "vram GB", "tok/s", "verdict", "+ppl", "score"], rows,
-              styles=styles)
+    headers = ["#", "model", "quant", "vram GB", "tok/s", "verdict", "+ppl", "score"]
+    if args.mode != "infer":
+        headers.append("fine-tune on")
+        for row, p in zip(rows, result.plans, strict=True):
+            fb = p.cloud_fallback
+            row.append(f"rent {fb['offer']['gpu']} ${fb['offer']['usd_per_hour']:.2f}/h" if fb
+                       else p.steps[0].device.name)
+    con.table(headers, rows, styles=styles)
     for line in result.plans[0].trace:
         con.debug(line)
+    rented = next((p for p in result.plans if p.cloud_fallback), None)
+    if rented:
+        con.info(rented.trace[-1])
     if args.commands:
         con.out()
         for step in result.plans[0].render():
@@ -450,6 +474,76 @@ def _closest_misses(rejected) -> list[str]:
         f"- {examples[kind].reason}"
         for kind, n in counts.most_common(4)
     ]
+
+
+def _count(text: str) -> int:
+    """10M, 250k, 1.5B or a plain number."""
+    t = text.strip().lower().replace("_", "")
+    scale = {"k": 1e3, "m": 1e6, "b": 1e9}.get(t[-1:], 1)
+    return int(float(t[:-1] if scale != 1 else t) * scale)
+
+
+def cmd_cloud(args: argparse.Namespace) -> int:
+    from rightsize.cloud import cheapest, estimate_job, offers
+
+    need, params = args.vram, None
+    if args.model:
+        from rightsize.catalog import facts
+        from rightsize.fit import estimate_finetune
+        from rightsize.types import Device
+
+        fx = facts(args.model)
+        params = fx.params_active or fx.params_total
+        big = Device(name="sizing", vendor="nvidia", memory_gib=10_000)
+        need = estimate_finetune(fx, big, args.mode).vram_gb
+    if not need:
+        print("rightsize cloud: give --vram GB or --model", file=sys.stderr)
+        return 2
+    pool, missing = offers(args.provider, offline=args.offline)
+    found = cheapest(need, pool=pool, spot=args.spot, top=args.top)
+    tokens = _count(args.tokens)
+    jobs = {}
+    if params:
+        jobs = {id(o): estimate_job(params, tokens, o, epochs=args.epochs) for o in found}
+    if args.json:
+        print(json.dumps({
+            "need_gb": need, "missing_providers": missing,
+            "offers": [{**o.model_dump(mode="json"),
+                        "job": jobs[id(o)].model_dump(mode="json") if params else None}
+                       for o in found],
+        }, indent=2))
+        return 0 if found else 1
+    con = _console(args)
+    what = f"{args.model} ({args.mode})" if args.model else "a job"
+    con.title(f"rental GPUs for {what} needing {need:.1f} GB")
+    if missing:
+        con.warn("no prices for " + ", ".join(missing) + (" (offline)" if args.offline else ""))
+    if not found:
+        con.fail("no single rental GPU has that much memory")
+        return 1
+    rows = []
+    for o in found:
+        row = [o.provider, o.gpu, f"{o.vram_gib:.0f}", f"{o.usd_per_hour:.2f}", o.region or ""]
+        if params:
+            j = jobs[id(o)]
+            row += [f"{j.hours:g}" if j.hours is not None else "?",
+                    f"{j.usd:,.2f}" if j.usd is not None else "?"]
+        rows.append(row)
+    headers = ["provider", "gpu", "GiB", "$/h", "region"]
+    if params:
+        headers += ["hours", f"$ for {args.tokens} tok"]
+    con.table(headers, rows)
+    if params and not any(jobs[id(o)].usd is not None for o in found):
+        timed = [(estimate_job(params, tokens, o, epochs=args.epochs), o)
+                 for o in cheapest(need, pool=pool, spot=args.spot, top=200)]
+        timed = [(j, o) for j, o in timed if j.usd is not None]
+        if timed:
+            j, o = min(timed, key=lambda t: t[0].usd)
+            con.info(f"cheapest with a time estimate: {o.gpu} on {o.provider} at "
+                     f"${o.usd_per_hour:.2f}/h, about {j.hours:g} h and ${j.usd:,.2f}")
+    con.info("prices: SkyPilot's open catalog (github.com/skypilot-org/skypilot-catalog), "
+             "cached for a day; job time assumes 35% of datasheet throughput, confidence 0.3")
+    return 0
 
 
 def cmd_mcp(args: argparse.Namespace) -> int:
@@ -615,6 +709,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     handlers = {
         "mcp": cmd_mcp,
+        "cloud": cmd_cloud,
         "recommend": cmd_recommend,
         "detect": cmd_detect,
         "estimate": cmd_estimate,

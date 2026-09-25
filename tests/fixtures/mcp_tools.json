@@ -1,4 +1,69 @@
 {
+  "cloud_offers": {
+    "properties": {
+      "min_vram_gb": {
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Min Vram Gb"
+      },
+      "mode": {
+        "default": "qlora",
+        "title": "Mode",
+        "type": "string"
+      },
+      "model": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Model"
+      },
+      "providers": {
+        "anyOf": [
+          {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Providers"
+      },
+      "spot": {
+        "default": false,
+        "title": "Spot",
+        "type": "boolean"
+      },
+      "tokens": {
+        "default": 10000000,
+        "title": "Tokens",
+        "type": "integer"
+      },
+      "top": {
+        "default": 5,
+        "title": "Top",
+        "type": "integer"
+      }
+    },
+    "title": "cloud_offersArguments",
+    "type": "object"
+  },
   "detect_hardware": {
     "properties": {},
     "title": "detect_hardwareArguments",
@@ -146,6 +211,11 @@
       "allow_slow": {
         "default": false,
         "title": "Allow Slow",
+        "type": "boolean"
+      },
+      "cloud": {
+        "default": false,
+        "title": "Cloud",
         "type": "boolean"
       },
       "ctx": {

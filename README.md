@@ -38,6 +38,8 @@ uv sync --group dev                       # core only: detect, estimate, recipes
 rightsize recommend                       # the best models for this machine, ranked
 rightsize recommend --task coding --device "RTX 3060 12GB" --commands
 rightsize recommend --finetune-device T4 --mode qlora     # fine-tune on one box, serve on this
+rightsize recommend --finetune-device "RTX 3060 12GB" --mode lora --cloud   # rent a GPU when it won't fit
+rightsize cloud --model Qwen/Qwen3-14B --mode lora --tokens 10M            # cheapest GPUs for that job
 rightsize detect                          # what machine is this?
 rightsize estimate Qwen/Qwen3-4B --quant Q4_K_M --quant Q8_0   # no download, reads Hub headers
 rightsize estimate Qwen/Qwen3-4B --device "RTX 5080"           # or any of 259 catalogued devices
@@ -137,7 +139,7 @@ every verdict on that card 7% pessimistic.
 | F4 Rules + ranking | [F04](docs/plans/F04-rules-engine.md) | `recommend` both flows, 31 sourced rules, plans that render to commands |
 | F5 Framework registry + recipes | [F05](docs/plans/F05-framework-registry.md) | 24 recipes over 14 frameworks (fine-tune, quantize, export, serve); plans render the whole chain; generated [framework pages](docs/frameworks/README.md) |
 | F6 SDK / CLI / MCP | [F06](docs/plans/F06-surfaces.md) | SDK, CLI and MCP server (seven tools, stdio) over the same functions; Plan JSON Schema in `schema/` |
-| F7 Cloud fallback | [F07](docs/plans/F07-cloud-fallback.md) | planned |
+| F7 Cloud fallback | [F07](docs/plans/F07-cloud-fallback.md) | cheapest rental GPU for a fine-tune that does not fit, from SkyPilot's open price catalog; job time and cost per 10M tokens (low confidence) |
 | F8 Execution + eval gate | [F08](docs/plans/F08-execution-eval.md) | first slice: llama.cpp adapter with KL-divergence gate |
 | F9 Calibration loop | [F09](docs/plans/F09-calibration.md) | phase 2; runs already record predicted vs measured, and `bench` checks the speed constant |
 | F10 Cloud provider connectors | [F10](docs/plans/F10-cloud-connectors.md) | phase 3 |

@@ -78,15 +78,18 @@ def build_server():
         ctx: int = 8192,
         top_k: int = 5,
         allow_slow: bool = False,
+        cloud: bool = False,
     ) -> dict[str, Any]:
         """task: chat, coding or agentic. mode: infer, or lora / qlora / full to plan a
-        fine-tune on finetune_device first. quality: near-lossless, good, noticeable, any."""
+        fine-tune on finetune_device first. quality: near-lossless, good, noticeable, any.
+        cloud: plan a fine-tune that does not fit on the cheapest rental GPU it fits; the
+        plan's cloud_fallback then names the offer and a cost per 10M training tokens."""
         from rightsize.rules.recommend import recommend_result
 
         return _result_payload(
             recommend_result(
                 task, device, finetune_device=finetune_device, mode=mode, ctx=ctx,
-                quality=quality, allow_slow=allow_slow, top_k=top_k,
+                quality=quality, allow_slow=allow_slow, top_k=top_k, cloud=cloud,
             )
         )
 
@@ -140,6 +143,47 @@ def build_server():
             frames=frames, text_encoder_quant=text_encoder_quant,
         )
         return r.model_dump(mode="json")
+
+    @server.tool(
+        description="The cheapest rental GPUs with enough memory for a job or a model's "
+        "fine-tune, with an estimated time and cost."
+    )
+    def cloud_offers(
+        min_vram_gb: float | None = None,
+        model: str | None = None,
+        mode: str = "qlora",
+        tokens: int = 10_000_000,
+        providers: list[str] | None = None,
+        spot: bool = False,
+        top: int = 5,
+    ) -> dict[str, Any]:
+        """Give min_vram_gb, or a model (Hub id) and mode (lora, qlora, full) to size the
+        fine-tune. Prices from SkyPilot's open catalog; times assume 35% of datasheet
+        tensor throughput (confidence 0.3). Nothing is rented or launched."""
+        from rightsize.cloud import cheapest, estimate_job
+
+        params = None
+        need = min_vram_gb
+        if model:
+            from rightsize.catalog import facts
+            from rightsize.fit import estimate_finetune
+            from rightsize.types import Device
+
+            fx = facts(model)
+            params = fx.params_active or fx.params_total
+            big = Device(name="sizing", vendor="nvidia", memory_gib=10_000)
+            need = estimate_finetune(fx, big, mode).vram_gb
+        if not need:
+            raise ValueError("give min_vram_gb, or a model to size the fine-tune")
+        found = cheapest(need, providers=providers, spot=spot, top=top)
+        return {
+            "need_gb": need,
+            "offers": [
+                {**o.model_dump(mode="json"),
+                 "job": estimate_job(params, tokens, o).model_dump(mode="json") if params else None}
+                for o in found
+            ],
+        }
 
     @server.tool(description="Devices rightsize knows, filtered by a name fragment.")
     def list_hardware(query: str = "", limit: int = 50) -> list[dict[str, Any]]:

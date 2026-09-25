@@ -374,6 +374,48 @@ def _evaluate_candidate(
     return found
 
 
+#: Tokens the rental cost is quoted for: a dataset size a reader can scale from.
+_QUOTE_TOKENS = 10_000_000
+#: Rented NVIDIA GPUs run the Unsloth recipe, which wants Volta or newer.
+_RENT_MIN_CC = 7.0
+
+
+def _rent(c: Candidate, mode: Mode, need: FitResult, pool: list) -> tuple | None:
+    """The rental GPU this fine-tune is cheapest to run on: (device, fit, offer, fallback,
+    job).
+
+    Every offer with enough memory is checked with the fine-tune estimate, so the rules
+    see an ordinary Device. Among those that fit, the lowest estimated job cost wins: a
+    card at twice the hourly price can finish in a quarter of the time. Offers with no
+    datasheet throughput are chosen only when none has one, by hourly price."""
+    from rightsize.cloud import cheapest, device_for, estimate_job
+
+    params = c.facts.params_active or c.facts.params_total or 0
+    fitting = []
+    for offer in cheapest(need.vram_gb, pool=pool, top=50, min_compute_capability=_RENT_MIN_CC):
+        base = device_for(offer.gpu, offer.vram_gib)
+        dev = Device(
+            name=f"{offer.provider} {offer.gpu}", vendor="nvidia", memory_gib=offer.vram_gib,
+            compute_capability=offer.compute_capability,
+            compute_arch=base.compute_arch if base else None,
+            backends=["cuda"], os="linux", usable_fraction=0.92,
+        )
+        fit = estimate_finetune(c.facts, dev, mode)
+        if fit.verdict is Verdict.fits:
+            fitting.append((dev, fit, offer, estimate_job(params, _QUOTE_TOKENS, offer)))
+    if not fitting:
+        return None
+    timed = [f for f in fitting if f[3].usd is not None]
+    dev, fit, offer, job = min(timed, key=lambda f: f[3].usd) if timed else fitting[0]
+    fallback = {
+        "reason": f"{mode.value} needs {need.vram_gb:.1f} GB to train",
+        "offer": offer.model_dump(mode="json"),
+        "job_per_10m_tokens": job.model_dump(mode="json"),
+        "cheapest_per_hour": fitting[0][2].model_dump(mode="json"),
+    }
+    return dev, fit, offer, fallback, job
+
+
 def rank(
     candidates: tuple[Candidate, ...],
     target_device: Device,
@@ -387,8 +429,12 @@ def rank(
     top_k: int = 5,
     one_per_model: bool = True,
     quants: tuple[str, ...] = LADDER,
+    cloud_pool: list | None = None,
 ) -> Result:
-    """The engine behind recommend() and recommend_for_model()."""
+    """The engine behind recommend() and recommend_for_model().
+
+    ``cloud_pool`` is a list of rental offers: a fine-tune that does not fit the fine-tune
+    device is then planned on the cheapest offer it fits, instead of being rejected."""
     max_delta = QUALITY_FLOORS[quality]
     result = Result()
     scored: list[tuple[float, Plan]] = []
@@ -397,19 +443,26 @@ def rank(
             continue
         ft = None
         ft_outcome = Outcome()
+        ft_device = finetune_device
+        rental = None
         if finetune_device is not None and mode is not Mode.infer:
             ft = estimate_finetune(c.facts, finetune_device, mode)
+            if ft.verdict is Verdict.no_fit and cloud_pool:
+                rental = _rent(c, mode, ft, cloud_pool)
+                if rental:
+                    ft_device, ft = rental[0], rental[1]
             if ft.verdict is Verdict.no_fit:
-                result.rejected.append(
-                    Rejection(c.repo, None, f"{mode.value} needs {ft.vram_gb:.1f} GB to train")
-                )
+                why = f"{mode.value} needs {ft.vram_gb:.1f} GB to train"
+                if cloud_pool:
+                    why += "; no single rental GPU has that much (multi-GPU is not planned yet)"
+                result.rejected.append(Rejection(c.repo, None, why))
                 continue
             ft_outcome = evaluate(
                 {
-                    "device": _device_ctx(finetune_device),
+                    "device": _device_ctx(ft_device),
                     "model": _model_ctx(c),
                     "quant": {"method": "bnb"} if mode is Mode.qlora else {"method": "none"},
-                    "runtime": {"name": _trainer(finetune_device)},
+                    "runtime": {"name": _trainer(ft_device)},
                     "task": task,
                     "stage": "finetune",
                     "mode": mode.value,
@@ -422,9 +475,21 @@ def rank(
                 continue
         found = _evaluate_candidate(
             c, quants, target_device, task=task, ctx=ctx, max_delta=max_delta,
-            ignore=ignore_rules, mode=mode, ft=ft, ft_device=finetune_device,
+            ignore=ignore_rules, mode=mode, ft=ft, ft_device=ft_device,
             rejected=result.rejected, carried=ft_outcome,
         )
+        if rental and found:
+            _, _, offer, fallback, job = rental
+            cost = (f"about ${job.usd:,.2f} and {job.hours:g} h per 10M training tokens "
+                    f"(confidence {job.confidence})" if job.usd is not None
+                    else "no time estimate for this GPU")
+            line = (f"fine-tune: {fallback['reason']}, more than the {finetune_device.name} "
+                    f"has; rent a {offer.gpu} ({offer.vram_gib:.0f} GiB) on {offer.provider} at "
+                    f"${offer.usd_per_hour:.2f}/h, {cost} [{offer.source_url}]")
+            found = [
+                (s, p.model_copy(update={"cloud_fallback": fallback, "trace": [*p.trace, line]}))
+                for s, p in found
+            ]
         if one_per_model and found:
             found = [max(found, key=lambda sp: sp[0])]
         scored.extend(found)
@@ -444,11 +509,15 @@ def recommend(
     quality: str = "noticeable",
     allow_slow: bool = False,
     top_k: int = 5,
+    cloud: bool = False,
 ) -> list[Plan]:
-    """Hardware-first: the best models for this device, one plan each, best first."""
+    """Hardware-first: the best models for this device, one plan each, best first.
+
+    ``cloud=True`` plans a fine-tune that does not fit the fine-tune device on the cheapest
+    rental GPU it fits (F7), rather than leaving that model out."""
     return recommend_result(
         task, target_device, finetune_device=finetune_device, mode=mode, ctx=ctx,
-        quality=quality, allow_slow=allow_slow, top_k=top_k,
+        quality=quality, allow_slow=allow_slow, top_k=top_k, cloud=cloud,
     ).plans
 
 
@@ -462,6 +531,7 @@ def recommend_result(
     quality: str = "noticeable",
     allow_slow: bool = False,
     top_k: int = 5,
+    cloud: bool = False,
 ) -> Result:
     from rightsize.hardware import resolve
 
@@ -478,7 +548,18 @@ def recommend_result(
         mode=mode,
         ignore_rules=frozenset({"too_slow_for_interactive_use"}) if allow_slow else frozenset(),
         top_k=top_k,
+        cloud_pool=_cloud_pool(cloud, mode),
     )
+
+
+def _cloud_pool(cloud: bool, mode: Mode) -> list | None:
+    """Rental offers when they could matter: asked for, and a fine-tune in the plan."""
+    if not cloud or mode is Mode.infer:
+        return None
+    from rightsize.cloud import offers
+
+    pool, _ = offers()
+    return pool
 
 
 def recommend_for_model(
@@ -492,6 +573,7 @@ def recommend_for_model(
     quality: str = "any",
     allow_slow: bool = False,
     top_k: int = 10,
+    cloud: bool = False,
 ) -> Result:
     """Model-first: every quantization of one model that works on this device, best first."""
     from rightsize.catalog import facts as hub_facts
@@ -517,4 +599,5 @@ def recommend_for_model(
         ignore_rules=frozenset({"too_slow_for_interactive_use"}) if allow_slow else frozenset(),
         top_k=top_k,
         one_per_model=False,
+        cloud_pool=_cloud_pool(cloud, mode),
     )

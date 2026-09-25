@@ -207,6 +207,41 @@ class Plan(BaseModel):
         return json.dumps(cls.model_json_schema(), indent=2)
 
 
+class Offer(BaseModel):
+    """A GPU instance someone rents out by the hour (F7)."""
+
+    provider: str
+    instance_type: str
+    gpu: str = Field(description="the price catalog's accelerator name, e.g. A100-80GB")
+    gpu_count: int = Field(ge=1)
+    vram_gib: float = Field(gt=0, description="per GPU, as the vendor states it")
+    usd_per_hour: float = Field(gt=0, description="for the whole instance")
+    spot: bool = False
+    region: str | None = None
+    device: str | None = Field(default=None, description="the matching rightsize device")
+    compute_capability: float | None = None
+    source_url: str
+    fetched_at: str
+
+    @property
+    def vram_gb(self) -> float:
+        return round(self.vram_gib * GIB / GB, 3)
+
+
+class JobEstimate(BaseModel):
+    """Time and cost of a fine-tuning job on a rented GPU (F7). Low confidence by design."""
+
+    tokens: int = Field(description="training tokens per epoch")
+    epochs: int = 1
+    hours: float | None = None
+    usd: float | None = None
+    tflops: float | None = Field(default=None, description="dense tensor TFLOPS of the GPU")
+    efficiency: float = Field(description="share of those TFLOPS the job is assumed to reach")
+    confidence: float = Field(ge=0, le=1)
+    formula_id: str
+    notes: list[str] = Field(default_factory=list)
+
+
 class Measurement(BaseModel):
     """One predicted-vs-measured pair recorded by an execution step (F8, F9)."""
 

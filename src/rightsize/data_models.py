@@ -475,6 +475,40 @@ class WhisperMemoryFile(_Strict):
     measurements: _WhisperMeasurements
 
 
+# ---------------------------------------------------------------- cloud (F7)
+
+
+class GpuTflopsRecord(_Strict):
+    names: list[str] = Field(min_length=1, description="SkyPilot catalog accelerator names")
+    tflops: float = Field(gt=0, description="dense 16-bit tensor TFLOPS")
+    source_url: str
+    note: str
+
+    @field_validator("source_url")
+    @classmethod
+    def _https(cls, v: str) -> str:
+        if not v.startswith("https://"):
+            raise ValueError("source_url must be an https:// link someone can open")
+        return v
+
+
+class GpuTflopsFile(_Strict):
+    """data/cloud/gpu_tflops.yaml: datasheet tensor throughput for the job-time estimate."""
+
+    gpus: list[GpuTflopsRecord]
+
+    @field_validator("gpus")
+    @classmethod
+    def _one_row_per_name(cls, v: list[GpuTflopsRecord]) -> list[GpuTflopsRecord]:
+        seen: set[str] = set()
+        for rec in v:
+            clash = seen.intersection(rec.names)
+            if clash:
+                raise ValueError(f"names in two rows: {sorted(clash)}")
+            seen.update(rec.names)
+        return v
+
+
 # ---------------------------------------------------------------- registry
 
 
@@ -491,6 +525,7 @@ DATA_FILES: dict[str, tuple[str, Any]] = {
     "quants/formats.yaml": ("formats", FormatsFile),
     "runtimes/diffusers/memory.yaml": ("diffusers_memory", DiffusersMemoryFile),
     "runtimes/whisper/memory.yaml": ("whisper_memory", WhisperMemoryFile),
+    "cloud/gpu_tflops.yaml": ("gpu_tflops", GpuTflopsFile),
     "hardware/presets.yaml": ("presets", PresetsFile),
     "hardware/gpus.yaml": ("gpu_catalog", GpuCatalogFile),
     "hardware/bandwidth*.yaml": ("bandwidth", BandwidthFile),

@@ -24,10 +24,11 @@ estimate_job(fit: FitResult, tokens: int, epochs: int, offer: Offer) -> JobEstim
 
 | Source | What | Notes |
 |---|---|---|
-| [ComputePrices API](https://computeprices.com/docs/api) | hourly prices across providers, OpenAPI | provider-agnostic ladder; terms to check |
-| RunPod GraphQL `gpuTypes` | live prices, availability | direct integration |
+| [SkyPilot catalog](https://github.com/skypilot-org/skypilot-catalog) (used) | one CSV of instance prices per provider, 26 providers, on demand and spot, refreshed from the providers' own APIs | public, no key; read at run time and cached a day, never shipped (the catalog repo states no licence) |
+| [ComputePrices API](https://computeprices.com/docs/api) | hourly prices across providers, OpenAPI | every endpoint needs an API key (free, 750 requests a day): not used, so rightsize works without an account |
+| RunPod GraphQL `gpuTypes` | live prices, availability | RunPod is in the SkyPilot catalog; a direct client adds little until availability matters |
 | Modal, Lambda pricing pages | no JSON API | scrape into `data/cloud/` weekly or skip |
-| Throughput table | tokens/s per GPU class for QLoRA of size buckets (published Unsloth / Axolotl numbers) | low confidence, marked |
+| Throughput | `data/cloud/gpu_tflops.yaml`: dense 16-bit tensor TFLOPS from each vendor's datasheet for H100, H200, A100, L40S, L4, A10, T4, RTX 4090 | Hugging Face's table has the non-tensor rate (a quarter of the tensor figure on an H100, half on a 4090), which would mis-rank the cards |
 
 Cache: `data/cloud/prices.json` refreshed hourly by a scheduled job in the data repo; the SDK reads the cached ladder and can refresh on demand.
 
@@ -53,10 +54,23 @@ Price ladder from ComputePrices with RunPod as the live source; "rent this" line
 
 ## TODO
 
-- [ ] `Offer`, `JobEstimate` types; `data/schema/offer.schema.json`
-- [ ] ComputePrices client + cache
-- [ ] RunPod GraphQL client
-- [ ] Throughput lookup table with sources
-- [ ] `cheapest()` and `estimate_job()`
-- [ ] Fill `Plan.cloud_fallback` from F4 when the fine-tune step does not fit
-- [ ] Tests with fixtures
+- [x] `Offer`, `JobEstimate` types (in `rightsize.types`; `Plan.cloud_fallback` carries them
+      as JSON, so the Plan schema covers them)
+- [x] Price client + cache: SkyPilot's catalog instead of ComputePrices, which needs a key.
+      GPU memory is the catalog's weak spot: GpuInfo is MiB at most providers and GiB at
+      RunPod, the instance total at AWS but one GPU's at Lambda, counted twice in some
+      PrimeIntellect rows and absent at GCP, and "A100" is 40 GB at Lambda and GCP but
+      80 GB at Vast. Both readings are tried against the sizes rightsize knows for the card,
+      then a size in the name, then the smallest variant: never larger than the card may be
+- [ ] RunPod GraphQL client (live availability; prices already come from the catalog)
+- [x] Throughput table with sources (datasheet tensor TFLOPS; job time = 6 x params x tokens
+      / (TFLOPS x 0.35), confidence 0.3)
+- [x] `cheapest()` and `estimate_job()`; `rightsize cloud --vram GB | --model M --mode qlora`
+      and the `cloud_offers` MCP tool
+- [x] Fill `Plan.cloud_fallback` from F4 when the fine-tune step does not fit:
+      `recommend(..., cloud=True)` / `--cloud` plans the fine-tune on the rental GPU with the
+      lowest estimated job cost (a card at twice the price per hour can finish in a quarter
+      of the time), runs the fine-tune rules against it, and says so in the trace
+- [x] Tests with fixtures: rows copied from the catalog, one per quirk
+- [ ] Multi-GPU jobs (a 32B full fine-tune needs 527 GB: no single GPU has that)
+- [ ] Calibrate the 0.35 efficiency against measured runs (F9)
