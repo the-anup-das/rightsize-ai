@@ -101,6 +101,7 @@ include = ["src/rightsize", "README.md", "LICENSE", "pyproject.toml"]
 line-length = 100
 target-version = "py311"
 src = ["src", "tests"]
+extend-exclude = ["notebooks"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "T20"]
@@ -112,7 +113,8 @@ select = ["E", "F", "I", "UP", "B", "SIM", "T20"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q"
 markers = [
-  "slow: needs a real GPU or network; excluded by default in CI",
+  "slow: runs real toolchains and downloads; excluded by default (uv run pytest -m slow)",
+  "network: reads the Hugging Face Hub; excluded by default (uv run pytest -m network)",
 ]
+addopts = "-q -m 'not slow and not network'"

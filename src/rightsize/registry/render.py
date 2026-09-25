@@ -1,16 +1,21 @@
 """Minimal template renderer for recipes (F5). No jinja2 in the core.
 
 Supported syntax, deliberately small:
-  {{ name }}                     value substitution (paths are quoted when they contain spaces)
+  {{ name }}                     value substitution
   {% if name %} ... {% endif %}  include the block when the value is truthy
   {% if not name %} ... {% endif %}
 Blocks do not nest. Anything else is a template error at load time, not at run time.
+
+Commands are rendered token by token: the template is split on whitespace *before* values are
+substituted, so a path with spaces or backslashes stays one argument and is never re-parsed.
 """
 
 from __future__ import annotations
 
 import re
 import shlex
+import subprocess
+import sys
 from typing import Any
 
 from rightsize.registry.schema import Recipe, RenderedStep
@@ -36,26 +41,44 @@ def validate_template(text: str) -> None:
 def _fmt(value: Any) -> str:
     if isinstance(value, bool):
         return "true" if value else "false"
-    s = str(value)
-    return shlex.quote(s) if " " in s and not (s.startswith('"') and s.endswith('"')) else s
+    return str(value)
 
 
-def render_text(template: str, values: dict[str, Any]) -> str:
+def _resolve_blocks(template: str, values: dict[str, Any]) -> str:
     def _if(m: re.Match) -> str:
         negate, name, body = m.group(1), m.group(2), m.group(3)
         truthy = bool(values.get(name))
         return body if (truthy != bool(negate)) else ""
 
-    out = _IF.sub(_if, template)
+    return _IF.sub(_if, template)
 
+
+def _substitute(text: str, values: dict[str, Any]) -> str:
     def _var(m: re.Match) -> str:
         name = m.group(1)
         if name not in values or values[name] is None:
             raise TemplateError(f"missing value for {{{{ {name} }}}}")
         return _fmt(values[name])
 
-    out = _VAR.sub(_var, out)
+    return _VAR.sub(_var, text)
+
+
+def render_text(template: str, values: dict[str, Any]) -> str:
+    """Render a config-style template (multi-line text) or a one-line command as text."""
+    out = _substitute(_resolve_blocks(template, values), values)
     return " ".join(out.split()) if "\n" not in template.strip() else out.strip()
+
+
+def render_argv(template: str, values: dict[str, Any]) -> list[str]:
+    """Render a command template into argv without re-parsing the result."""
+    resolved = _resolve_blocks(template, values)
+    # Normalise "{{ name }}" to "{{name}}" so whitespace splitting keeps each placeholder whole.
+    resolved = _VAR.sub(lambda m: "{{" + m.group(1) + "}}", resolved)
+    return [_substitute(tok, values) for tok in resolved.split()]
+
+
+def argv_to_text(argv: list[str]) -> str:
+    return subprocess.list2cmdline(argv) if sys.platform == "win32" else shlex.join(argv)
 
 
 def coerce_inputs(recipe: Recipe, given: dict[str, Any]) -> dict[str, Any]:
@@ -84,8 +107,12 @@ def coerce_inputs(recipe: Recipe, given: dict[str, Any]) -> dict[str, Any]:
 
 def render(recipe: Recipe, **given: Any) -> RenderedStep:
     values = coerce_inputs(recipe, given)
-    text = render_text(recipe.template, values)
-    argv = shlex.split(text, posix=True) if recipe.kind == "command" else None
+    if recipe.kind == "command":
+        argv = render_argv(recipe.template, values)
+        text = argv_to_text(argv)
+    else:
+        argv = None
+        text = render_text(recipe.template, values)
     return RenderedStep(
         recipe_id=recipe.id,
         framework=recipe.framework,

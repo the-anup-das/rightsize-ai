@@ -53,6 +53,16 @@ rightsize --version
 | F9 Calibration loop | [F09](docs/plans/F09-calibration.md) | phase 2 |
 | F10 Cloud provider connectors | [F10](docs/plans/F10-cloud-connectors.md) | phase 3 |
 
+## A note on scope and hardware
+
+Rightsize is built by one developer in spare time, on one machine: a Windows 11 desktop with an RTX 4070 Ti SUPER (16 GB), 64 GB of RAM, and no cloud budget. That shapes what is tested and what is not:
+
+- **Tested for real:** GGUF quantization and evaluation of models up to about 8B parameters on NVIDIA under Windows, and the CPU-only paths. CI covers Linux and Windows on Python 3.11 to 3.13 for the parts that need no GPU.
+- **Written from documentation, not yet run here:** Apple Silicon, AMD ROCm, Intel, multi-GPU, data-center GPUs, and every fine-tuning path. The presets for those devices carry their source URLs so you can check them, and the estimates for them carry a lower confidence on purpose.
+- **Not started:** the fine-tuning estimators, the rules engine, the MCP server, the cloud fallback and the calibration loop. Each has a plan file with a TODO list in `docs/plans/`.
+
+If a number is wrong on your hardware, that is exactly the feedback the project needs. Open an issue with the output of `rightsize detect` and `rightsize estimate`, or a `runs/*/manifest.json` from a real run. Presets, recipes and rules are data files, so corrections are small PRs. When better hardware or cloud access becomes affordable, the untested paths move into the tested column; until then, treat every estimate for a device I do not own as a starting point, not a promise.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). Adding a framework means adding a recipe file, not code.

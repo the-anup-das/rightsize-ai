@@ -197,7 +197,7 @@ def cmd_quantize(args: argparse.Namespace) -> int:
         gpu_layers=args.gpu_layers,
         revision=args.revision,
         dry_run=args.dry_run,
-        log=(lambda s: None) if args.json else print,
+        log=(lambda s: None) if args.json else (lambda s: print(s, flush=True)),
     )
     if args.json:
         print(manifest.model_dump_json(indent=2))

@@ -54,16 +54,17 @@ def test_render_quantize_with_and_without_imatrix() -> None:
     ]
 
 
-def test_render_quotes_paths_with_spaces() -> None:
+def test_render_keeps_paths_with_spaces_and_backslashes_intact() -> None:
     r = get("llama.cpp/quantize")
     s = render(
         r,
-        quantize_bin="C:/Program Files/llama/llama-quantize.exe",
+        quantize_bin=r"C:\Program Files\llama\llama-quantize.exe",
         input_gguf="in.gguf",
         output_gguf="out.gguf",
         quant="Q8_0",
     )
-    assert s.argv[0] == "C:/Program Files/llama/llama-quantize.exe"
+    assert s.argv[0] == r"C:\Program Files\llama\llama-quantize.exe"
+    assert "in.gguf" in s.argv and s.text
 
 
 def test_missing_required_and_bad_enum_raise() -> None:
