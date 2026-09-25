@@ -29,6 +29,9 @@ defaults:
   recurrent_state_bytes: 4
   swa_source_url: https://github.com/ggml-org/llama.cpp/blob/b11177/src/llama-kv-cache-iswa.cpp
 
+# model_types lists both names a model goes by: config.json's model_type and the architecture
+# a GGUF declares (general.architecture, from llama.cpp's src/llama-arch.cpp), so a model read
+# from its GGUF header meets the same rule as the model it was converted from.
 architectures:
   # ---------------------------------------------------------------- sliding window
   # llama_hparams::set_swa_pattern(n): layer il slides when il % n < n - 1, so the last layer
@@ -52,7 +55,7 @@ architectures:
       window_default: 8192
     note: chunked attention in 8192-token chunks; three chunked layers to one full
     source_url: https://github.com/ggml-org/llama.cpp/blob/b11177/src/models/llama4.cpp
-  - model_types: [gpt_oss]
+  - model_types: [gpt_oss, gpt-oss]
     sliding:
       pattern: 2
       window_key: sliding_window
@@ -63,7 +66,7 @@ architectures:
   # The converter turns MLA into MQA with one large head (conversion/deepseek.py sets
   # num_key_value_heads = 1 and key_length = kv_lora_rank + qk_rope_head_dim), and the cache
   # allocates no V tensor for MLA models (llama-kv-cache.cpp: has_v = !is_mla).
-  - model_types: [deepseek_v2, deepseek_v3, deepseek_v32, kimi_k2]
+  - model_types: [deepseek_v2, deepseek_v3, deepseek_v32, kimi_k2, deepseek2, deepseek32]
     mla: true
     note: one compressed latent of kv_lora_rank + qk_rope_head_dim per token and layer
     source_url: https://github.com/ggml-org/llama.cpp/blob/b11177/src/llama-kv-cache.cpp
@@ -72,7 +75,7 @@ architectures:
   # Only attention layers keep a KV cache. Recurrent layers keep a fixed state per sequence:
   #     d_state * d_inner + (d_conv - 1) * (d_inner + 2 * n_groups * d_state)
   # floats (llama_hparams::n_embd_s and n_embd_r), independent of context length.
-  - model_types: [qwen3_next]
+  - model_types: [qwen3_next, qwen3next]
     hybrid:
       rule: full_attention_interval
       interval_default: 4
@@ -83,17 +86,17 @@ architectures:
       rule: attn_layer_period
     note: one attention layer per attn_layer_period, at attn_layer_offset
     source_url: https://github.com/ggml-org/llama.cpp/blob/b11177/src/models/jamba.cpp
-  - model_types: [nemotron_h]
+  - model_types: [nemotron_h, nemotron_h_moe]
     hybrid:
       rule: hybrid_override_pattern
     note: "'*' marks attention, 'M' Mamba2, '-' MLP-only"
     source_url: https://github.com/ggml-org/llama.cpp/blob/b11177/src/models/nemotron-h.cpp
-  - model_types: [granitemoehybrid, lfm2, lfm2_moe]
+  - model_types: [granitemoehybrid, lfm2, lfm2_moe, granitehybrid, lfm2moe]
     hybrid:
       rule: layer_types
     note: per-layer list (Granite layer_types) or attention indices (LFM2 full_attn_idxs)
     source_url: https://github.com/ggml-org/llama.cpp/blob/b11177/src/models/granite-hybrid.cpp
-  - model_types: [falcon_h1]
+  - model_types: [falcon_h1, falcon-h1]
     hybrid:
       rule: parallel
     note: attention and a Mamba2 block side by side in every layer, so every layer has both

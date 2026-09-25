@@ -8,6 +8,7 @@ that ship only PyTorch files are sized from the files.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import re
@@ -17,10 +18,12 @@ from typing import Any
 
 import httpx
 
+from rightsize.catalog import gguf
 from rightsize.catalog.weights import (
     count_files,
     pick_variant,
     pipeline_components,
+    stored_head,
     torch_weights,
     variant_groups,
 )
@@ -76,15 +79,18 @@ def _headers(token: str | None) -> dict[str, str]:
     return {"Authorization": f"Bearer {tok}"} if tok else {}
 
 
-def _cache_path(repo: str, revision: str) -> Path:
+def _cache_path(repo: str, revision: str, file: str | None = None) -> Path:
     base = Path(os.environ.get("RIGHTSIZE_CACHE_DIR", Path.home() / ".cache" / "rightsize"))
-    return base / "models" / repo.replace("/", "__") / f"{revision}.json"
+    name = revision if not file else f"{revision}__{file.replace('/', '__')}"
+    return base / "models" / repo.replace("/", "__") / f"{name}.json"
 
 
 #: Bump whenever facts() starts keeping something new. A cached entry from an older
 #: version is refetched rather than trusted: without this, adding the attention fields left
 #: every warm cache describing LFM2 as all-attention, 166% over what llama.cpp allocates.
-CACHE_VERSION = 7
+CACHE_VERSION = 8
+
+_COMMIT = re.compile(r"[0-9a-f]{40}")
 
 
 def _read_cache(path: Path, ttl_s: float) -> dict[str, Any] | None:
@@ -105,6 +111,24 @@ def _write_cache(path: Path, payload: dict[str, Any]) -> None:
         path.write_text(json.dumps({**payload, "_cache_version": CACHE_VERSION}), encoding="utf-8")
     except OSError:
         pass
+
+
+def _unchanged(client: httpx.Client, repo: str, revision: str, cached: dict[str, Any]) -> bool:
+    """Whether the repo still sits at the commit the cached facts were read from.
+
+    One request of about a hundred bytes (``expand[]=sha`` returns the commit id alone), in
+    place of rereading the config and every header. The model-info ETag cannot answer this:
+    it hashes the whole response, download count included, so it changes when the repo has
+    not."""
+    sha = (cached.get("extra") or {}).get("sha")
+    if not sha:
+        return False
+    try:
+        r = client.get(f"{HUB}/api/models/{repo}/revision/{revision}", params={"expand[]": "sha"})
+        r.raise_for_status()
+        return r.json().get("sha") == sha
+    except (httpx.HTTPError, ValueError):
+        return False
 
 
 def _text_config(cfg: dict[str, Any]) -> dict[str, Any]:
@@ -201,80 +225,134 @@ def facts(
     repo: str,
     revision: str = "main",
     *,
+    file: str | None = None,
     token: str | None = None,
     offline: bool = False,
     ttl_s: float = 7 * 24 * 3600,
     timeout: float = 30.0,
     transport: httpx.BaseTransport | None = None,
+    use_cache: bool | None = None,
 ) -> ModelFacts:
-    """Return ModelFacts for a Hub repo. Weights are never downloaded. ``offline`` (or
-    RIGHTSIZE_OFFLINE=1) answers from the cache only, however old."""
+    """Return ModelFacts for a Hub repo. Weights are never downloaded.
+
+    ``file`` names one GGUF in the repo (a split model by any of its parts); a repo that
+    holds only GGUFs is read from its Q4_K_M, or the nearest file it has. ``offline`` (or
+    RIGHTSIZE_OFFLINE=1) answers from the cache only, however old. After ``ttl_s`` a cached
+    answer is checked against the repo's current commit before anything is refetched, and
+    facts for a commit id never go stale. The cache is used unless a test ``transport`` is
+    given; ``use_cache`` overrides that."""
+    if file and not file.lower().endswith(".gguf"):
+        raise ValueError(f"file= selects a GGUF in the repo, not {file!r}")
     offline = offline or os.environ.get("RIGHTSIZE_OFFLINE") == "1"
-    cache = _cache_path(repo, revision)
-    cached = None if transport else _read_cache(cache, ttl_s if not offline else float("inf"))
-    if cached is not None:
-        return ModelFacts.model_validate(cached)
+    use_cache = transport is None if use_cache is None else use_cache
+    cache = _cache_path(repo, revision, file)
+    if _COMMIT.fullmatch(revision):
+        ttl_s = float("inf")
+    if use_cache:
+        cached = _read_cache(cache, float("inf") if offline else ttl_s)
+        if cached is not None:
+            return ModelFacts.model_validate(cached)
     if offline:
         raise FileNotFoundError(f"no cached facts for {repo}@{revision} and offline=True")
 
     with httpx.Client(
         headers=_headers(token), timeout=timeout, follow_redirects=True, transport=transport
     ) as c:
+        stale = _read_cache(cache, float("inf")) if use_cache else None
+        if stale is not None and _unchanged(c, repo, revision, stale):
+            _touch(cache)
+            return ModelFacts.model_validate(stale)
         info = c.get(
             f"{HUB}/api/models/{repo}", params={"revision": revision, "blobs": "true"}
         )
         info.raise_for_status()
         meta = info.json()
         sizes = {s["rfilename"]: s.get("size") for s in meta.get("siblings", [])}
-        siblings = list(sizes)
         base = f"{HUB}/{repo}/resolve/{revision}"
-
-        cfg: dict[str, Any] = {}
-        if "config.json" in siblings:
-            r = c.get(f"{base}/config.json")
-            if r.status_code not in (401, 403):  # a gated repo still lists its files
-                r.raise_for_status()
-                cfg = r.json()
-
-        pipeline = pipeline_components(c, base, sizes) if "model_index.json" in sizes else None
-        shards: list[str] = []
-        total = 0
-        by_dtype: dict[str, int] = {}
-        counted_from = None
-        summary = (meta.get("safetensors") or {}).get("parameters")
-        if pipeline and pipeline["components"]:
-            # The Hub's summary covers one set of files, not the pipeline: for FLUX it is
-            # the single-file transformer at the root, for SDXL the UNet alone.
-            for comp in pipeline["components"].values():
-                total += comp["params"]
-                for k, v in comp["params_by_dtype"].items():
-                    by_dtype[k] = by_dtype.get(k, 0) + v
-            counted_from = "pipeline components"
-            if any("file sizes" in comp["counted_from"]
-                   for comp in pipeline["components"].values()):
-                counted_from += ", from file sizes (the headers are gated)"
-        elif isinstance(summary, dict) and summary:
-            # The Hub already counts parameters per dtype in the response we just fetched.
-            # Reading every shard header instead cost DeepSeek-V3 163 requests and minutes.
-            by_dtype = {str(k): int(v) for k, v in summary.items()}
-            total = sum(by_dtype.values())
-            counted_from = "Hub parameter summary"
+        ggufs, other_ggufs = gguf.weight_files(
+            sizes, repo, model=gguf.identity(file) if file else None
+        )
+        if file or (ggufs and not _has_weights(sizes)):
+            facts_ = _gguf_facts(c, repo, revision, base, meta, sizes, ggufs, other_ggufs, file)
         else:
-            root = [f for f in siblings if f.endswith(".safetensors") and "/" not in f]
-            shards, chosen = pick_variant(root)
-            if shards:
-                total, by_dtype, counted_from = count_files(
-                    c, base, shards, sizes, variant_groups(root), chosen
-                )
-            else:
-                torch = torch_weights(sizes, cfg.get("torch_dtype"))
-                if torch:
-                    total = torch["params"]
-                    by_dtype = {str(cfg.get("torch_dtype") or "float32").upper(): total}
-                    counted_from = torch["counted_from"]
-                    shards = torch["files"]
+            facts_ = _hf_facts(c, repo, revision, base, meta, sizes)
+            if ggufs:
+                facts_.extra["gguf_files"] = _gguf_table(ggufs)
+    if use_cache:
+        _write_cache(cache, facts_.model_dump(mode="json"))
+    return facts_
+
+
+def _touch(path: Path) -> None:
+    with contextlib.suppress(OSError):
+        os.utime(path)
+
+
+def _has_weights(sizes: dict[str, int | None]) -> bool:
+    """Whether a repo holds weights other than GGUF: safetensors, a diffusers pipeline,
+    PyTorch files."""
+    return any(
+        f == "model_index.json" or f.endswith((".safetensors", ".bin", ".pth", ".pt", ".ckpt"))
+        for f in sizes
+    )
+
+
+def _hf_facts(
+    c: httpx.Client, repo: str, revision: str, base: str, meta: dict[str, Any],
+    sizes: dict[str, int | None],
+) -> ModelFacts:
+    """Facts from config.json and the safetensors (or PyTorch) weights."""
+    siblings = list(sizes)
+    cfg: dict[str, Any] = {}
+    if "config.json" in siblings:
+        r = c.get(f"{base}/config.json")
+        if r.status_code not in (401, 403):  # a gated repo still lists its files
+            r.raise_for_status()
+            cfg = r.json()
+
+    pipeline = pipeline_components(c, base, sizes) if "model_index.json" in sizes else None
+    shards: list[str] = []
+    total = 0
+    by_dtype: dict[str, int] = {}
+    counted_from = None
+    summary = (meta.get("safetensors") or {}).get("parameters")
+    if pipeline and pipeline["components"]:
+        # The Hub's summary covers one set of files, not the pipeline: for FLUX it is
+        # the single-file transformer at the root, for SDXL the UNet alone.
+        for comp in pipeline["components"].values():
+            total += comp["params"]
+            for k, v in comp["params_by_dtype"].items():
+                by_dtype[k] = by_dtype.get(k, 0) + v
+        counted_from = "pipeline components"
+        if any("file sizes" in comp["counted_from"]
+               for comp in pipeline["components"].values()):
+            counted_from += ", from file sizes (the headers are gated)"
+    elif isinstance(summary, dict) and summary:
+        # The Hub already counts parameters per dtype in the response we just fetched.
+        # Reading every shard header instead cost DeepSeek-V3 163 requests and minutes.
+        by_dtype = {str(k): int(v) for k, v in summary.items()}
+        total = sum(by_dtype.values())
+        counted_from = "Hub parameter summary"
+    else:
+        root = [f for f in siblings if f.endswith(".safetensors") and "/" not in f]
+        shards, chosen = pick_variant(root)
+        if shards:
+            total, by_dtype, counted_from = count_files(
+                c, base, shards, sizes, variant_groups(root), chosen
+            )
+        else:
+            torch = torch_weights(sizes, cfg.get("torch_dtype"))
+            if torch:
+                total = torch["params"]
+                by_dtype = {str(cfg.get("torch_dtype") or "float32").upper(): total}
+                counted_from = torch["counted_from"]
+                shards = torch["files"]
 
     tc = _text_config(cfg)
+    tied = cfg.get("tie_word_embeddings", tc.get("tie_word_embeddings"))
+    stored = 0
+    if tied and total and counted_from in ("Hub parameter summary", "safetensors headers"):
+        stored, _ = stored_head(c, base, sizes)
     hidden = tc.get("hidden_size")
     heads = tc.get("num_attention_heads")
     head_dim = tc.get("head_dim") or (hidden // heads if hidden and heads else None)
@@ -308,11 +386,16 @@ def facts(
             "pipeline": pipeline,
             "gated": meta.get("gated", False),
             "private": meta.get("private"),
+            "sha": meta.get("sha"),
             "num_experts": experts,
             "num_experts_per_tok": active_experts,
             "sliding_window": tc.get("sliding_window"),
             "attention": {k: tc[k] for k in _ATTENTION_KEYS if tc.get(k) is not None},
             "tie_word_embeddings": cfg.get("tie_word_embeddings"),
+            # A tied output head the checkpoint stores anyway (Qwen3-0.6B and 1.7B). It is in
+            # params_total because llama.cpp's converter keeps it as output.weight; some
+            # published GGUFs leave it out, and transformers ties it away at load.
+            "tied_head_stored": stored or None,
             "vocab_size": tc.get("vocab_size"),
             "hidden_size": hidden,
             "intermediate_size": tc.get("intermediate_size"),
@@ -330,9 +413,156 @@ def facts(
             active, how = _moe_active(total, tc, experts, active_experts, hidden)
             facts_.params_active = active
             facts_.extra["params_active_note"] = how
-    if transport is None:
-        _write_cache(cache, facts_.model_dump(mode="json"))
     return facts_
+
+
+def _gguf_table(
+    groups: dict[str, dict[str, Any]], read: str | None = None,
+    tensor_bytes: int | None = None, header_bytes: int = 0,
+) -> dict[str, dict[str, Any]]:
+    """Every quantization the repo has, with the bytes of weights each would load: exact for
+    the file whose header was read, its size less that header for the others (the metadata
+    and tokenizer are the same in every quantization of a model)."""
+    out = {}
+    for q, g in groups.items():
+        exact = q == read and tensor_bytes is not None
+        weights = tensor_bytes if exact else max(g["bytes"] - header_bytes, 0)
+        out[q] = {"files": g["files"], "bytes": g["bytes"], "weights_bytes": weights,
+                  "exact": exact}
+    return out
+
+
+def _gguf_facts(
+    c: httpx.Client, repo: str, revision: str, base: str, meta: dict[str, Any],
+    sizes: dict[str, int | None], groups: dict[str, dict[str, Any]], others: list[str],
+    file: str | None,
+) -> ModelFacts:
+    """Facts from a GGUF's own header: every tensor's type and shape, and the architecture
+    numbers llama.cpp will use. Split models read each part's header."""
+    if not groups:
+        raise FileNotFoundError(f"{repo} holds no GGUF weights")
+    if file:
+        quant = gguf.group_of(file, groups)
+        if quant is None:
+            raise FileNotFoundError(
+                f"{file} is not a GGUF weights file in {repo}; it has "
+                + ", ".join(f for g in groups.values() for f in g["files"])
+            )
+    else:
+        quant = gguf.default_quant(groups)
+    parts = groups[quant]["files"]
+    try:
+        headers = [gguf.read_header(c, f"{base}/{p}") for p in parts]
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code not in (401, 403):
+            raise
+        return _gated_gguf_facts(repo, revision, meta, groups, quant, others)
+    head = headers[0]
+    file_type = gguf.file_type_name(head)
+    if gguf.quant_label(parts[0]) is None and file_type and file_type not in groups:
+        groups[file_type] = groups.pop(quant)  # a name that states no quantization
+        quant = file_type
+    summ = gguf.summarize(headers)
+    view = gguf.config_view(head)
+    arch = head.architecture
+    total = summ["params_total"]
+    family = (Family.embedding if arch in gguf.ENCODER_ARCHITECTURES
+              else _family(view, meta.get("pipeline_tag"), meta.get("library_name")))
+    dominant = next(iter(summ["params_by_type"]), None)
+    how = "GGUF header" + (f" ({len(parts)} files)" if len(parts) > 1 else "")
+    facts_ = ModelFacts(
+        ref=ModelRef(repo=repo, revision=revision, file=parts[0]),
+        family=family,
+        params_total=total or None,
+        dtype=file_type or dominant,
+        num_layers=view["num_hidden_layers"],
+        num_kv_heads=view["num_key_value_heads"],
+        head_dim=view["head_dim"],
+        context_max=view["max_position_embeddings"],
+        license=(meta.get("cardData") or {}).get("license")
+        or head.metadata.get("general.license"),
+        base_model=_base_model(meta) or gguf.base_model(head),
+        confidence=1.0 if total else 0.5,
+        extra={
+            "model_type": arch,
+            "architectures": None,
+            "params_by_dtype": summ["params_by_type"],
+            "params_counted_from": how,
+            "shards": parts,
+            "library": meta.get("library_name"),
+            "pipeline_tag": meta.get("pipeline_tag"),
+            "pipeline": None,
+            "gated": meta.get("gated", False),
+            "private": meta.get("private"),
+            "sha": meta.get("sha"),
+            "num_experts": view["num_experts"],
+            "num_experts_per_tok": view["num_experts_per_tok"],
+            "sliding_window": view["sliding_window"],
+            "attention": {k: view[k] for k in _ATTENTION_KEYS if view.get(k) is not None},
+            "tie_word_embeddings": summ["tied_embeddings"],
+            "vocab_size": view["vocab_size"],
+            "hidden_size": view["hidden_size"],
+            "intermediate_size": view["intermediate_size"],
+            "num_attention_heads": view["num_attention_heads"],
+            "image_size": None,
+            "patch_size": None,
+            "gguf": {
+                "file": parts[0],
+                "files": parts,
+                "quant": quant,
+                "file_type": file_type,
+                "architecture": arch,
+                "version": head.version,
+                "tensor_bytes": summ["tensor_bytes"],
+                "bytes_by_type": summ["bytes_by_type"],
+                "input_embedding_bytes": summ["input_embedding_bytes"],
+                "output_bytes": summ["output_bytes"],
+                "header_bytes": head.data_offset,
+                "unknown_types": summ["unknown_types"],
+            },
+            "gguf_files": _gguf_table(groups, quant, summ["tensor_bytes"], head.data_offset),
+            "gguf_other_files": others,
+            "mmproj": gguf.extras(sizes, "mmproj") or None,
+        },
+    )
+    if view["num_experts"] and view["num_experts_per_tok"] and total:
+        active, note = gguf.active_params(headers, total)
+        facts_.params_active = active
+        facts_.extra["params_active_note"] = note
+    return facts_
+
+
+def _gated_gguf_facts(
+    repo: str, revision: str, meta: dict[str, Any], groups: dict[str, dict[str, Any]],
+    quant: str, others: list[str],
+) -> ModelFacts:
+    """A gated repo lists its files but serves no header until its terms are accepted. The
+    Hub's own GGUF summary still gives the parameter count and context length; the layer
+    numbers the KV cache needs stay unknown, so an estimate says to set HF_TOKEN."""
+    summary = meta.get("gguf") or {}
+    total = summary.get("total")
+    parts = groups[quant]["files"]
+    return ModelFacts(
+        ref=ModelRef(repo=repo, revision=revision, file=parts[0]),
+        family=_family({}, meta.get("pipeline_tag"), meta.get("library_name")),
+        params_total=total,
+        dtype=quant,
+        context_max=summary.get("context_length"),
+        license=(meta.get("cardData") or {}).get("license"),
+        base_model=_base_model(meta),
+        confidence=0.7 if total else 0.5,
+        extra={
+            "model_type": summary.get("architecture"),
+            "params_counted_from": "the Hub's GGUF summary; the file headers are gated",
+            "shards": parts,
+            "gated": meta.get("gated", True),
+            "private": meta.get("private"),
+            "sha": meta.get("sha"),
+            "gguf": {"file": parts[0], "files": parts, "quant": quant},
+            "gguf_files": _gguf_table(groups),
+            "gguf_other_files": others,
+        },
+    )
 
 
 def _confidence(total: int, counted_from: str | None) -> float:

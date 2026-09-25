@@ -108,6 +108,8 @@ def test_hub_parameter_summary_spares_the_shard_headers() -> None:
             body = _handler(request).json()
             body["safetensors"] = {"parameters": {"BF16": 4_022_468_096}, "total": 4_022_468_096}
             return httpx.Response(200, json=body)
+        if request.url.path.endswith("/config.json"):
+            return httpx.Response(200, json={**CONFIG, "tie_word_embeddings": False})
         if request.url.path.endswith(".safetensors"):
             shard_reads.append(request.url.path)
         return _handler(request)
@@ -115,6 +117,31 @@ def test_hub_parameter_summary_spares_the_shard_headers() -> None:
     fx = facts("Qwen/Qwen3-4B", transport=httpx.MockTransport(handler))
     assert fx.params_total == 4_022_468_096
     assert shard_reads == [], "headers are only the fallback"
+
+
+def test_a_tied_head_stored_twice_is_noted() -> None:
+    """Qwen3-0.6B ties its output head to the input embedding and stores it anyway: 751.6M
+    parameters by the Hub's count, 596M in unsloth's GGUF. llama.cpp's own converter keeps
+    the copy, so the count stands; the copy is recorded so a smaller GGUF is explained."""
+    tied = _safetensors_bytes({
+        "model.embed_tokens.weight": ("BF16", [1000, 2560]),
+        "lm_head.weight": ("BF16", [1000, 2560]),
+        "model.norm.weight": ("F32", [2560]),
+    })
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/api/models/Qwen/Qwen3-4B":
+            body = _handler(request).json()
+            body["safetensors"] = {"parameters": {"BF16": 2 * 2_560_000, "F32": 2560}}
+            return httpx.Response(200, json=body)
+        if request.url.path.endswith("/model.safetensors"):
+            a, b = (int(x) for x in request.headers["Range"].split("=")[1].split("-"))
+            return httpx.Response(206, content=tied[a: b + 1])
+        return _handler(request)
+
+    fx = facts("Qwen/Qwen3-4B", transport=httpx.MockTransport(handler))
+    assert fx.params_total == 2 * 2_560_000 + 2560
+    assert fx.extra["tied_head_stored"] == 2_560_000
 
 
 def test_a_cache_from_an_older_catalog_is_refetched(tmp_path, monkeypatch) -> None:

@@ -266,7 +266,7 @@ def test_cli_estimate_for_a_diffusion_pipeline(monkeypatch, capsys) -> None:
     import rightsize.catalog as catalog
     from rightsize.cli import main
 
-    monkeypatch.setattr(catalog, "facts", lambda repo, rev="main": _facts(repo))
+    monkeypatch.setattr(catalog, "facts", lambda repo, rev="main", **_: _facts(repo))
     assert main(["--json", "estimate", "black-forest-labs/FLUX.1-dev", "--device",
                  "RTX 4070 12GB", "--quant", "nf4", "--offload", "none", "--offload",
                  "model"]) == 0

@@ -79,6 +79,11 @@ def build_parser() -> argparse.ArgumentParser:
         "vision or embedding",
     )
     e.add_argument("model", help="Hub id, e.g. Qwen/Qwen3-4B or black-forest-labs/FLUX.1-dev")
+    e.add_argument(
+        "--file", default=None,
+        help="one GGUF in the repo; a GGUF repo is otherwise sized at its Q4_K_M, or the "
+        "nearest file it has",
+    )
     e.add_argument("--device", default="detect", help="preset name or 'detect' (default)")
     e.add_argument(
         "--quant",
@@ -236,14 +241,16 @@ def cmd_estimate(args: argparse.Namespace) -> int:
     from rightsize._console import verdict_style
     from rightsize.catalog import facts
     from rightsize.fit import estimate, predicted_file_gb
+    from rightsize.fit.llm import repo_file
 
-    fx = facts(args.model, args.revision)
+    fx = facts(args.model, args.revision, file=args.file)
     dev = _device(args)
     if fx.family.value != "llm":
         return _estimate_other(args, fx, dev)
     if args.mode != "infer":
         return _estimate_training(args, fx, dev)
-    quants = [q.upper() for q in (args.quant or ["Q4_K_M"])]
+    own = (fx.extra or {}).get("gguf") or {}
+    quants = [q.upper() for q in (args.quant or [own.get("quant") or "Q4_K_M"])]
     results = {q: estimate(fx, q, dev, runtime=args.runtime, ctx=args.ctx) for q in quants}
     if args.json:
         payload = {
@@ -261,12 +268,18 @@ def cmd_estimate(args: argparse.Namespace) -> int:
         f"kv_heads {fx.num_kv_heads}, head_dim {fx.head_dim}  |  "
         f"{dev.memory_gib} GiB, {dev.bandwidth_gbps or '?'} GB/s, ctx {args.ctx}"
     )
+    files = (fx.extra or {}).get("gguf_files") or {}
+    if own:
+        con.info(f"read from {fx.ref.file}; the repo has " + ", ".join(
+            f"{q} {g['bytes'] / 1e9:.2f} GB" for q, g in sorted(
+                files.items(), key=lambda kv: kv[1]["bytes"])))
     rows, styles = [], []
     for q, r in results.items():
+        mine = repo_file(fx, q)
         rows.append(
             [
                 q,
-                f"{predicted_file_gb(fx, q):.2f}",
+                f"{(mine['bytes'] / 1e9 if mine else predicted_file_gb(fx, q)):.2f}",
                 f"{r.breakdown['weights']:.2f}",
                 f"{r.breakdown['kv_cache']:.2f}",
                 f"{r.vram_gb:.2f}",

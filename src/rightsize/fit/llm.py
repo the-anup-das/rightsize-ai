@@ -1,7 +1,8 @@
 """LLM fit estimator, GGUF path (F3, first slice).
 
 formula_id ``llm.gguf.analytic.v0``:
-  weights_gb   = params x effective_bpw / 8
+  weights_gb   = params x effective_bpw / 8, or the tensor bytes of the repo's own GGUF
+                 for that quantization when the facts came from a GGUF repo
   kv_gb        = per-layer KV as llama.cpp allocates it (fit/kv.py): plain GQA is
                  2 x layers x kv_heads x head_dim x ctx x batch x kv_bytes; sliding-window,
                  MLA and hybrid models follow data/runtimes/llama.cpp/kv_cache.yaml
@@ -67,6 +68,30 @@ def predicted_file_gb(facts: ModelFacts, quant: str) -> float:
     return facts.params_total * bpw / 8 / 1e9
 
 
+def repo_file(facts: ModelFacts, quant: str) -> dict | None:
+    """The repo's own GGUF for this quantization, when the facts came from a GGUF repo."""
+    files = (facts.extra or {}).get("gguf_files") or {}
+    return {k.upper(): v for k, v in files.items()}.get(quant.upper())
+
+
+def weights(facts: ModelFacts, quant: str) -> tuple[float, float, str]:
+    """(GB, bits per weight, where from) for the weights at ``quant``.
+
+    A GGUF repo's own file beats any table: its tensors are what llama.cpp loads, and
+    publishers' own mixes (Unsloth's UD-Q4_K_XL) have no table entry at all. Otherwise
+    parameters x the bits per weight llama.cpp measured for the type."""
+    if not facts.params_total:
+        raise ValueError(f"{facts.ref.repo}: parameter count unknown; cannot size the weights")
+    own = repo_file(facts, quant)
+    if own and own.get("weights_bytes"):
+        nbytes = own["weights_bytes"]
+        how = "its header" if own.get("exact") else "its file size"
+        return (nbytes / 1e9, nbytes * 8 / facts.params_total,
+                f"the repo's {quant.upper()} file ({how})")
+    bpw, source = gguf_bpw(quant)
+    return facts.params_total * bpw / 8 / 1e9, bpw, source
+
+
 def kv_cache_gb(facts: ModelFacts, ctx: int, batch: int = 1, kv_bytes: float = 2.0) -> float:
     """Context-dependent memory as llama.cpp allocates it. Delegates to fit.kv, which knows
     sliding-window, MLA and hybrid layouts; plain GQA models come out as before."""
@@ -105,14 +130,22 @@ def estimate(
     rname = runtime.name if isinstance(runtime, RuntimeSpec) else str(runtime)
     fixed, frac = overhead_constants(rname)
 
-    bpw, bpw_source = gguf_bpw(qname)
-    weights = facts.params_total * bpw / 8 / 1e9
+    if not (facts.num_layers and facts.num_kv_heads and facts.head_dim):
+        hint = (" The repo is gated: accept its terms on the Hub and set HF_TOKEN."
+                if (facts.extra or {}).get("gated") else "")
+        raise ValueError(
+            f"{facts.ref.repo}: its layer count, KV heads and head size are unknown, so the "
+            f"KV cache cannot be sized.{hint}"
+        )
+    weights_gb, bpw, bpw_source = weights(facts, qname)
     kv = kv_cache_gb(facts, ctx, batch, kv_bytes)
-    overhead = fixed + frac * weights
-    vram = weights + kv + overhead
+    overhead = fixed + frac * weights_gb
+    vram = weights_gb + kv + overhead
     usable = device.memory_gb * device.usable_fraction
 
     notes = [f"bpw {bpw:.3f} from {bpw_source}", f"ctx {ctx}, kv {kv_bytes:g} B/elem"]
+    if repo_file(facts, qname) is None and (facts.extra or {}).get("gguf_files"):
+        notes.append(f"the repo has no {qname.upper()} file; sized from the bits-per-weight table")
     lay = _kv.layout(facts)
     if lay.kind != "gqa":
         notes.append(lay.rule)
@@ -121,7 +154,7 @@ def estimate(
         verdict = Verdict.fits
     elif vram <= usable:
         verdict = Verdict.tight
-    elif weights * 0.5 + kv + overhead <= usable and device.system_ram_gb:
+    elif weights_gb * 0.5 + kv + overhead <= usable and device.system_ram_gb:
         verdict = Verdict.offload
         notes.append("does not fit fully; partial offload to system RAM possible")
     else:
@@ -156,7 +189,7 @@ def estimate(
         vram_gb=round(vram, 2),
         ram_gb=0.0,
         breakdown={
-            "weights": round(weights, 3),
+            "weights": round(weights_gb, 3),
             "kv_cache": round(kv, 3),
             **{k: v for k, v in _kv.kv_breakdown(facts, ctx, batch, kv_bytes).items() if v},
             "overhead": round(overhead, 3),

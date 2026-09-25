@@ -159,6 +159,43 @@ def count_files(
     return params, {label: params}, f"file sizes ({why}); the headers are gated"
 
 
+_HEAD = re.compile(r"(^|\.)lm_head\.weight$")
+
+
+def stored_head(
+    client: httpx.Client, base: str, sizes: dict[str, int | None]
+) -> tuple[int, str | None]:
+    """Parameters and dtype of an output head the checkpoint stores although the config
+    ties it to the input embedding.
+
+    Whether that copy counts depends on who loads the model. transformers ties the two and
+    drops it; llama.cpp's converter (at the tag we pin) keeps it as output.weight, so our
+    own Qwen3-0.6B GGUF has the 751.6M parameters the Hub's summary counts; unsloth's GGUF
+    of the same model leaves it out and has 596M. One request answers it: the shard index,
+    or the header of a single-file checkpoint (a second for the shard that holds it)."""
+    try:
+        if "model.safetensors.index.json" in sizes:
+            weight_map = (_get_json(client, f"{base}/model.safetensors.index.json") or {}).get(
+                "weight_map") or {}
+            names = [k for k in weight_map if _HEAD.search(k)]
+            if not names:
+                return 0, None
+            header = safetensors_header(client, f"{base}/{weight_map[names[0]]}")
+        elif "model.safetensors" in sizes:
+            header = safetensors_header(client, f"{base}/model.safetensors")
+        else:
+            return 0, None
+    except (httpx.HTTPError, ValueError, KeyError):
+        return 0, None
+    for name, info in header.items():
+        if name != "__metadata__" and _HEAD.search(name):
+            n = 1
+            for d in info["shape"]:
+                n *= d
+            return n, info["dtype"]
+    return 0, None
+
+
 def _get_json(client: httpx.Client, url: str) -> dict[str, Any] | None:
     try:
         r = client.get(url)

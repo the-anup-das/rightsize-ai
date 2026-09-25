@@ -6,6 +6,9 @@
 One model per layout the fit engine has to get right, fetched through the catalog itself
 so the fixtures also pin what the catalog keeps from each config. Re-run after changing
 what facts() extracts; the cache is bypassed so nothing stale is recorded.
+
+The GGUF repos are the same models as the config.json ones above them; the tests check that
+the two sources give the same KV cache.
 """
 
 from __future__ import annotations
@@ -38,6 +41,17 @@ REPOS = {
     "openai/whisper-small": "Whisper, the size faster-whisper measured on CPU",
     "BAAI/bge-m3": "embedding model shipped as pytorch_model.bin only",
     "google/vit-base-patch16-224": "vision transformer",
+    "deepseek-ai/DeepSeek-V2-Lite-Chat": "MLA, small enough to have GGUFs everywhere",
+    # the same models read from a GGUF header
+    "unsloth/Qwen3-4B-GGUF": "GGUF: plain GQA, tied embeddings, 26 quantizations",
+    "ggml-org/gpt-oss-20b-GGUF": "GGUF: sliding window; an EAGLE3 draft model beside it",
+    "unsloth/gemma-3-270m-it-GGUF": "GGUF: sliding window, five layers in six",
+    "LiquidAI/LFM2-350M-GGUF": "GGUF: hybrid, recurrent layers marked by zero KV heads",
+    "ibm-granite/granite-4.0-h-350m-GGUF": "GGUF: hybrid, Mamba2 state from the ssm keys",
+    "tiiuae/Falcon-H1-1.5B-Instruct-GGUF": "GGUF: attention and Mamba2 in every layer",
+    "unsloth/Qwen3-Next-80B-A3B-Instruct-GGUF": "GGUF: gated delta-net; no MTP layer",
+    "mradermacher/DeepSeek-V2-Lite-Chat-GGUF": "GGUF: MLA from an older conversion",
+    "unsloth/Qwen3-235B-A22B-Instruct-2507-GGUF": "GGUF: split in three parts, MoE",
 }
 
 
@@ -47,7 +61,7 @@ def main(argv: list[str]) -> int:
     wanted = {r: REPOS.get(r, "requested") for r in argv} or REPOS
     for repo, why in wanted.items():
         try:
-            fx = facts(repo, ttl_s=0)
+            fx = facts(repo, use_cache=False)
         except Exception as exc:  # a gated or renamed repo should not stop the rest
             print(f"FAIL {repo:36s} {type(exc).__name__}: {str(exc)[:60]}")
             failed += 1

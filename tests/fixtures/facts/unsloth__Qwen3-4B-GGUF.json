@@ -1,0 +1,283 @@
+{
+ "ref": {
+  "repo": "unsloth/Qwen3-4B-GGUF",
+  "revision": "main",
+  "file": "Qwen3-4B-Q4_K_M.gguf"
+ },
+ "family": "llm",
+ "params_total": 4022468096,
+ "params_active": null,
+ "dtype": "Q4_K_M",
+ "num_layers": 36,
+ "num_kv_heads": 8,
+ "head_dim": 128,
+ "context_max": 40960,
+ "license": "apache-2.0",
+ "base_model": "Qwen/Qwen3-4B",
+ "confidence": 1.0,
+ "extra": {
+  "model_type": "qwen3",
+  "architectures": null,
+  "params_by_dtype": {
+   "Q4_K": 3137863680,
+   "Q6_K": 884408320,
+   "F32": 196096
+  },
+  "params_counted_from": "GGUF header",
+  "shards": [
+   "Qwen3-4B-Q4_K_M.gguf"
+  ],
+  "library": "transformers",
+  "pipeline_tag": "text-generation",
+  "pipeline": null,
+  "gated": false,
+  "private": false,
+  "sha": "22c9fc8a8c7700b76a1789366280a6a5a1ad1120",
+  "num_experts": null,
+  "num_experts_per_tok": null,
+  "sliding_window": null,
+  "attention": {
+   "model_type": "qwen3",
+   "hidden_size": 2560
+  },
+  "tie_word_embeddings": true,
+  "vocab_size": 151936,
+  "hidden_size": 2560,
+  "intermediate_size": 9728,
+  "num_attention_heads": 32,
+  "image_size": null,
+  "patch_size": null,
+  "gguf": {
+   "file": "Qwen3-4B-Q4_K_M.gguf",
+   "files": [
+    "Qwen3-4B-Q4_K_M.gguf"
+   ],
+   "quant": "Q4_K_M",
+   "file_type": "Q4_K_M",
+   "architecture": "qwen3",
+   "version": 3,
+   "tensor_bytes": 2491323904,
+   "bytes_by_type": {
+    "Q4_K": 1765048320,
+    "Q6_K": 725491200,
+    "F32": 784384
+   },
+   "input_embedding_bytes": 319065600,
+   "output_bytes": null,
+   "header_bytes": 5957408,
+   "unknown_types": []
+  },
+  "gguf_files": {
+   "BF16": {
+    "files": [
+     "Qwen3-4B-BF16.gguf"
+    ],
+    "bytes": 8051285536,
+    "weights_bytes": 8045328128,
+    "exact": false
+   },
+   "Q2_K": {
+    "files": [
+     "Qwen3-4B-Q2_K.gguf"
+    ],
+    "bytes": 1669500192,
+    "weights_bytes": 1663542784,
+    "exact": false
+   },
+   "Q4_0": {
+    "files": [
+     "Qwen3-4B-Q4_0.gguf"
+    ],
+    "bytes": 2375773472,
+    "weights_bytes": 2369816064,
+    "exact": false
+   },
+   "Q4_1": {
+    "files": [
+     "Qwen3-4B-Q4_1.gguf"
+    ],
+    "bytes": 2596629792,
+    "weights_bytes": 2590672384,
+    "exact": false
+   },
+   "Q6_K": {
+    "files": [
+     "Qwen3-4B-Q6_K.gguf"
+    ],
+    "bytes": 3306261792,
+    "weights_bytes": 3300304384,
+    "exact": false
+   },
+   "Q8_0": {
+    "files": [
+     "Qwen3-4B-Q8_0.gguf"
+    ],
+    "bytes": 4280405792,
+    "weights_bytes": 4274448384,
+    "exact": false
+   },
+   "IQ4_NL": {
+    "files": [
+     "Qwen3-4B-IQ4_NL.gguf"
+    ],
+    "bytes": 2381344032,
+    "weights_bytes": 2375386624,
+    "exact": false
+   },
+   "IQ4_XS": {
+    "files": [
+     "Qwen3-4B-IQ4_XS.gguf"
+    ],
+    "bytes": 2270752032,
+    "weights_bytes": 2264794624,
+    "exact": false
+   },
+   "Q2_K_L": {
+    "files": [
+     "Qwen3-4B-Q2_K_L.gguf"
+    ],
+    "bytes": 1669500192,
+    "weights_bytes": 1663542784,
+    "exact": false
+   },
+   "Q3_K_M": {
+    "files": [
+     "Qwen3-4B-Q3_K_M.gguf"
+    ],
+    "bytes": 2075618592,
+    "weights_bytes": 2069661184,
+    "exact": false
+   },
+   "Q3_K_S": {
+    "files": [
+     "Qwen3-4B-Q3_K_S.gguf"
+    ],
+    "bytes": 1886997792,
+    "weights_bytes": 1881040384,
+    "exact": false
+   },
+   "Q4_K_M": {
+    "files": [
+     "Qwen3-4B-Q4_K_M.gguf"
+    ],
+    "bytes": 2497281312,
+    "weights_bytes": 2491323904,
+    "exact": true
+   },
+   "Q4_K_S": {
+    "files": [
+     "Qwen3-4B-Q4_K_S.gguf"
+    ],
+    "bytes": 2383310112,
+    "weights_bytes": 2377352704,
+    "exact": false
+   },
+   "Q5_K_M": {
+    "files": [
+     "Qwen3-4B-Q5_K_M.gguf"
+    ],
+    "bytes": 2889514272,
+    "weights_bytes": 2883556864,
+    "exact": false
+   },
+   "Q5_K_S": {
+    "files": [
+     "Qwen3-4B-Q5_K_S.gguf"
+    ],
+    "bytes": 2823712032,
+    "weights_bytes": 2817754624,
+    "exact": false
+   },
+   "UD-IQ1_M": {
+    "files": [
+     "Qwen3-4B-UD-IQ1_M.gguf"
+    ],
+    "bytes": 1143484192,
+    "weights_bytes": 1137526784,
+    "exact": false
+   },
+   "UD-IQ1_S": {
+    "files": [
+     "Qwen3-4B-UD-IQ1_S.gguf"
+    ],
+    "bytes": 1083150112,
+    "weights_bytes": 1077192704,
+    "exact": false
+   },
+   "UD-IQ2_M": {
+    "files": [
+     "Qwen3-4B-UD-IQ2_M.gguf"
+    ],
+    "bytes": 1532931872,
+    "weights_bytes": 1526974464,
+    "exact": false
+   },
+   "UD-IQ2_XXS": {
+    "files": [
+     "Qwen3-4B-UD-IQ2_XXS.gguf"
+    ],
+    "bytes": 1255345952,
+    "weights_bytes": 1249388544,
+    "exact": false
+   },
+   "UD-IQ3_XXS": {
+    "files": [
+     "Qwen3-4B-UD-IQ3_XXS.gguf"
+    ],
+    "bytes": 1674376992,
+    "weights_bytes": 1668419584,
+    "exact": false
+   },
+   "UD-Q2_K_XL": {
+    "files": [
+     "Qwen3-4B-UD-Q2_K_XL.gguf"
+    ],
+    "bytes": 1695724832,
+    "weights_bytes": 1689767424,
+    "exact": false
+   },
+   "UD-Q3_K_XL": {
+    "files": [
+     "Qwen3-4B-UD-Q3_K_XL.gguf"
+    ],
+    "bytes": 2131692832,
+    "weights_bytes": 2125735424,
+    "exact": false
+   },
+   "UD-Q4_K_XL": {
+    "files": [
+     "Qwen3-4B-UD-Q4_K_XL.gguf"
+    ],
+    "bytes": 2546341152,
+    "weights_bytes": 2540383744,
+    "exact": false
+   },
+   "UD-Q5_K_XL": {
+    "files": [
+     "Qwen3-4B-UD-Q5_K_XL.gguf"
+    ],
+    "bytes": 2905253152,
+    "weights_bytes": 2899295744,
+    "exact": false
+   },
+   "UD-Q6_K_XL": {
+    "files": [
+     "Qwen3-4B-UD-Q6_K_XL.gguf"
+    ],
+    "bytes": 3658223392,
+    "weights_bytes": 3652265984,
+    "exact": false
+   },
+   "UD-Q8_K_XL": {
+    "files": [
+     "Qwen3-4B-UD-Q8_K_XL.gguf"
+    ],
+    "bytes": 5056700192,
+    "weights_bytes": 5050742784,
+    "exact": false
+   }
+  },
+  "gguf_other_files": [],
+  "mmproj": null
+ }
+}

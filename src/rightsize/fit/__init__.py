@@ -53,7 +53,9 @@ def estimate(
             f"fine-tuning memory for {family.value} models", "docs/plans/F03-fit-engine.md"
         )
     args = {k: v for k, v in kwargs.items() if k in FAMILY_ARGS[family] and v is not None}
-    quant = quant if quant is not None else DEFAULT_QUANT[family]
+    if quant is None:
+        # a GGUF repo is sized at the file its facts were read from
+        quant = ((facts.extra or {}).get("gguf") or {}).get("quant") or DEFAULT_QUANT[family]
     if family is Family.diffusion:
         from rightsize.fit import diffusion
 

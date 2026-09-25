@@ -93,14 +93,14 @@ def candidate(row: dict[str, Any], listed: set[str]) -> dict[str, Any] | None:
         return None
     source = repo
     try:
-        fx = facts(source, ttl_s=0)
+        fx = facts(source, use_cache=False)
     except httpx.HTTPStatusError:
         mirror = MIRRORS.get(org)
         if not mirror:
             return None
         source = f"{mirror}/{name}"
         try:
-            fx = facts(source, ttl_s=0)
+            fx = facts(source, use_cache=False)
         except httpx.HTTPStatusError:
             return None
     if not fx.params_total or not MIN_PARAMS <= fx.params_total <= MAX_PARAMS:

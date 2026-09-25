@@ -1,0 +1,272 @@
+{
+ "ref": {
+  "repo": "unsloth/gemma-3-270m-it-GGUF",
+  "revision": "main",
+  "file": "gemma-3-270m-it-Q4_K_M.gguf"
+ },
+ "family": "llm",
+ "params_total": 268098176,
+ "params_active": null,
+ "dtype": "Q4_K_M",
+ "num_layers": 18,
+ "num_kv_heads": 1,
+ "head_dim": 256,
+ "context_max": 32768,
+ "license": "gemma",
+ "base_model": "google/gemma-3-270m-it",
+ "confidence": 1.0,
+ "extra": {
+  "model_type": "gemma3",
+  "architectures": null,
+  "params_by_dtype": {
+   "Q8_0": 169246720,
+   "Q5_0": 63406080,
+   "Q4_K": 23592960,
+   "Q6_K": 11796480,
+   "F32": 55936
+  },
+  "params_counted_from": "GGUF header",
+  "shards": [
+   "gemma-3-270m-it-Q4_K_M.gguf"
+  ],
+  "library": "transformers",
+  "pipeline_tag": "text-generation",
+  "pipeline": null,
+  "gated": false,
+  "private": false,
+  "sha": "c90975dbd40c0c7b275fefaae758c3415c906238",
+  "num_experts": null,
+  "num_experts_per_tok": null,
+  "sliding_window": 512,
+  "attention": {
+   "model_type": "gemma3",
+   "sliding_window": 512,
+   "hidden_size": 640
+  },
+  "tie_word_embeddings": true,
+  "vocab_size": 262144,
+  "hidden_size": 640,
+  "intermediate_size": 2048,
+  "num_attention_heads": 4,
+  "image_size": null,
+  "patch_size": null,
+  "gguf": {
+   "file": "gemma-3-270m-it-Q4_K_M.gguf",
+   "files": [
+    "gemma-3-270m-it-Q4_K_M.gguf"
+   ],
+   "quant": "Q4_K_M",
+   "file_type": "Q4_K_M",
+   "architecture": "gemma3",
+   "version": 3,
+   "tensor_bytes": 246587904,
+   "bytes_by_type": {
+    "Q8_0": 179824640,
+    "Q5_0": 43591680,
+    "Q4_K": 13271040,
+    "Q6_K": 9676800,
+    "F32": 223744
+   },
+   "input_embedding_bytes": 178257920,
+   "output_bytes": null,
+   "header_bytes": 6527520,
+   "unknown_types": []
+  },
+  "gguf_files": {
+   "F16": {
+    "files": [
+     "gemma-3-270m-it-F16.gguf"
+    ],
+    "bytes": 542835488,
+    "weights_bytes": 536307968,
+    "exact": false
+   },
+   "Q2_K": {
+    "files": [
+     "gemma-3-270m-it-Q2_K.gguf"
+    ],
+    "bytes": 237079584,
+    "weights_bytes": 230552064,
+    "exact": false
+   },
+   "Q4_0": {
+    "files": [
+     "gemma-3-270m-it-Q4_0.gguf"
+    ],
+    "bytes": 241574944,
+    "weights_bytes": 235047424,
+    "exact": false
+   },
+   "Q4_1": {
+    "files": [
+     "gemma-3-270m-it-Q4_1.gguf"
+    ],
+    "bytes": 247677984,
+    "weights_bytes": 241150464,
+    "exact": false
+   },
+   "Q6_K": {
+    "files": [
+     "gemma-3-270m-it-Q6_K.gguf"
+    ],
+    "bytes": 282975264,
+    "weights_bytes": 276447744,
+    "exact": false
+   },
+   "Q8_0": {
+    "files": [
+     "gemma-3-270m-it-Q8_0.gguf"
+    ],
+    "bytes": 291546144,
+    "weights_bytes": 285018624,
+    "exact": false
+   },
+   "IQ4_NL": {
+    "files": [
+     "gemma-3-270m-it-IQ4_NL.gguf"
+    ],
+    "bytes": 241964064,
+    "weights_bytes": 235436544,
+    "exact": false
+   },
+   "IQ4_XS": {
+    "files": [
+     "gemma-3-270m-it-IQ4_XS.gguf"
+    ],
+    "bytes": 240858144,
+    "weights_bytes": 234330624,
+    "exact": false
+   },
+   "Q2_K_L": {
+    "files": [
+     "gemma-3-270m-it-Q2_K_L.gguf"
+    ],
+    "bytes": 237079584,
+    "weights_bytes": 230552064,
+    "exact": false
+   },
+   "Q3_K_M": {
+    "files": [
+     "gemma-3-270m-it-Q3_K_M.gguf"
+    ],
+    "bytes": 241964064,
+    "weights_bytes": 235436544,
+    "exact": false
+   },
+   "Q3_K_S": {
+    "files": [
+     "gemma-3-270m-it-Q3_K_S.gguf"
+    ],
+    "bytes": 236710944,
+    "weights_bytes": 230183424,
+    "exact": false
+   },
+   "Q4_K_M": {
+    "files": [
+     "gemma-3-270m-it-Q4_K_M.gguf"
+    ],
+    "bytes": 253115424,
+    "weights_bytes": 246587904,
+    "exact": true
+   },
+   "Q4_K_S": {
+    "files": [
+     "gemma-3-270m-it-Q4_K_S.gguf"
+    ],
+    "bytes": 249889824,
+    "weights_bytes": 243362304,
+    "exact": false
+   },
+   "Q5_K_M": {
+    "files": [
+     "gemma-3-270m-it-Q5_K_M.gguf"
+    ],
+    "bytes": 260027424,
+    "weights_bytes": 253499904,
+    "exact": false
+   },
+   "Q5_K_S": {
+    "files": [
+     "gemma-3-270m-it-Q5_K_S.gguf"
+    ],
+    "bytes": 257999904,
+    "weights_bytes": 251472384,
+    "exact": false
+   },
+   "UD-IQ2_M": {
+    "files": [
+     "gemma-3-270m-it-UD-IQ2_M.gguf"
+    ],
+    "bytes": 182787104,
+    "weights_bytes": 176259584,
+    "exact": false
+   },
+   "UD-IQ2_XXS": {
+    "files": [
+     "gemma-3-270m-it-UD-IQ2_XXS.gguf"
+    ],
+    "bytes": 180104224,
+    "weights_bytes": 173576704,
+    "exact": false
+   },
+   "UD-IQ3_XXS": {
+    "files": [
+     "gemma-3-270m-it-UD-IQ3_XXS.gguf"
+    ],
+    "bytes": 184517664,
+    "weights_bytes": 177990144,
+    "exact": false
+   },
+   "UD-Q2_K_XL": {
+    "files": [
+     "gemma-3-270m-it-UD-Q2_K_XL.gguf"
+    ],
+    "bytes": 237745184,
+    "weights_bytes": 231217664,
+    "exact": false
+   },
+   "UD-Q3_K_XL": {
+    "files": [
+     "gemma-3-270m-it-UD-Q3_K_XL.gguf"
+    ],
+    "bytes": 242619424,
+    "weights_bytes": 236091904,
+    "exact": false
+   },
+   "UD-Q4_K_XL": {
+    "files": [
+     "gemma-3-270m-it-UD-Q4_K_XL.gguf"
+    ],
+    "bytes": 253934624,
+    "weights_bytes": 247407104,
+    "exact": false
+   },
+   "UD-Q5_K_XL": {
+    "files": [
+     "gemma-3-270m-it-UD-Q5_K_XL.gguf"
+    ],
+    "bytes": 260027424,
+    "weights_bytes": 253499904,
+    "exact": false
+   },
+   "UD-Q6_K_XL": {
+    "files": [
+     "gemma-3-270m-it-UD-Q6_K_XL.gguf"
+    ],
+    "bytes": 286149664,
+    "weights_bytes": 279622144,
+    "exact": false
+   },
+   "UD-Q8_K_XL": {
+    "files": [
+     "gemma-3-270m-it-UD-Q8_K_XL.gguf"
+    ],
+    "bytes": 471104544,
+    "weights_bytes": 464577024,
+    "exact": false
+   }
+  },
+  "gguf_other_files": [],
+  "mmproj": null
+ }
+}

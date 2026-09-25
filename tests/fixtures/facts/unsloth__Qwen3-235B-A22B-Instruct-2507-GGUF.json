@@ -1,0 +1,296 @@
+{
+ "ref": {
+  "repo": "unsloth/Qwen3-235B-A22B-Instruct-2507-GGUF",
+  "revision": "main",
+  "file": "Q4_K_M/Qwen3-235B-A22B-Instruct-2507-Q4_K_M-00001-of-00003.gguf"
+ },
+ "family": "llm",
+ "params_total": 235093634560,
+ "params_active": 22190763520,
+ "dtype": "Q4_K_M",
+ "num_layers": 94,
+ "num_kv_heads": 4,
+ "head_dim": 128,
+ "context_max": 262144,
+ "license": "apache-2.0",
+ "base_model": "Qwen/Qwen3-235B-A22B-Instruct-2507",
+ "confidence": 1.0,
+ "extra": {
+  "model_type": "qwen3moe",
+  "architectures": null,
+  "params_by_dtype": {
+   "Q4_K": 197280661504,
+   "Q6_K": 37762891776,
+   "F32": 50081280
+  },
+  "params_counted_from": "GGUF header (3 files)",
+  "shards": [
+   "Q4_K_M/Qwen3-235B-A22B-Instruct-2507-Q4_K_M-00001-of-00003.gguf",
+   "Q4_K_M/Qwen3-235B-A22B-Instruct-2507-Q4_K_M-00002-of-00003.gguf",
+   "Q4_K_M/Qwen3-235B-A22B-Instruct-2507-Q4_K_M-00003-of-00003.gguf"
+  ],
+  "library": "transformers",
+  "pipeline_tag": "text-generation",
+  "pipeline": null,
+  "gated": false,
+  "private": false,
+  "sha": "437d6915c5c512869e4cf8b16b840bbe3fb172bc",
+  "num_experts": 128,
+  "num_experts_per_tok": 8,
+  "sliding_window": null,
+  "attention": {
+   "model_type": "qwen3moe",
+   "hidden_size": 4096
+  },
+  "tie_word_embeddings": false,
+  "vocab_size": 151936,
+  "hidden_size": 4096,
+  "intermediate_size": 12288,
+  "num_attention_heads": 64,
+  "image_size": null,
+  "patch_size": null,
+  "gguf": {
+   "file": "Q4_K_M/Qwen3-235B-A22B-Instruct-2507-Q4_K_M-00001-of-00003.gguf",
+   "files": [
+    "Q4_K_M/Qwen3-235B-A22B-Instruct-2507-Q4_K_M-00001-of-00003.gguf",
+    "Q4_K_M/Qwen3-235B-A22B-Instruct-2507-Q4_K_M-00002-of-00003.gguf",
+    "Q4_K_M/Qwen3-235B-A22B-Instruct-2507-Q4_K_M-00003-of-00003.gguf"
+   ],
+   "quant": "Q4_K_M",
+   "file_type": "Q4_K_M",
+   "architecture": "qwen3moe",
+   "version": 3,
+   "tensor_bytes": 142148069376,
+   "bytes_by_type": {
+    "Q4_K": 110970372096,
+    "Q6_K": 30977372160,
+    "F32": 200325120
+   },
+   "input_embedding_bytes": 350060544,
+   "output_bytes": 510504960,
+   "header_bytes": 5958816,
+   "unknown_types": []
+  },
+  "gguf_files": {
+   "BF16": {
+    "files": [
+     "BF16/Qwen3-235B-A22B-Instruct-2507-BF16-00001-of-00010.gguf",
+     "BF16/Qwen3-235B-A22B-Instruct-2507-BF16-00002-of-00010.gguf",
+     "BF16/Qwen3-235B-A22B-Instruct-2507-BF16-00003-of-00010.gguf",
+     "BF16/Qwen3-235B-A22B-Instruct-2507-BF16-00004-of-00010.gguf",
+     "BF16/Qwen3-235B-A22B-Instruct-2507-BF16-00005-of-00010.gguf",
+     "BF16/Qwen3-235B-A22B-Instruct-2507-BF16-00006-of-00010.gguf",
+     "BF16/Qwen3-235B-A22B-Instruct-2507-BF16-00007-of-00010.gguf",
+     "BF16/Qwen3-235B-A22B-Instruct-2507-BF16-00008-of-00010.gguf",
+     "BF16/Qwen3-235B-A22B-Instruct-2507-BF16-00009-of-00010.gguf",
+     "BF16/Qwen3-235B-A22B-Instruct-2507-BF16-00010-of-00010.gguf"
+    ],
+    "bytes": 470293437664,
+    "weights_bytes": 470287478848,
+    "exact": false
+   },
+   "Q2_K": {
+    "files": [
+     "Q2_K/Qwen3-235B-A22B-Instruct-2507-Q2_K-00001-of-00002.gguf",
+     "Q2_K/Qwen3-235B-A22B-Instruct-2507-Q2_K-00002-of-00002.gguf"
+    ],
+    "bytes": 85691001472,
+    "weights_bytes": 85685042656,
+    "exact": false
+   },
+   "Q4_0": {
+    "files": [
+     "Q4_0/Qwen3-235B-A22B-Instruct-2507-Q4_0-00001-of-00003.gguf",
+     "Q4_0/Qwen3-235B-A22B-Instruct-2507-Q4_0-00002-of-00003.gguf",
+     "Q4_0/Qwen3-235B-A22B-Instruct-2507-Q4_0-00003-of-00003.gguf"
+    ],
+    "bytes": 133132421888,
+    "weights_bytes": 133126463072,
+    "exact": false
+   },
+   "Q4_1": {
+    "files": [
+     "Q4_1/Qwen3-235B-A22B-Instruct-2507-Q4_1-00001-of-00003.gguf",
+     "Q4_1/Qwen3-235B-A22B-Instruct-2507-Q4_1-00002-of-00003.gguf",
+     "Q4_1/Qwen3-235B-A22B-Instruct-2507-Q4_1-00003-of-00003.gguf"
+    ],
+    "bytes": 147230100224,
+    "weights_bytes": 147224141408,
+    "exact": false
+   },
+   "Q6_K": {
+    "files": [
+     "Q6_K/Qwen3-235B-A22B-Instruct-2507-Q6_K-00001-of-00004.gguf",
+     "Q6_K/Qwen3-235B-A22B-Instruct-2507-Q6_K-00002-of-00004.gguf",
+     "Q6_K/Qwen3-235B-A22B-Instruct-2507-Q6_K-00003-of-00004.gguf",
+     "Q6_K/Qwen3-235B-A22B-Instruct-2507-Q6_K-00004-of-00004.gguf"
+    ],
+    "bytes": 193015495552,
+    "weights_bytes": 193009536736,
+    "exact": false
+   },
+   "Q8_0": {
+    "files": [
+     "Q8_0/Qwen3-235B-A22B-Instruct-2507-Q8_0-00001-of-00006.gguf",
+     "Q8_0/Qwen3-235B-A22B-Instruct-2507-Q8_0-00002-of-00006.gguf",
+     "Q8_0/Qwen3-235B-A22B-Instruct-2507-Q8_0-00003-of-00006.gguf",
+     "Q8_0/Qwen3-235B-A22B-Instruct-2507-Q8_0-00004-of-00006.gguf",
+     "Q8_0/Qwen3-235B-A22B-Instruct-2507-Q8_0-00005-of-00006.gguf",
+     "Q8_0/Qwen3-235B-A22B-Instruct-2507-Q8_0-00006-of-00006.gguf"
+    ],
+    "bytes": 249940106336,
+    "weights_bytes": 249934147520,
+    "exact": false
+   },
+   "IQ4_XS": {
+    "files": [
+     "IQ4_XS/Qwen3-235B-A22B-Instruct-2507-IQ4_XS-00001-of-00003.gguf",
+     "IQ4_XS/Qwen3-235B-A22B-Instruct-2507-IQ4_XS-00002-of-00003.gguf",
+     "IQ4_XS/Qwen3-235B-A22B-Instruct-2507-IQ4_XS-00003-of-00003.gguf"
+    ],
+    "bytes": 125479521056,
+    "weights_bytes": 125473562240,
+    "exact": false
+   },
+   "Q2_K_L": {
+    "files": [
+     "Q2_K_L/Qwen3-235B-A22B-Instruct-2507-Q2_K_L-00001-of-00002.gguf",
+     "Q2_K_L/Qwen3-235B-A22B-Instruct-2507-Q2_K_L-00002-of-00002.gguf"
+    ],
+    "bytes": 85836860032,
+    "weights_bytes": 85830901216,
+    "exact": false
+   },
+   "Q3_K_M": {
+    "files": [
+     "Q3_K_M/Qwen3-235B-A22B-Instruct-2507-Q3_K_M-00001-of-00003.gguf",
+     "Q3_K_M/Qwen3-235B-A22B-Instruct-2507-Q3_K_M-00002-of-00003.gguf",
+     "Q3_K_M/Qwen3-235B-A22B-Instruct-2507-Q3_K_M-00003-of-00003.gguf"
+    ],
+    "bytes": 112447380192,
+    "weights_bytes": 112441421376,
+    "exact": false
+   },
+   "Q3_K_S": {
+    "files": [
+     "Q3_K_S/Qwen3-235B-A22B-Instruct-2507-Q3_K_S-00001-of-00003.gguf",
+     "Q3_K_S/Qwen3-235B-A22B-Instruct-2507-Q3_K_S-00002-of-00003.gguf",
+     "Q3_K_S/Qwen3-235B-A22B-Instruct-2507-Q3_K_S-00003-of-00003.gguf"
+    ],
+    "bytes": 101444705024,
+    "weights_bytes": 101438746208,
+    "exact": false
+   },
+   "Q4_K_M": {
+    "files": [
+     "Q4_K_M/Qwen3-235B-A22B-Instruct-2507-Q4_K_M-00001-of-00003.gguf",
+     "Q4_K_M/Qwen3-235B-A22B-Instruct-2507-Q4_K_M-00002-of-00003.gguf",
+     "Q4_K_M/Qwen3-235B-A22B-Instruct-2507-Q4_K_M-00003-of-00003.gguf"
+    ],
+    "bytes": 142154074880,
+    "weights_bytes": 142148069376,
+    "exact": true
+   },
+   "Q4_K_S": {
+    "files": [
+     "Q4_K_S/Qwen3-235B-A22B-Instruct-2507-Q4_K_S-00001-of-00003.gguf",
+     "Q4_K_S/Qwen3-235B-A22B-Instruct-2507-Q4_K_S-00002-of-00003.gguf",
+     "Q4_K_S/Qwen3-235B-A22B-Instruct-2507-Q4_K_S-00003-of-00003.gguf"
+    ],
+    "bytes": 133687118592,
+    "weights_bytes": 133681159776,
+    "exact": false
+   },
+   "Q5_K_M": {
+    "files": [
+     "Q5_K_M/Qwen3-235B-A22B-Instruct-2507-Q5_K_M-00001-of-00004.gguf",
+     "Q5_K_M/Qwen3-235B-A22B-Instruct-2507-Q5_K_M-00002-of-00004.gguf",
+     "Q5_K_M/Qwen3-235B-A22B-Instruct-2507-Q5_K_M-00003-of-00004.gguf",
+     "Q5_K_M/Qwen3-235B-A22B-Instruct-2507-Q5_K_M-00004-of-00004.gguf"
+    ],
+    "bytes": 166814157632,
+    "weights_bytes": 166808198816,
+    "exact": false
+   },
+   "Q5_K_S": {
+    "files": [
+     "Q5_K_S/Qwen3-235B-A22B-Instruct-2507-Q5_K_S-00001-of-00004.gguf",
+     "Q5_K_S/Qwen3-235B-A22B-Instruct-2507-Q5_K_S-00002-of-00004.gguf",
+     "Q5_K_S/Qwen3-235B-A22B-Instruct-2507-Q5_K_S-00003-of-00004.gguf",
+     "Q5_K_S/Qwen3-235B-A22B-Instruct-2507-Q5_K_S-00004-of-00004.gguf"
+    ],
+    "bytes": 161881426816,
+    "weights_bytes": 161875468000,
+    "exact": false
+   },
+   "UD-Q2_K_XL": {
+    "files": [
+     "UD-Q2_K_XL/Qwen3-235B-A22B-Instruct-2507-UD-Q2_K_XL-00001-of-00002.gguf",
+     "UD-Q2_K_XL/Qwen3-235B-A22B-Instruct-2507-UD-Q2_K_XL-00002-of-00002.gguf"
+    ],
+    "bytes": 88767695488,
+    "weights_bytes": 88761736672,
+    "exact": false
+   },
+   "UD-Q3_K_XL": {
+    "files": [
+     "UD-Q3_K_XL/Qwen3-235B-A22B-Instruct-2507-UD-Q3_K_XL-00001-of-00003.gguf",
+     "UD-Q3_K_XL/Qwen3-235B-A22B-Instruct-2507-UD-Q3_K_XL-00002-of-00003.gguf",
+     "UD-Q3_K_XL/Qwen3-235B-A22B-Instruct-2507-UD-Q3_K_XL-00003-of-00003.gguf"
+    ],
+    "bytes": 104152926944,
+    "weights_bytes": 104146968128,
+    "exact": false
+   },
+   "UD-Q4_K_XL": {
+    "files": [
+     "UD-Q4_K_XL/Qwen3-235B-A22B-Instruct-2507-UD-Q4_K_XL-00001-of-00003.gguf",
+     "UD-Q4_K_XL/Qwen3-235B-A22B-Instruct-2507-UD-Q4_K_XL-00002-of-00003.gguf",
+     "UD-Q4_K_XL/Qwen3-235B-A22B-Instruct-2507-UD-Q4_K_XL-00003-of-00003.gguf"
+    ],
+    "bytes": 134329371392,
+    "weights_bytes": 134323412576,
+    "exact": false
+   },
+   "UD-Q5_K_XL": {
+    "files": [
+     "UD-Q5_K_XL/Qwen3-235B-A22B-Instruct-2507-UD-Q5_K_XL-00001-of-00004.gguf",
+     "UD-Q5_K_XL/Qwen3-235B-A22B-Instruct-2507-UD-Q5_K_XL-00002-of-00004.gguf",
+     "UD-Q5_K_XL/Qwen3-235B-A22B-Instruct-2507-UD-Q5_K_XL-00003-of-00004.gguf",
+     "UD-Q5_K_XL/Qwen3-235B-A22B-Instruct-2507-UD-Q5_K_XL-00004-of-00004.gguf"
+    ],
+    "bytes": 168925367136,
+    "weights_bytes": 168919408320,
+    "exact": false
+   },
+   "UD-Q6_K_XL": {
+    "files": [
+     "UD-Q6_K_XL/Qwen3-235B-A22B-Instruct-2507-UD-Q6_K_XL-00001-of-00005.gguf",
+     "UD-Q6_K_XL/Qwen3-235B-A22B-Instruct-2507-UD-Q6_K_XL-00002-of-00005.gguf",
+     "UD-Q6_K_XL/Qwen3-235B-A22B-Instruct-2507-UD-Q6_K_XL-00003-of-00005.gguf",
+     "UD-Q6_K_XL/Qwen3-235B-A22B-Instruct-2507-UD-Q6_K_XL-00004-of-00005.gguf",
+     "UD-Q6_K_XL/Qwen3-235B-A22B-Instruct-2507-UD-Q6_K_XL-00005-of-00005.gguf"
+    ],
+    "bytes": 201977715680,
+    "weights_bytes": 201971756864,
+    "exact": false
+   },
+   "UD-Q8_K_XL": {
+    "files": [
+     "UD-Q8_K_XL/Qwen3-235B-A22B-Instruct-2507-UD-Q8_K_XL-00001-of-00006.gguf",
+     "UD-Q8_K_XL/Qwen3-235B-A22B-Instruct-2507-UD-Q8_K_XL-00002-of-00006.gguf",
+     "UD-Q8_K_XL/Qwen3-235B-A22B-Instruct-2507-UD-Q8_K_XL-00003-of-00006.gguf",
+     "UD-Q8_K_XL/Qwen3-235B-A22B-Instruct-2507-UD-Q8_K_XL-00004-of-00006.gguf",
+     "UD-Q8_K_XL/Qwen3-235B-A22B-Instruct-2507-UD-Q8_K_XL-00005-of-00006.gguf",
+     "UD-Q8_K_XL/Qwen3-235B-A22B-Instruct-2507-UD-Q8_K_XL-00006-of-00006.gguf"
+    ],
+    "bytes": 274275261536,
+    "weights_bytes": 274269302720,
+    "exact": false
+   }
+  },
+  "gguf_other_files": [],
+  "mmproj": null,
+  "params_active_note": "total minus idle routed experts (8 of 128 used), from the GGUF's tensors"
+ }
+}

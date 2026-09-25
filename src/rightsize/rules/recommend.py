@@ -581,6 +581,18 @@ def recommend_for_model(
 
     mode = Mode(mode)
     fx = model if isinstance(model, ModelFacts) else hub_facts(model)
+    if (fx.extra or {}).get("gguf"):
+        # Plans quantize from the original weights; a repo of ready-made GGUFs needs a
+        # download step instead, which is not planned yet.
+        from rightsize.errors import NotImplementedYet
+
+        hint = f"`rightsize estimate {fx.ref.repo} --quant Q4_K_M` sizes any file in it"
+        if fx.base_model:
+            hint += f", and `rightsize recommend --model {fx.base_model}` ranks its base model"
+        raise NotImplementedYet(
+            "Model-first plans for a repo of ready-made GGUFs", "docs/plans/F04-rules-engine.md",
+            hint=f"For now, {hint}.",
+        )
     known = {c.repo: c for c in load_candidates()}
     c = known.get(fx.ref.repo) or Candidate(
         repo=fx.ref.repo, facts=fx, tasks=(task,), publisher=fx.ref.repo.split("/")[0],

@@ -109,6 +109,7 @@ def estimate(
     text_encoder_quant: str | None = None,
     vae_slicing: bool = False,
     seq_len: int | None = None,
+    file: str | None = None,
 ):
     """Memory, and speed where there is a model for it, for one model on one device (F3).
 
@@ -118,9 +119,12 @@ def estimate(
         rightsize.estimate("openai/whisper-large-v3", "int8", "RTX 3060 12GB")
 
     ``model`` is a Hub id or a ``ModelFacts``; its family (LLM, diffusion, audio, vision,
-    embedding) picks the estimator. ``quant`` is a GGUF type or a format such as bf16,
-    fp8, nf4, int8, int4, awq, mlx-4bit; left out, each family has its default (Q4_K_M
-    for LLMs, bf16 for diffusion). ``device`` is a ``Device``, a preset or catalogue name,
+    embedding) picks the estimator. A repo of GGUFs is read from the header of one file,
+    ``file`` or else its Q4_K_M, and sized from its own file for each ``quant`` it holds.
+    ``quant`` is a GGUF type or a format such as bf16, fp8, nf4, int8, int4, awq,
+    mlx-4bit; left out, each family has its default (Q4_K_M for LLMs, bf16 for
+    diffusion), and a GGUF repo the file it was read from. ``device`` is a ``Device``, a
+    preset or catalogue name,
     ``"@hf-username"`` for the hardware saved on that profile, or ``"detect"``.
 
     LLMs: ``ctx``, ``runtime``, ``mode`` (``"lora"``, ``"qlora"``, ``"full"`` for the
@@ -136,7 +140,7 @@ def estimate(
     from rightsize.hardware import resolve
     from rightsize.types import Mode, ModelFacts
 
-    fx = model if isinstance(model, ModelFacts) else facts(model, revision)
+    fx = model if isinstance(model, ModelFacts) else facts(model, revision, file=file)
     dev = resolve(device)
     if bandwidth_gbps:
         dev = dev.model_copy(update={"bandwidth_gbps": bandwidth_gbps})
