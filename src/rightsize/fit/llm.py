@@ -2,7 +2,9 @@
 
 formula_id ``llm.gguf.analytic.v0``:
   weights_gb   = params x effective_bpw / 8
-  kv_gb        = 2 x layers x kv_heads x head_dim x ctx x batch x kv_bytes
+  kv_gb        = per-layer KV as llama.cpp allocates it (fit/kv.py): plain GQA is
+                 2 x layers x kv_heads x head_dim x ctx x batch x kv_bytes; sliding-window,
+                 MLA and hybrid models follow data/runtimes/llama.cpp/kv_cache.yaml
   overhead_gb  = runtime constant + fraction x weights  (llama.cpp ~0.75 GB + 2%)
   vram_gb      = weights + kv + overhead
   tok/s        ~ bandwidth / (weights + kv) bytes read per decoded token, x efficiency
@@ -12,6 +14,7 @@ Confidence 0.6 (analytic, uncalibrated). Every number is explainable in ``breakd
 from __future__ import annotations
 
 from rightsize._data import load_yaml
+from rightsize.fit import kv as _kv
 from rightsize.types import Device, FitResult, Mode, ModelFacts, QuantSpec, RuntimeSpec, Verdict
 
 FORMULA_ID = "llm.gguf.analytic.v0"
@@ -52,14 +55,9 @@ def predicted_file_gb(facts: ModelFacts, quant: str) -> float:
 
 
 def kv_cache_gb(facts: ModelFacts, ctx: int, batch: int = 1, kv_bytes: float = 2.0) -> float:
-    if not (facts.num_layers and facts.num_kv_heads and facts.head_dim):
-        raise ValueError("num_layers, num_kv_heads and head_dim are required for the KV cache")
-    layers = facts.num_layers
-    sw = (facts.extra or {}).get("sliding_window")
-    # Sliding-window layers cap their KV at the window; without a per-layer map assume all
-    # layers are windowed when the model declares one (conservative for hybrids, noted).
-    eff_ctx = min(ctx, sw) if sw else ctx
-    return 2 * layers * facts.num_kv_heads * facts.head_dim * eff_ctx * batch * kv_bytes / 1e9
+    """Context-dependent memory as llama.cpp allocates it. Delegates to fit.kv, which knows
+    sliding-window, MLA and hybrid layouts; plain GQA models come out as before."""
+    return _kv.kv_cache_gb(facts, ctx, batch, kv_bytes)
 
 
 def estimate(
@@ -87,8 +85,10 @@ def estimate(
     usable = device.memory_gb * device.usable_fraction
 
     notes = [f"bpw {bpw:.3f} from {bpw_source}", f"ctx {ctx}, kv {kv_bytes:g} B/elem"]
-    if (facts.extra or {}).get("sliding_window"):
-        notes.append("sliding-window model: KV capped at the window for all layers (approximate)")
+    lay = _kv.layout(facts)
+    if lay.kind != "gqa":
+        notes.append(lay.rule)
+    notes.extend(lay.notes)
     if vram <= usable * (1 - _HEADROOM):
         verdict = Verdict.fits
     elif vram <= usable:
@@ -126,6 +126,7 @@ def estimate(
         breakdown={
             "weights": round(weights, 3),
             "kv_cache": round(kv, 3),
+            **{k: v for k, v in _kv.kv_breakdown(facts, ctx, batch, kv_bytes).items() if v},
             "overhead": round(overhead, 3),
             "usable_memory": round(usable, 2),
         },

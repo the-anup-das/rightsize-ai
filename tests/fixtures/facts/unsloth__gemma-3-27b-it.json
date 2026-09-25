@@ -1,0 +1,55 @@
+{
+ "ref": {
+  "repo": "unsloth/gemma-3-27b-it",
+  "revision": "main",
+  "file": null
+ },
+ "family": "llm",
+ "params_total": 27432406640,
+ "params_active": null,
+ "dtype": "BF16",
+ "num_layers": 62,
+ "num_kv_heads": 16,
+ "head_dim": 128,
+ "context_max": 131072,
+ "license": "gemma",
+ "base_model": "google/gemma-3-27b-it",
+ "confidence": 1.0,
+ "extra": {
+  "model_type": "gemma3",
+  "architectures": [
+   "Gemma3ForConditionalGeneration"
+  ],
+  "params_by_dtype": {
+   "BF16": 27432406640
+  },
+  "shards": [
+   "model-00001-of-00012.safetensors",
+   "model-00002-of-00012.safetensors",
+   "model-00003-of-00012.safetensors",
+   "model-00004-of-00012.safetensors",
+   "model-00005-of-00012.safetensors",
+   "model-00006-of-00012.safetensors",
+   "model-00007-of-00012.safetensors",
+   "model-00008-of-00012.safetensors",
+   "model-00009-of-00012.safetensors",
+   "model-00010-of-00012.safetensors",
+   "model-00011-of-00012.safetensors",
+   "model-00012-of-00012.safetensors"
+  ],
+  "gated": false,
+  "num_experts": null,
+  "num_experts_per_tok": null,
+  "sliding_window": 1024,
+  "attention": {
+   "model_type": "gemma3_text",
+   "sliding_window": 1024,
+   "sliding_window_pattern": 6,
+   "hidden_size": 5376
+  },
+  "tie_word_embeddings": null,
+  "vocab_size": 262208,
+  "hidden_size": 5376,
+  "num_attention_heads": 32
+ }
+}

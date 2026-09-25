@@ -1,0 +1,63 @@
+{
+ "ref": {
+  "repo": "unsloth/gemma-3-270m-it",
+  "revision": "main",
+  "file": null
+ },
+ "family": "llm",
+ "params_total": 268098176,
+ "params_active": null,
+ "dtype": "BF16",
+ "num_layers": 18,
+ "num_kv_heads": 1,
+ "head_dim": 256,
+ "context_max": 32768,
+ "license": "gemma",
+ "base_model": "google/gemma-3-270m-it",
+ "confidence": 1.0,
+ "extra": {
+  "model_type": "gemma3_text",
+  "architectures": [
+   "Gemma3ForCausalLM"
+  ],
+  "params_by_dtype": {
+   "BF16": 268098176
+  },
+  "shards": [
+   "model.safetensors"
+  ],
+  "gated": false,
+  "num_experts": null,
+  "num_experts_per_tok": null,
+  "sliding_window": 512,
+  "attention": {
+   "model_type": "gemma3_text",
+   "layer_types": [
+    "sliding_attention",
+    "sliding_attention",
+    "sliding_attention",
+    "sliding_attention",
+    "sliding_attention",
+    "full_attention",
+    "sliding_attention",
+    "sliding_attention",
+    "sliding_attention",
+    "sliding_attention",
+    "sliding_attention",
+    "full_attention",
+    "sliding_attention",
+    "sliding_attention",
+    "sliding_attention",
+    "sliding_attention",
+    "sliding_attention",
+    "full_attention"
+   ],
+   "sliding_window": 512,
+   "hidden_size": 640
+  },
+  "tie_word_embeddings": null,
+  "vocab_size": 262144,
+  "hidden_size": 640,
+  "num_attention_heads": 4
+ }
+}

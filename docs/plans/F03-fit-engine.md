@@ -83,7 +83,9 @@ LLM analytic + oobabooga path + speed; fine-tune components with Unsloth floors;
 - [ ] `data/quants/gguf_bpw.yaml` ingested from `quant-descriptions.ts` with provenance; bnb / AWQ / GPTQ / MLX bpw rows
       (partial: GGUF rows derived from llama.cpp's block formulas and checked against
       `llama-quantize --help`; bnb / AWQ / GPTQ / MLX rows not yet)
-- [ ] LLM weights + KV (GQA, overrides) + runtime overhead constants
+- [x] LLM weights + KV (GQA, sliding window, MLA, hybrid) + runtime overhead constants.
+      KV checked against llama.cpp's own dry-run allocation (`llama-fit-params`) for plain GQA,
+      sliding window, a conv hybrid and a Mamba2 hybrid: 0.0% worst disagreement.
 - [ ] oobabooga regression port + router
 - [x] Speed model (bandwidth / bytes per token; MoE active params; offload penalty).
       Validated on an RTX 4070 Ti SUPER: `rightsize bench` measured 70% of peak, the

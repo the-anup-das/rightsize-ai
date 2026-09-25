@@ -95,3 +95,39 @@ def test_facts_from_headers_and_config() -> None:
     assert fx.license == "apache-2.0"
     assert fx.confidence == 1.0
     assert fx.extra["params_by_dtype"] == {"BF16": EXPECTED_PARAMS - 2560, "F32": 2560}
+
+
+def test_hub_parameter_summary_spares_the_shard_headers() -> None:
+    """The model-info response already counts parameters per dtype. Reading every shard
+    header instead cost DeepSeek-V3 163 requests; with the summary there are none."""
+    shard_reads: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/api/models/Qwen/Qwen3-4B":
+            body = _handler(request).json()
+            body["safetensors"] = {"parameters": {"BF16": 4_022_468_096}, "total": 4_022_468_096}
+            return httpx.Response(200, json=body)
+        if request.url.path.endswith(".safetensors"):
+            shard_reads.append(request.url.path)
+        return _handler(request)
+
+    fx = facts("Qwen/Qwen3-4B", transport=httpx.MockTransport(handler))
+    assert fx.params_total == 4_022_468_096
+    assert shard_reads == [], "headers are only the fallback"
+
+
+def test_a_cache_from_an_older_catalog_is_refetched(tmp_path, monkeypatch) -> None:
+    """A warm cache written before facts() learned a field would otherwise answer forever:
+    it kept describing LFM2 as all-attention, 166% over what llama.cpp allocates."""
+    from rightsize.catalog import hub
+
+    monkeypatch.setenv("RIGHTSIZE_CACHE_DIR", str(tmp_path))
+    path = hub._cache_path("Qwen/Qwen3-4B", "main")
+    fresh = facts("Qwen/Qwen3-4B", transport=httpx.MockTransport(_handler))
+    hub._write_cache(path, fresh.model_dump(mode="json"))
+    assert hub._read_cache(path, ttl_s=3600) is not None, "same version: served from cache"
+
+    stale = json.loads(path.read_text(encoding="utf-8"))
+    stale["_cache_version"] = hub.CACHE_VERSION - 1
+    path.write_text(json.dumps(stale), encoding="utf-8")
+    assert hub._read_cache(path, ttl_s=3600) is None, "older version: refetch"

@@ -67,14 +67,18 @@ LLM and VLM full facts. Diffusion, audio, vision, embeddings: per-subfolder size
 
 - [x] `ModelFacts`, `ModelRef` finalised (types.py) and documented
 - [x] httpx Range fetch of the safetensors header; parser for the 8-byte length prefix + JSON
-- [ ] `config.json` reader with architecture normalisation (`model_type` -> family, attention type, MoE)
+- [x] `config.json` reader with architecture normalisation (`model_type` -> family, attention type, MoE).
+      The attention block keeps what decides KV layout: layer_types, windows, MLA ranks,
+      hybrid layer rules and recurrent state sizes.
 - [ ] GGUF header reader: magic, version, tensor infos (dtype, dims), metadata KV
 - [ ] `base_model` back-link and `variants()` with name heuristics
-- [ ] `data/quants/kv_overrides.yaml` + schema + loader
+- [x] KV rules + loader, at `data/runtimes/llama.cpp/kv_cache.yaml` rather than under quants/:
+      the behaviour belongs to the runtime, not the model (schema lands with the data schemas)
 - [ ] Disk cache with TTL and ETag; `offline` flag; `HF_TOKEN` support
       (partial: TTL, offline and `HF_TOKEN` work; no ETag revalidation yet)
 - [ ] Curated type lists per family and task (names only)
-- [ ] Fixtures for 10 repos; fake transport; tests
-      (partial: fake transport and tests; fixtures cover Qwen3 only)
+- [x] Fixtures for 11 repos (`scripts/record_fixtures.py`), one per KV layout; fake transport;
+      tests. Parameter counts come from the Hub's own summary, so recording all 11 takes
+      8 seconds instead of minutes.
 - [ ] Per-subfolder sums for multi-component pipelines
 - [ ] Docs page: how facts are derived and what `confidence` means

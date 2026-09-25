@@ -1,0 +1,49 @@
+{
+ "ref": {
+  "repo": "tiiuae/Falcon-H1-1.5B-Instruct",
+  "revision": "main",
+  "file": null
+ },
+ "family": "llm",
+ "params_total": 1554863488,
+ "params_active": null,
+ "dtype": "BF16",
+ "num_layers": 24,
+ "num_kv_heads": 2,
+ "head_dim": 128,
+ "context_max": 131072,
+ "license": "other",
+ "base_model": "tiiuae/Falcon-H1-1.5B-Base",
+ "confidence": 1.0,
+ "extra": {
+  "model_type": "falcon_h1",
+  "architectures": [
+   "FalconH1ForCausalLM"
+  ],
+  "params_by_dtype": {
+   "BF16": 1554863488
+  },
+  "shards": [
+   "model.safetensors"
+  ],
+  "gated": false,
+  "num_experts": null,
+  "num_experts_per_tok": null,
+  "sliding_window": null,
+  "attention": {
+   "model_type": "falcon_h1",
+   "hidden_size": 2048,
+   "mamba_d_state": 256,
+   "mamba_d_conv": 4,
+   "mamba_expand": 2,
+   "mamba_n_groups": 1,
+   "mamba_n_heads": 48,
+   "mamba_d_head": 64,
+   "mamba_d_ssm": 3072
+  },
+  "tie_word_embeddings": false,
+  "vocab_size": 65537,
+  "hidden_size": 2048,
+  "num_attention_heads": 8
+ }
+}

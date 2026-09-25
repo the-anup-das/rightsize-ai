@@ -1,0 +1,45 @@
+{
+ "ref": {
+  "repo": "Qwen/Qwen3-4B",
+  "revision": "main",
+  "file": null
+ },
+ "family": "llm",
+ "params_total": 4022468096,
+ "params_active": null,
+ "dtype": "BF16",
+ "num_layers": 36,
+ "num_kv_heads": 8,
+ "head_dim": 128,
+ "context_max": 40960,
+ "license": "apache-2.0",
+ "base_model": "Qwen/Qwen3-4B-Base",
+ "confidence": 1.0,
+ "extra": {
+  "model_type": "qwen3",
+  "architectures": [
+   "Qwen3ForCausalLM"
+  ],
+  "params_by_dtype": {
+   "BF16": 4022468096
+  },
+  "shards": [
+   "model-00001-of-00003.safetensors",
+   "model-00002-of-00003.safetensors",
+   "model-00003-of-00003.safetensors"
+  ],
+  "gated": false,
+  "num_experts": null,
+  "num_experts_per_tok": null,
+  "sliding_window": null,
+  "attention": {
+   "model_type": "qwen3",
+   "use_sliding_window": false,
+   "hidden_size": 2560
+  },
+  "tie_word_embeddings": true,
+  "vocab_size": 151936,
+  "hidden_size": 2560,
+  "num_attention_heads": 32
+ }
+}

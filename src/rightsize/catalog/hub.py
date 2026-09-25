@@ -38,6 +38,47 @@ _DTYPE_BYTES = {
 }
 _TEXT_MODEL_KEYS = ("text_config", "language_config", "llm_config")
 
+#: Config keys that decide how much KV cache a model really needs, beyond plain GQA:
+#: which layers slide, whether attention is MLA, which layers are recurrent and how big
+#: their state is. Kept raw so the fit engine can apply each runtime's own rules, which
+#: differ (llama.cpp caches a sliding window only for architectures it implements it for).
+_ATTENTION_KEYS = (
+    "model_type",
+    "layer_types",
+    "sliding_window",
+    "sliding_window_pattern",
+    "use_sliding_window",
+    "full_attention_interval",
+    "attn_layer_period",
+    "attn_layer_offset",
+    "hybrid_override_pattern",
+    "full_attn_idxs",
+    "kv_lora_rank",
+    "qk_rope_head_dim",
+    "qk_nope_head_dim",
+    "v_head_dim",
+    "hidden_size",
+    "mamba_d_state",
+    "mamba_d_conv",
+    "mamba_expand",
+    "mamba_n_groups",
+    "mamba_n_heads",
+    "mamba_d_head",
+    "mamba_head_dim",
+    "mamba_num_heads",
+    "mamba_d_ssm",
+    "ssm_state_size",
+    "conv_kernel",
+    "conv_L_cache",
+    "n_groups",
+    "expand",
+    "linear_num_value_heads",
+    "linear_num_key_heads",
+    "linear_key_head_dim",
+    "linear_value_head_dim",
+    "linear_conv_kernel_dim",
+)
+
 
 def _headers(token: str | None) -> dict[str, str]:
     tok = token or os.environ.get("HF_TOKEN")
@@ -49,19 +90,28 @@ def _cache_path(repo: str, revision: str) -> Path:
     return base / "models" / repo.replace("/", "__") / f"{revision}.json"
 
 
+#: Bump whenever facts() starts keeping something new. A cached entry from an older
+#: version is refetched rather than trusted: without this, adding the attention fields left
+#: every warm cache describing LFM2 as all-attention, 166% over what llama.cpp allocates.
+CACHE_VERSION = 2
+
+
 def _read_cache(path: Path, ttl_s: float) -> dict[str, Any] | None:
     try:
         if time.time() - path.stat().st_mtime > ttl_s:
             return None
-        return json.loads(path.read_text(encoding="utf-8"))
+        payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None
+    if payload.pop("_cache_version", None) != CACHE_VERSION:
+        return None
+    return payload
 
 
 def _write_cache(path: Path, payload: dict[str, Any]) -> None:
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(payload), encoding="utf-8")
+        path.write_text(json.dumps({**payload, "_cache_version": CACHE_VERSION}), encoding="utf-8")
     except OSError:
         pass
 
@@ -147,12 +197,19 @@ def facts(
         shards = sorted(s for s in siblings if s.endswith(".safetensors") and "/" not in s)
         total = 0
         by_dtype: dict[str, int] = {}
-        for shard in shards:
-            hdr = safetensors_header(c, f"{base}/{shard}")
-            n, d = _count_params(hdr)
-            total += n
-            for k, v in d.items():
-                by_dtype[k] = by_dtype.get(k, 0) + v
+        summary = (meta.get("safetensors") or {}).get("parameters")
+        if isinstance(summary, dict) and summary:
+            # The Hub already counts parameters per dtype in the response we just fetched.
+            # Reading every shard header instead cost DeepSeek-V3 163 requests and minutes.
+            by_dtype = {str(k): int(v) for k, v in summary.items()}
+            total = sum(by_dtype.values())
+        else:
+            for shard in shards:
+                hdr = safetensors_header(c, f"{base}/{shard}")
+                n, d = _count_params(hdr)
+                total += n
+                for k, v in d.items():
+                    by_dtype[k] = by_dtype.get(k, 0) + v
 
     tc = _text_config(cfg)
     hidden = tc.get("hidden_size")
@@ -185,6 +242,7 @@ def facts(
             "num_experts": experts,
             "num_experts_per_tok": active_experts,
             "sliding_window": tc.get("sliding_window"),
+            "attention": {k: tc[k] for k in _ATTENTION_KEYS if tc.get(k) is not None},
             "tie_word_embeddings": cfg.get("tie_word_embeddings"),
             "vocab_size": tc.get("vocab_size"),
             "hidden_size": hidden,

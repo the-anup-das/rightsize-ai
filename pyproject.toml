@@ -128,11 +128,9 @@ select = ["E", "F", "I", "UP", "B", "SIM", "T20"]
 "src/rightsize/cli.py" = ["T20"]
 "src/rightsize/_console.py" = ["T20"]
 "tests/**" = ["T20"]
-# notebook cell sources are embedded strings; wrapping them would wrap the cells
-"scripts/make_notebooks.py" = ["E501", "T20"]
-# ingest scripts are run by hand and report what they fetched
-"scripts/ingest_hf_hardware.py" = ["T20"]
-"scripts/ingest_bandwidth.py" = ["T20", "E501"]
+# scripts/ are run by hand and report what they did, often as tables; notebook cell
+# sources in make_notebooks.py are embedded strings that wrapping would wrap
+"scripts/**" = ["T20", "E501"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
