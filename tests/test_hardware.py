@@ -211,3 +211,18 @@ def test_size_variants_do_not_borrow_each_others_bandwidth() -> None:
     assert cat["A100 80GB"].bandwidth_gbps == 2039.0
     assert cat["RTX 3060 8GB"].bandwidth_gbps == 240.0
     assert cat["RTX 3060 12GB"].bandwidth_gbps == 360.0
+
+
+def test_apple_silicon_is_covered_and_derived() -> None:
+    """Apple's table gives bus width, memory type and a stated bandwidth that reconcile.
+
+    The memory standard names its own data rate - LPDDR5X-8533 is 8533 MT/s - so these
+    compute the same way the GPUs do rather than being copied.
+    """
+    cat = db.catalog()
+    assert cat["Apple M1 Max 64GB"].bandwidth_gbps == 409.6  # 512-bit LPDDR5-6400
+    assert cat["Apple M2 Ultra 192GB"].bandwidth_gbps == 819.2  # 1024-bit
+    assert "LPDDR5-6400 at 6.4 Gbps" in cat["Apple M1 Max 64GB"].provenance.note
+    # the M4 Max ships in two widths and they must not share a number
+    assert cat["Apple M4 Max 36GB"].bandwidth_gbps == 409.6  # 384-bit x 8.533
+    assert cat["Apple M4 Max 64GB"].bandwidth_gbps == pytest.approx(546, abs=0.2)  # 512-bit

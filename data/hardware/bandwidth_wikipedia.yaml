@@ -13,6 +13,7 @@ formula_id: mem.bandwidth.bus_x_rate.v0
 sources:
   nvidia: https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779
   amd: https://en.wikipedia.org/w/index.php?title=List_of_AMD_graphics_processing_units&oldid=1375945815
+  apple: https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578
 devices:
   - name: "GeForce 205 OEM"
     match: "205 oem"
@@ -1957,14 +1958,86 @@ devices:
     memory_speed_gbps: 2.43
     stated_gbps: 1555
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
-  - name: "A16 GPU accelerator"
+  - name: "A10X Fusion"
+    match: "a10x fusion"
+    memory_type: "LPDDR4-3200"
+    vendor: "apple"
+    bus_width_bits: 128
+    memory_speed_gbps: 3.2
+    stated_gbps: 51.2
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "A11 Bionic"
+    match: "a11 bionic"
+    memory_type: "LPDDR4X-4266"
+    vendor: "apple"
+    bus_width_bits: 64
+    memory_speed_gbps: 4.266
+    stated_gbps: 34.1
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "A12 Bionic"
+    match: "a12 bionic"
+    memory_type: "LPDDR4X-4266"
+    vendor: "apple"
+    bus_width_bits: 64
+    memory_speed_gbps: 4.266
+    stated_gbps: 34.1
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "A12X Bionic"
+    match: "a12x bionic"
+    memory_type: "LPDDR4X-4266"
+    vendor: "apple"
+    bus_width_bits: 128
+    memory_speed_gbps: 4.266
+    stated_gbps: 68.2
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "A12Z Bionic"
+    match: "a12z bionic"
+    memory_type: "LPDDR4X-4266"
+    vendor: "apple"
+    bus_width_bits: 128
+    memory_speed_gbps: 4.266
+    stated_gbps: 68.2
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "A13 Bionic"
+    match: "a13 bionic"
+    memory_type: "LPDDR4X-4266"
+    vendor: "apple"
+    bus_width_bits: 64
+    memory_speed_gbps: 4.266
+    stated_gbps: 34.1
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "A14 Bionic"
+    match: "a14 bionic"
+    memory_type: "LPDDR4X-4266"
+    vendor: "apple"
+    bus_width_bits: 64
+    memory_speed_gbps: 4.266
+    stated_gbps: 34.1
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "A15 Bionic"
+    match: "a15 bionic"
+    memory_type: "LPDDR4X-4266"
+    vendor: "apple"
+    bus_width_bits: 64
+    memory_speed_gbps: 4.266
+    stated_gbps: 34.1
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "A16"
     match: "a16"
-    memory_type: "GDDR6"
-    vendor: "nvidia"
-    bus_width_bits: 4
-    memory_speed_gbps: 7.242
-    stated_gbps: 4
-    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+    memory_type: "LPDDR5-6400"
+    vendor: "apple"
+    bus_width_bits: 64
+    memory_speed_gbps: 6.4
+    stated_gbps: 51.2
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "A16 Bionic"
+    match: "a16 bionic"
+    memory_type: "LPDDR5-6400"
+    vendor: "apple"
+    bus_width_bits: 64
+    memory_speed_gbps: 6.4
+    stated_gbps: 51.2
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
   - name: "A16 GPU accelerator"
     match: "a16 gpu accelerator"
     memory_type: "GDDR6"
@@ -1973,6 +2046,46 @@ devices:
     memory_speed_gbps: 7.242
     stated_gbps: 4
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "A17 Pro"
+    match: "a17 pro"
+    memory_type: "LPDDR5-6400"
+    vendor: "apple"
+    bus_width_bits: 64
+    memory_speed_gbps: 6.4
+    stated_gbps: 51.2
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "A18"
+    match: "a18"
+    memory_type: "LPDDR5X-7500"
+    vendor: "apple"
+    bus_width_bits: 64
+    memory_speed_gbps: 7.5
+    stated_gbps: 60
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "A18 Pro"
+    match: "a18 pro"
+    memory_type: "LPDDR5X-7500"
+    vendor: "apple"
+    bus_width_bits: 64
+    memory_speed_gbps: 7.5
+    stated_gbps: 60
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "A19"
+    match: "a19"
+    memory_type: "LPDDR5X-8533"
+    vendor: "apple"
+    bus_width_bits: 64
+    memory_speed_gbps: 8.533
+    stated_gbps: 68.3
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "A19 Pro"
+    match: "a19 pro 12gb"
+    memory_type: "LPDDR5X-9600"
+    vendor: "apple"
+    bus_width_bits: 64
+    memory_speed_gbps: 9.6
+    stated_gbps: 76.8
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
   - name: "A2 GPU accelerator"
     match: "a2"
     memory_type: "GDDR6"
@@ -1989,6 +2102,14 @@ devices:
     memory_speed_gbps: 12.504
     stated_gbps: 200
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "A20 Pro"
+    match: "a20 pro"
+    memory_type: "LPDDR5X-9600"
+    vendor: "apple"
+    bus_width_bits: 96
+    memory_speed_gbps: 9.6
+    stated_gbps: 115.2
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
   - name: "A30 GPU accelerator"
     match: "a30"
     memory_type: "HBM2"
@@ -2005,6 +2126,14 @@ devices:
     memory_speed_gbps: 2.43
     stated_gbps: 933.1
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "A4"
+    match: "a4"
+    memory_type: "LPDDR-400"
+    vendor: "apple"
+    bus_width_bits: 64
+    memory_speed_gbps: 0.4
+    stated_gbps: 3.2
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
   - name: "A40 GPU accelerator"
     match: "a40"
     memory_type: "GDDR6"
@@ -2021,6 +2150,78 @@ devices:
     memory_speed_gbps: 14.496
     stated_gbps: 695.8
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "A5"
+    match: "a5"
+    memory_type: "LPDDR2-800"
+    vendor: "apple"
+    bus_width_bits: 64
+    memory_speed_gbps: 0.8
+    stated_gbps: 6.4
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "A5X"
+    match: "a5x"
+    memory_type: "LPDDR2-800"
+    vendor: "apple"
+    bus_width_bits: 128
+    memory_speed_gbps: 0.8
+    stated_gbps: 12.8
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "A6"
+    match: "a6"
+    memory_type: "LPDDR2-1066"
+    vendor: "apple"
+    bus_width_bits: 64
+    memory_speed_gbps: 1.066
+    stated_gbps: 8.5
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "A6X"
+    match: "a6x"
+    memory_type: "LPDDR2-1066"
+    vendor: "apple"
+    bus_width_bits: 128
+    memory_speed_gbps: 1.066
+    stated_gbps: 17
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "A7"
+    match: "a7"
+    memory_type: "LPDDR3-1600"
+    vendor: "apple"
+    bus_width_bits: 64
+    memory_speed_gbps: 1.6
+    stated_gbps: 12.8
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "A8"
+    match: "a8"
+    memory_type: "LPDDR3-1600"
+    vendor: "apple"
+    bus_width_bits: 64
+    memory_speed_gbps: 1.6
+    stated_gbps: 12.8
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "A8X"
+    match: "a8x"
+    memory_type: "LPDDR3-1600"
+    vendor: "apple"
+    bus_width_bits: 128
+    memory_speed_gbps: 1.6
+    stated_gbps: 25.6
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "A9"
+    match: "a9"
+    memory_type: "LPDDR4-3200"
+    vendor: "apple"
+    bus_width_bits: 64
+    memory_speed_gbps: 3.2
+    stated_gbps: 25.6
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "A9X"
+    match: "a9x"
+    memory_type: "LPDDR4-3200"
+    vendor: "apple"
+    bus_width_bits: 128
+    memory_speed_gbps: 3.2
+    stated_gbps: 25.6
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
   - name: "Radeon AI Pro R9600"
     match: "ai pro r9600"
     memory_type: "GDDR6"
@@ -5852,7 +6053,7 @@ devices:
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_AMD_graphics_processing_units&oldid=1375945815", fetched_at: "2026-09-25" }
   - name: "Radeon HD 3200 Graphics"
     match: "hd 3200 graphics"
-    memory_type: "HT (system) + DDR2-1066 DDR3-1333 (sideport)"
+    memory_type: "HT + DDR2-1066 DDR3-1333"
     vendor: "amd"
     bus_width_bits: 16
     bandwidth_gbps: 20.8
@@ -5860,7 +6061,7 @@ devices:
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_AMD_graphics_processing_units&oldid=1375945815", fetched_at: "2026-09-25" }
   - name: "Radeon HD 3300 Graphics"
     match: "hd 3300 graphics"
-    memory_type: "HT (system) + DDR3-1333 (sideport)"
+    memory_type: "HT + DDR3-1333"
     vendor: "amd"
     bus_width_bits: 16
     bandwidth_gbps: 20.8
@@ -5980,7 +6181,7 @@ devices:
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_AMD_graphics_processing_units&oldid=1375945815", fetched_at: "2026-09-25" }
   - name: "Radeon HD 4200 Graphics"
     match: "hd 4200 graphics"
-    memory_type: "HT (system) + DDR2-1066 DDR3-1333 (sideport)"
+    memory_type: "HT + DDR2-1066 DDR3-1333"
     vendor: "amd"
     bus_width_bits: 16
     bandwidth_gbps: 20.8
@@ -5988,7 +6189,7 @@ devices:
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_AMD_graphics_processing_units&oldid=1375945815", fetched_at: "2026-09-25" }
   - name: "Radeon HD 4250 Graphics"
     match: "hd 4250 graphics"
-    memory_type: "HT (system) + DDR3-1333 (sideport)"
+    memory_type: "HT + DDR3-1333"
     vendor: "amd"
     bus_width_bits: 16
     bandwidth_gbps: 20.8
@@ -5996,7 +6197,7 @@ devices:
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_AMD_graphics_processing_units&oldid=1375945815", fetched_at: "2026-09-25" }
   - name: "Radeon HD 4290 Graphics"
     match: "hd 4290 graphics"
-    memory_type: "HT (system) + DDR3-1333 (sideport)"
+    memory_type: "HT + DDR3-1333"
     vendor: "amd"
     bus_width_bits: 16
     bandwidth_gbps: 20.8
@@ -6770,6 +6971,38 @@ devices:
     bandwidth_gbps: 4.736
     stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_AMD_graphics_processing_units&oldid=1375945815", fetched_at: "2026-09-25" }
+  - name: "M1"
+    match: "m1"
+    memory_type: "LPDDR4X-4266"
+    vendor: "apple"
+    bus_width_bits: 128
+    memory_speed_gbps: 4.266
+    stated_gbps: 68.25
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "M1 Max"
+    match: "m1 max"
+    memory_type: "LPDDR5-6400"
+    vendor: "apple"
+    bus_width_bits: 512
+    memory_speed_gbps: 6.4
+    stated_gbps: 409.6
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "M1 Pro"
+    match: "m1 pro"
+    memory_type: "LPDDR5-6400"
+    vendor: "apple"
+    bus_width_bits: 256
+    memory_speed_gbps: 6.4
+    stated_gbps: 204.8
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "M1 Ultra"
+    match: "m1 ultra"
+    memory_type: "LPDDR5-6400"
+    vendor: "apple"
+    bus_width_bits: 1024
+    memory_speed_gbps: 6.4
+    stated_gbps: 819.2
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
   - name: "M10 GPU accelerator"
     match: "m10"
     memory_type: "GDDR5"
@@ -6786,6 +7019,30 @@ devices:
     memory_speed_gbps: 5.188
     stated_gbps: 4
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "M2 Max"
+    match: "m2 max"
+    memory_type: "LPDDR5-6400"
+    vendor: "apple"
+    bus_width_bits: 512
+    memory_speed_gbps: 6.4
+    stated_gbps: 409.6
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "M2 Pro"
+    match: "m2 pro"
+    memory_type: "LPDDR5-6400"
+    vendor: "apple"
+    bus_width_bits: 256
+    memory_speed_gbps: 6.4
+    stated_gbps: 204.8
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "M2 Ultra"
+    match: "m2 ultra"
+    memory_type: "LPDDR5-6400"
+    vendor: "apple"
+    bus_width_bits: 1024
+    memory_speed_gbps: 6.4
+    stated_gbps: 819.2
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
   - name: "M2050 GPU Computing Module"
     match: "m2050 gpu computing"
     memory_type: "GDDR5"
@@ -6834,14 +7091,54 @@ devices:
     memory_speed_gbps: 3.7
     stated_gbps: 177.6
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
-  - name: "M4 GPU accelerator"
-    match: "m4"
-    memory_type: "GDDR5"
-    vendor: "nvidia"
+  - name: "M3"
+    match: "m3"
+    memory_type: "LPDDR5-6400"
+    vendor: "apple"
     bus_width_bits: 128
-    memory_speed_gbps: 5.5
-    stated_gbps: 88
-    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+    memory_speed_gbps: 6.4
+    stated_gbps: 102.4
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "M3 Max"
+    match: "m3 max 36gb"
+    memory_type: "LPDDR5-6400"
+    vendor: "apple"
+    bus_width_bits: 384
+    memory_speed_gbps: 6.4
+    stated_gbps: 307.2
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "M3 Max"
+    match: "m3 max 48gb"
+    memory_type: "LPDDR5-6400"
+    vendor: "apple"
+    bus_width_bits: 512
+    memory_speed_gbps: 6.4
+    stated_gbps: 409.6
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "M3 Pro"
+    match: "m3 pro"
+    memory_type: "LPDDR5-6400"
+    vendor: "apple"
+    bus_width_bits: 192
+    memory_speed_gbps: 6.4
+    stated_gbps: 153.6
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "M3 Ultra"
+    match: "m3 ultra"
+    memory_type: "LPDDR5-6400"
+    vendor: "apple"
+    bus_width_bits: 1024
+    memory_speed_gbps: 6.4
+    stated_gbps: 819.2
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "M4"
+    match: "m4"
+    memory_type: "LPDDR5X-7500"
+    vendor: "apple"
+    bus_width_bits: 128
+    memory_speed_gbps: 7.5
+    stated_gbps: 120
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
   - name: "M4 GPU accelerator"
     match: "m4 gpu accelerator"
     memory_type: "GDDR5"
@@ -6850,6 +7147,30 @@ devices:
     memory_speed_gbps: 5.5
     stated_gbps: 88
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "M4 Max"
+    match: "m4 max 36gb"
+    memory_type: "LPDDR5X-8533"
+    vendor: "apple"
+    bus_width_bits: 384
+    memory_speed_gbps: 8.533
+    stated_gbps: 409.6
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "M4 Max"
+    match: "m4 max 48gb"
+    memory_type: "LPDDR5X-8533"
+    vendor: "apple"
+    bus_width_bits: 512
+    memory_speed_gbps: 8.533
+    stated_gbps: 546
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "M4 Pro"
+    match: "m4 pro"
+    memory_type: "LPDDR5X-8533"
+    vendor: "apple"
+    bus_width_bits: 256
+    memory_speed_gbps: 8.533
+    stated_gbps: 273
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
   - name: "M40 GPU accelerator"
     match: "m40"
     memory_type: "GDDR5"
@@ -6866,6 +7187,46 @@ devices:
     memory_speed_gbps: 6
     stated_gbps: 288
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "M5"
+    match: "m5"
+    memory_type: "LPDDR5X-9600"
+    vendor: "apple"
+    bus_width_bits: 128
+    memory_speed_gbps: 9.6
+    stated_gbps: 153.6
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "M5 Max"
+    match: "m5 max 36gb"
+    memory_type: "LPDDR5X-9600"
+    vendor: "apple"
+    bus_width_bits: 384
+    memory_speed_gbps: 9.6
+    stated_gbps: 460.8
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "M5 Max"
+    match: "m5 max 48gb"
+    memory_type: "LPDDR5X-9600"
+    vendor: "apple"
+    bus_width_bits: 512
+    memory_speed_gbps: 9.6
+    stated_gbps: 614.4
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "M5 Pro"
+    match: "m5 pro"
+    memory_type: "LPDDR5X-9600"
+    vendor: "apple"
+    bus_width_bits: 256
+    memory_speed_gbps: 9.6
+    stated_gbps: 307.2
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "M5 Ultra"
+    match: "m5 ultra"
+    memory_type: "LPDDR5X-9600"
+    vendor: "apple"
+    bus_width_bits: 1024
+    memory_speed_gbps: 9.6
+    stated_gbps: 1.2
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
   - name: "M6 GPU accelerator"
     match: "m6"
     memory_type: "GDDR5"
@@ -6874,6 +7235,22 @@ devices:
     memory_speed_gbps: 4.6
     stated_gbps: 147.2
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "M6"
+    match: "m6 16gb"
+    memory_type: "LPDDR5X-9600"
+    vendor: "apple"
+    bus_width_bits: 128
+    memory_speed_gbps: 9.6
+    stated_gbps: 153.6
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
+  - name: "M6"
+    match: "m6 24gb"
+    memory_type: "LPDDR5X-10666"
+    vendor: "apple"
+    bus_width_bits: 128
+    memory_speed_gbps: 10.666
+    stated_gbps: 170.6
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=Apple_silicon&oldid=1376203578", fetched_at: "2026-09-25" }
   - name: "M6 GPU accelerator"
     match: "m6 gpu accelerator"
     memory_type: "GDDR5"

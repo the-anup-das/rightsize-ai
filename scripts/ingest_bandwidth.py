@@ -43,19 +43,23 @@ UA = "rightsize-hardware-ingest/0.0.1 (+https://github.com/the-anup-das/rightsiz
 PAGES = (
     ("List of Nvidia graphics processing units", "nvidia"),
     ("List of AMD graphics processing units", "amd"),
+    # Apple's table gives bus width, memory type and a stated bandwidth that reconcile:
+    # the M4 Max's 512-bit LPDDR5X-8533 is 546 GB/s, which is Apple's own figure.
+    ("Apple silicon", "apple"),
 )
 TOLERANCE = 0.02
 
 # Header cells we need, matched case-insensitively against the sub-header row.
 WANT = {
-    "model": ("model", "model name", "graphics", "chip", "model (code name)"),
-    "size": ("size (gb)", "size (gib)", "size (mb)", "size (mib)", "size"),
+    "model": ("model", "model name", "name", "graphics", "chip", "model (code name)"),
+    "size": ("size (gb)", "size (gib)", "size (mb)", "size (mib)", "size", "available capacity"),
     "bus_type": ("bus type", "memory type"),
+    "bus_width_apple": ("memory bus width",),
     "bus_width": ("bus width (bit)", "bus width (bits)"),
     # AMD's RDNA tables put both in one cell, e.g. "GDDR6 384-bit"
     "bus_type_width": ("bus type & width", "bus width & type"),
-    "bandwidth": ("bandwidth (gb/s)", "memory bandwidth (gb/s)"),
-    "mem_clock": ("memory (mhz) (gt/s)", "memory clock (mhz)"),
+    "bandwidth": ("bandwidth (gb/s)", "memory bandwidth (gb/s)", "theoretical bandwidth"),
+    "mem_clock": ("memory (mhz) (gt/s)", "memory clock (mhz)", "memory type"),
     # ... and state the data rate in MT/s rather than parenthesised Gbps
     "mem_rate_mts": ("clock (mt/s)", "memory (mt/s)"),
 }
@@ -168,7 +172,11 @@ RATE_RANGE = (0.4, 40.0)
 
 def _rate_gt_s(cell: str) -> float | None:
     """Effective data rate from 'clock (rate)' cells: '1313 (21.0)' -> 21.0 Gbps."""
-    m = re.search(r"\(\s*(\d+(?:\.\d+)?)\s*\)", cell)
+    # Memory standards name their own data rate: LPDDR5X-8533 is 8533 MT/s. Preferred over
+    # the parenthesised figure, which is sometimes the clock (half the rate) instead.
+    # Some rows use a non-breaking hyphen, hence the wide dash class.
+    named = re.search(r"\b(?:LP)?(?:G?DDR|HBM)\w*[-\u2010-\u2015\u2212 ](\d{3,6})\b", cell, re.I)
+    m = named or re.search(r"\(\s*(\d+(?:\.\d+)?)\s*(?:MHz|MT/s|Gbps)?\s*\)", cell, re.I)
     if not m:
         return None
     rate = float(m.group(1))
@@ -208,6 +216,8 @@ def rows_from(grid: list[list[str]]) -> list[dict[str, Any]]:
     """Data rows of one spec table, if it is one: needs a model and a bandwidth column."""
     for h in range(min(4, len(grid))):
         cols = columns(grid[h], grid[h - 1] if h else None)
+        if "bus_width_apple" in cols:
+            cols["bus_width"] = cols["bus_width_apple"]
         if "model" in cols and "bandwidth" in cols and ("bus_width" in cols or "bus_type_width" in cols):
             break
     else:
@@ -225,7 +235,9 @@ def rows_from(grid: list[list[str]]) -> list[dict[str, Any]]:
         if "bus_width" in cols:
             rec["bus_width"] = _num(row[cols["bus_width"]])
             if "bus_type" in cols:
-                rec["bus_type"] = row[cols["bus_type"]].strip() or None
+                # "LPDDR5X-8533 (4266 MHz)" -> "LPDDR5X-8533": the rate is in the name already
+                raw = re.sub(r"\s*\([^)]*\)", "", row[cols["bus_type"]])
+                rec["bus_type"] = raw.strip() or None
         else:
             rec["bus_type"], rec["bus_width"] = _type_and_width(row[cols["bus_type_width"]])
         if "size" in cols:
