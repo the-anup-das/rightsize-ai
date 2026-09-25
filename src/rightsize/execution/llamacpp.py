@@ -26,7 +26,7 @@ from rightsize.errors import MissingExtraError, RightsizeError
 from rightsize.registry import get as get_recipe
 from rightsize.registry import render
 from rightsize.registry.schema import RenderedStep
-from rightsize.types import Measurement, RunStep
+from rightsize.types import GB, GIB, Measurement, RunStep
 
 Log = Callable[[str], None]
 
@@ -127,7 +127,8 @@ class _VramSampler:
 
     @property
     def peak_gb(self) -> float | None:
-        return round(self.peak_mib * 1024**2 / 1e9, 2) if self.peak_mib else None
+        """Peak in decimal GB, to sit next to the fit engine's prediction in a Measurement."""
+        return round(self.peak_mib * 1024**2 / GB, 2) if self.peak_mib else None
 
 
 # ------------------------------------------------------------------ GPU preflight
@@ -154,11 +155,15 @@ def _smi(query: str) -> list[str]:
 
 
 def gpu_memory() -> tuple[float, float] | None:
-    """(free_gb, total_gb) for the first NVIDIA GPU, or None when there is none."""
+    """(free_gib, total_gib) for the first NVIDIA GPU, or None when there is none.
+
+    In GiB, the unit nvidia-smi itself uses, so what rightsize prints can be compared with
+    what the driver prints. Model sizes are decimal GB; ``preflight_vram`` converts.
+    """
     for line in _smi("gpu=memory.free,memory.total"):
         parts = [p.strip() for p in line.split(",")]
         if len(parts) == 2 and all(p.isdigit() for p in parts):
-            free, total = (int(p) * 1024**2 / 1e9 for p in parts)
+            free, total = (int(p) * 1024**2 / GIB for p in parts)
             return round(free, 2), round(total, 2)
     return None
 
@@ -174,12 +179,15 @@ def gpu_holders() -> list[str]:
         if not any(h in stem.lower() for h in _GPU_HOGS):
             continue
         mib = used.strip()
-        found.append(f"{stem} ({int(mib) * 1024**2 / 1e9:.1f} GB)" if mib.isdigit() else stem)
+        found.append(f"{stem} ({int(mib) * 1024**2 / GIB:.1f} GiB)" if mib.isdigit() else stem)
     return found
 
 
 def preflight_vram(need_gb: float, *, what: str, log: Log) -> bool:
     """Log free VRAM before a GPU step; warn when another process leaves too little.
+
+    ``need_gb`` is a model size in decimal GB, as the fit engine reports it; the comparison
+    happens in GiB so it lines up with the driver's own numbers.
 
     Returns True when the step looks safe. A step that starts with just enough memory can
     still die later if the other process grows, so this warns rather than blocks.
@@ -188,13 +196,14 @@ def preflight_vram(need_gb: float, *, what: str, log: Log) -> bool:
     if mem is None:
         return True
     free, total = mem
-    if free >= need_gb:
-        log(f"gpu: {free:.1f} GB free of {total:.1f} GB, {what} needs about {need_gb:.1f} GB")
+    need = need_gb * GB / GIB
+    if free >= need:
+        log(f"gpu: {free:.1f} GiB free of {total:.1f} GiB, {what} needs about {need:.1f} GiB")
         return True
     holders = gpu_holders()
     log(
-        f"gpu: only {free:.1f} GB free of {total:.1f} GB but {what} needs about "
-        f"{need_gb:.1f} GB. llama.cpp will fail mid-run, often without an error message."
+        f"gpu: only {free:.1f} GiB free of {total:.1f} GiB but {what} needs about "
+        f"{need:.1f} GiB. llama.cpp will fail mid-run, often without an error message."
     )
     if holders:
         log(f"gpu: memory is held by {', '.join(holders)} - unload it, or pass --gpu-layers 0")
@@ -463,7 +472,7 @@ def gate(metrics: dict[str, float]) -> dict[str, object]:
 
 
 def file_size_gb(path: Path) -> float:
-    return round(path.stat().st_size / 1e9, 3)
+    return round(path.stat().st_size / GB, 3)
 
 
 def write_manifest(manifest, run_dir: Path) -> Path:

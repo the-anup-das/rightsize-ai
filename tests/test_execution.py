@@ -106,7 +106,7 @@ _SMI_APPS = [
 
 def test_gpu_memory_parses_free_and_total(monkeypatch) -> None:
     monkeypatch.setattr(llamacpp, "_smi", lambda q: _SMI_MEM)
-    assert llamacpp.gpu_memory() == (4.08, 17.17)
+    assert llamacpp.gpu_memory() == (3.8, 15.99)
     monkeypatch.setattr(llamacpp, "_smi", lambda q: [])
     assert llamacpp.gpu_memory() is None
 
@@ -114,18 +114,18 @@ def test_gpu_memory_parses_free_and_total(monkeypatch) -> None:
 def test_gpu_holders_keeps_runtimes_and_handles_missing_sizes(monkeypatch) -> None:
     monkeypatch.setattr(llamacpp, "_smi", lambda q: _SMI_APPS)
     holders = llamacpp.gpu_holders()
-    assert holders == ["llama-server", "ollama (8.6 GB)"], "explorer.exe is not worth reporting"
+    assert holders == ["llama-server", "ollama (8.0 GiB)"], "explorer.exe is not worth reporting"
 
 
 def test_preflight_warns_and_names_the_holder(monkeypatch) -> None:
     monkeypatch.setattr(llamacpp, "_smi", lambda q: _SMI_MEM if "gpu=" in q else _SMI_APPS)
     said: list[str] = []
     assert llamacpp.preflight_vram(5.0, what="the reference pass", log=said.append) is False
-    assert "only 4.1 GB free" in said[0] and "needs about 5.0 GB" in said[0]
+    assert "only 3.8 GiB free" in said[0] and "needs about 4.7 GiB" in said[0]
     assert "llama-server" in said[1]
     said.clear()
     assert llamacpp.preflight_vram(2.0, what="imatrix", log=said.append) is True
-    assert said and "4.1 GB free" in said[0]
+    assert said and "3.8 GiB free" in said[0]
 
 
 def test_preflight_is_quiet_without_nvidia_smi(monkeypatch) -> None:

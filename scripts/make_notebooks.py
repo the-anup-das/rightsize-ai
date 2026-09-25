@@ -149,7 +149,7 @@ Every preset carries provenance (where the bandwidth number came from). Detectio
     code("""
 from rightsize.hardware import presets, get, detect
 for name, d in presets().items():
-    print(f"{name:24s} {d.memory_gb:6.0f} GB  {d.bandwidth_gbps:6.0f} GB/s  {d.compute_arch or '':10s} {d.provenance.source_url}")
+    print(f"{name:24s} {d.memory_gib:6.0f} GiB {d.bandwidth_gbps:6.0f} GB/s  {d.compute_arch or '':10s} {d.provenance.source_url}")
 """),
     code("""
 get("4090"), get("GeForce RTX 4070 Ti SUPER 16GB").bandwidth_gbps

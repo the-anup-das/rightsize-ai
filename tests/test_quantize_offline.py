@@ -38,7 +38,7 @@ def fake_env(monkeypatch, tmp_path: Path):
         version="test",
     )
     monkeypatch.setattr(q, "find_tools", lambda explicit=None: tools)
-    dev = Device(name="RTX 4070 Ti SUPER 16GB", vendor="nvidia", memory_gb=16, bandwidth_gbps=672)
+    dev = Device(name="RTX 4070 Ti SUPER 16GB", vendor="nvidia", memory_gib=16, bandwidth_gbps=672)
     return fx, tools, dev, tmp_path
 
 

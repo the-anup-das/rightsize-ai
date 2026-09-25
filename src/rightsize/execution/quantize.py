@@ -41,7 +41,7 @@ from rightsize.execution.llamacpp import (
 from rightsize.execution.progress import parser_for
 from rightsize.fit import estimate, predicted_file_gb
 from rightsize.hardware import resolve as resolve_device
-from rightsize.types import Device, Measurement, ModelRef, RunManifest, RunStep
+from rightsize.types import GB, Device, Measurement, ModelRef, RunManifest, RunStep
 
 Log = Callable[[str], None]
 
@@ -65,7 +65,7 @@ def _logits_gb(facts, chunks: int | None, ctx: int = EVAL_CTX) -> float:
     """
     vocab = (facts.extra or {}).get("vocab_size") or 32000
     per_token = (2 * ((vocab + 1) // 2) + 4) * 2
-    return per_token * (ctx // 2 - 1) * (chunks or 640) / 1e9
+    return per_token * (ctx // 2 - 1) * (chunks or 640) / GB
 
 
 def _now_id() -> str:
@@ -165,7 +165,7 @@ def quantize_model(
         f"model {repo}: {facts.params_total / 1e9:.2f}B params, {facts.num_layers} layers, "
         f"kv_heads {facts.num_kv_heads}, head_dim {facts.head_dim}"
     )
-    log(f"device {dev.name}: {dev.memory_gb} GB, bandwidth {dev.bandwidth_gbps} GB/s")
+    log(f"device {dev.name}: {dev.memory_gib} GiB, bandwidth {dev.bandwidth_gbps} GB/s")
     for q in quants:
         manifest.predicted[q] = estimate(facts, q, dev, ctx=ctx)
         fr = manifest.predicted[q]

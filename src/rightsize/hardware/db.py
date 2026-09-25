@@ -13,8 +13,8 @@ def _to_device(rec: dict) -> Device:
     return Device(
         name=rec["name"],
         vendor=rec.get("vendor", "other"),
-        memory_gb=rec["memory_gb"],
-        system_ram_gb=rec.get("system_ram_gb"),
+        memory_gib=rec["memory_gib"],
+        system_ram_gib=rec.get("system_ram_gib"),
         bandwidth_gbps=rec.get("bandwidth_gbps"),
         compute_arch=rec.get("compute_arch"),
         backends=list(rec.get("backends", [])),

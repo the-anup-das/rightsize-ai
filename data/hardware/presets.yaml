@@ -1,11 +1,14 @@
-# Hardware presets. Every record carries provenance. Bandwidth is the vendor-stated peak memory
-# bandwidth in GB/s (decimal). usable_fraction is the share of memory the runtime can use in
-# practice (Apple defaults to ~70% of unified memory for the GPU; discrete GPUs lose ~0.5-1 GB to
-# the driver and display). Values marked hand: true were typed from the cited page, not ingested.
+# Hardware presets. Every record carries provenance. memory_gib is the card's memory in GiB
+# (1024**3 bytes) exactly as the vendor and nvidia-smi state it, so a "16GB" card is 16 here;
+# rightsize converts it to decimal GB (17.18) before comparing it with model sizes. Bandwidth is
+# the vendor-stated peak memory bandwidth in GB/s (decimal). usable_fraction is the share of
+# memory the runtime can use in practice (Apple defaults to ~70% of unified memory for the GPU;
+# discrete GPUs lose ~0.5-1 GB to the driver and display). Values marked hand: true were typed
+# from the cited page, not ingested.
 presets:
   - name: RTX 3060 12GB
     vendor: nvidia
-    memory_gb: 12
+    memory_gib: 12
     bandwidth_gbps: 360
     compute_arch: ampere
     compute_capability: 8.6
@@ -14,7 +17,7 @@ presets:
     provenance: { source_url: https://www.techpowerup.com/gpu-specs/geforce-rtx-3060-12-gb.c3682, fetched_at: "2026-09-25", hand: true }
   - name: RTX 4070 12GB
     vendor: nvidia
-    memory_gb: 12
+    memory_gib: 12
     bandwidth_gbps: 504
     compute_arch: ada
     compute_capability: 8.9
@@ -23,7 +26,7 @@ presets:
     provenance: { source_url: https://www.techpowerup.com/gpu-specs/geforce-rtx-4070.c3924, fetched_at: "2026-09-25", hand: true }
   - name: RTX 4070 Ti SUPER 16GB
     vendor: nvidia
-    memory_gb: 16
+    memory_gib: 16
     bandwidth_gbps: 672
     compute_arch: ada
     compute_capability: 8.9
@@ -32,7 +35,7 @@ presets:
     provenance: { source_url: https://www.techpowerup.com/gpu-specs/geforce-rtx-4070-ti-super.c4187, fetched_at: "2026-09-25", hand: true }
   - name: RTX 4090 24GB
     vendor: nvidia
-    memory_gb: 24
+    memory_gib: 24
     bandwidth_gbps: 1008
     compute_arch: ada
     compute_capability: 8.9
@@ -41,7 +44,7 @@ presets:
     provenance: { source_url: https://www.techpowerup.com/gpu-specs/geforce-rtx-4090.c3889, fetched_at: "2026-09-25", hand: true }
   - name: RTX 5060 Ti 16GB
     vendor: nvidia
-    memory_gb: 16
+    memory_gib: 16
     bandwidth_gbps: 448
     compute_arch: blackwell
     compute_capability: 12.0
@@ -50,7 +53,7 @@ presets:
     provenance: { source_url: https://www.techpowerup.com/gpu-specs/geforce-rtx-5060-ti-16-gb.c4292, fetched_at: "2026-09-25", hand: true }
   - name: RTX 5090 32GB
     vendor: nvidia
-    memory_gb: 32
+    memory_gib: 32
     bandwidth_gbps: 1792
     compute_arch: blackwell
     compute_capability: 12.0
@@ -59,7 +62,7 @@ presets:
     provenance: { source_url: https://www.techpowerup.com/gpu-specs/geforce-rtx-5090.c4216, fetched_at: "2026-09-25", hand: true }
   - name: T4 16GB
     vendor: nvidia
-    memory_gb: 16
+    memory_gib: 16
     bandwidth_gbps: 320
     compute_arch: turing
     compute_capability: 7.5
@@ -68,7 +71,7 @@ presets:
     provenance: { source_url: https://www.techpowerup.com/gpu-specs/tesla-t4.c3316, fetched_at: "2026-09-25", hand: true }
   - name: L4 24GB
     vendor: nvidia
-    memory_gb: 24
+    memory_gib: 24
     bandwidth_gbps: 300
     compute_arch: ada
     compute_capability: 8.9
@@ -77,7 +80,7 @@ presets:
     provenance: { source_url: https://www.techpowerup.com/gpu-specs/l4.c4091, fetched_at: "2026-09-25", hand: true }
   - name: A100 80GB
     vendor: nvidia
-    memory_gb: 80
+    memory_gib: 80
     bandwidth_gbps: 2039
     compute_arch: ampere
     compute_capability: 8.0
@@ -86,7 +89,7 @@ presets:
     provenance: { source_url: https://www.techpowerup.com/gpu-specs/a100-sxm4-80-gb.c3746, fetched_at: "2026-09-25", hand: true }
   - name: H100 80GB
     vendor: nvidia
-    memory_gb: 80
+    memory_gib: 80
     bandwidth_gbps: 3350
     compute_arch: hopper
     compute_capability: 9.0
@@ -95,7 +98,7 @@ presets:
     provenance: { source_url: https://www.techpowerup.com/gpu-specs/h100-sxm5-80-gb.c3900, fetched_at: "2026-09-25", hand: true }
   - name: MI300X 192GB
     vendor: amd
-    memory_gb: 192
+    memory_gib: 192
     bandwidth_gbps: 5300
     compute_arch: cdna3
     backends: [rocm]
@@ -103,7 +106,7 @@ presets:
     provenance: { source_url: https://www.amd.com/en/products/accelerators/instinct/mi300/mi300x.html, fetched_at: "2026-09-25", hand: true }
   - name: M4 Max 64GB
     vendor: apple
-    memory_gb: 64
+    memory_gib: 64
     bandwidth_gbps: 546
     compute_arch: m4
     backends: [metal]
@@ -111,7 +114,7 @@ presets:
     provenance: { source_url: https://www.apple.com/newsroom/2024/10/apple-introduces-m4-pro-and-m4-max/, fetched_at: "2026-09-25", hand: true }
   - name: M4 Pro 24GB
     vendor: apple
-    memory_gb: 24
+    memory_gib: 24
     bandwidth_gbps: 273
     compute_arch: m4
     backends: [metal]
@@ -119,7 +122,7 @@ presets:
     provenance: { source_url: https://www.apple.com/newsroom/2024/10/apple-introduces-m4-pro-and-m4-max/, fetched_at: "2026-09-25", hand: true }
   - name: M4 16GB
     vendor: apple
-    memory_gb: 16
+    memory_gib: 16
     bandwidth_gbps: 120
     compute_arch: m4
     backends: [metal]
@@ -127,7 +130,7 @@ presets:
     provenance: { source_url: https://www.apple.com/newsroom/2024/05/apple-introduces-m4-chip/, fetched_at: "2026-09-25", hand: true }
   - name: DGX Spark 128GB
     vendor: nvidia
-    memory_gb: 128
+    memory_gib: 128
     bandwidth_gbps: 273
     compute_arch: blackwell
     compute_capability: 12.1
@@ -136,7 +139,7 @@ presets:
     provenance: { source_url: https://www.nvidia.com/en-us/products/workstations/dgx-spark/, fetched_at: "2026-09-25", hand: true }
   - name: CPU only 32GB
     vendor: cpu
-    memory_gb: 32
+    memory_gib: 32
     bandwidth_gbps: 60
     compute_arch: x86
     backends: [cpu]

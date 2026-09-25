@@ -16,6 +16,11 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+#: Sizes in rightsize are decimal GB (1e9 bytes), matching Hugging Face's file listings.
+#: Device memory is authored in GiB (1024**3 bytes), matching what the hardware reports.
+GB = 1e9
+GIB = 1024**3
+
 
 class Family(StrEnum):
     """Model family. Each has its own estimator (F3)."""
@@ -52,14 +57,23 @@ class Provenance(BaseModel):
 
 
 class Device(BaseModel):
-    """A fine-tuning box or a target device (F2)."""
+    """A fine-tuning box or a target device (F2).
+
+    Two units live here on purpose, because the two things a user compares against use
+    different ones. Memory is authored in **GiB** (1024**3 bytes): that is what the card
+    holds, what nvidia-smi and llama.cpp print, and what the box says on the shelf. Model
+    sizes everywhere else in rightsize are **decimal GB** (1e9 bytes), matching Hugging
+    Face's file listings and the published numbers our golden tests are checked against.
+    The ``_gb`` properties below convert, so the fit engine only ever compares GB with GB.
+    A 16 GiB card is 17.18 GB, and getting that wrong makes every verdict 7% pessimistic.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
     name: str
     vendor: Literal["nvidia", "amd", "intel", "apple", "qualcomm", "cpu", "other"] = "other"
-    memory_gb: float = Field(gt=0, description="VRAM, or unified memory on Apple")
-    system_ram_gb: float | None = None
+    memory_gib: float = Field(gt=0, description="VRAM, or unified memory on Apple, in GiB")
+    system_ram_gib: float | None = None
     bandwidth_gbps: float | None = Field(default=None, description="Memory bandwidth, GB/s")
     compute_arch: str | None = Field(
         default=None, description="e.g. ada, hopper, blackwell, rdna3, m4, sm_89"
@@ -68,6 +82,15 @@ class Device(BaseModel):
     os: Literal["linux", "windows", "macos", "ios", "android", "unknown"] = "unknown"
     usable_fraction: float = Field(default=1.0, gt=0, le=1.0)
     provenance: Provenance | None = None
+
+    @property
+    def memory_gb(self) -> float:
+        """Memory in decimal GB, the unit the fit engine and every size estimate use."""
+        return round(self.memory_gib * GIB / GB, 3)
+
+    @property
+    def system_ram_gb(self) -> float | None:
+        return round(self.system_ram_gib * GIB / GB, 3) if self.system_ram_gib else None
 
 
 class ModelRef(BaseModel):

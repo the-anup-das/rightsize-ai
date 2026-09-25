@@ -128,10 +128,10 @@ def cmd_detect(args: argparse.Namespace) -> int:
             [
                 dev.name,
                 dev.vendor,
-                f"{dev.memory_gb} GB",
+                f"{dev.memory_gib} GiB",
                 f"{dev.bandwidth_gbps or '?'} GB/s",
                 dev.compute_arch or "?",
-                f"{dev.system_ram_gb or '?'} GB",
+                f"{dev.system_ram_gib or '?'} GiB",
                 dev.os,
             ]
         ],
@@ -163,7 +163,7 @@ def cmd_estimate(args: argparse.Namespace) -> int:
     con.info(
         f"{fx.params_total / 1e9:.2f}B params, {fx.num_layers} layers, "
         f"kv_heads {fx.num_kv_heads}, head_dim {fx.head_dim}  |  "
-        f"{dev.memory_gb} GB, {dev.bandwidth_gbps or '?'} GB/s, ctx {args.ctx}"
+        f"{dev.memory_gib} GiB, {dev.bandwidth_gbps or '?'} GB/s, ctx {args.ctx}"
     )
     rows, styles = [], []
     for q, r in results.items():

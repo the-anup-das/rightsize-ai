@@ -12,7 +12,7 @@ import re
 import subprocess
 import sys
 
-from rightsize.types import Device, Provenance
+from rightsize.types import GIB, Device, Provenance
 
 
 def _run(cmd: list[str], timeout: float = 15.0) -> str | None:
@@ -27,13 +27,13 @@ def _os_name() -> str:
     return {"win32": "windows", "darwin": "macos", "linux": "linux"}.get(sys.platform, "unknown")
 
 
-def system_ram_gb() -> float | None:
+def system_ram_gib() -> float | None:
     if sys.platform == "win32":
         out = _run(["wmic", "ComputerSystem", "get", "TotalPhysicalMemory"])
         if out:
             digits = re.findall(r"\d+", out)
             if digits:
-                return round(int(digits[0]) / 1e9, 1)
+                return round(int(digits[0]) / GIB, 1)
         out = _run(
             [
                 "powershell",
@@ -43,17 +43,17 @@ def system_ram_gb() -> float | None:
             ]
         )
         if out and out.strip().isdigit():
-            return round(int(out.strip()) / 1e9, 1)
+            return round(int(out.strip()) / GIB, 1)
     elif sys.platform == "darwin":
         out = _run(["sysctl", "-n", "hw.memsize"])
         if out and out.strip().isdigit():
-            return round(int(out.strip()) / 1e9, 1)
+            return round(int(out.strip()) / GIB, 1)
     else:
         try:
             with open("/proc/meminfo", encoding="utf-8") as fh:
                 for line in fh:
                     if line.startswith("MemTotal:"):
-                        return round(int(line.split()[1]) * 1024 / 1e9, 1)
+                        return round(int(line.split()[1]) * 1024 / GIB, 1)
         except OSError:
             pass
     return None
@@ -76,7 +76,7 @@ def nvidia_gpus() -> list[dict]:
             gpus.append(
                 {
                     "name": parts[0],
-                    "memory_gb": round(int(parts[1]) / 1024, 1),
+                    "memory_gib": round(int(parts[1]) / 1024, 1),
                     "driver": parts[2] if len(parts) > 2 else None,
                 }
             )
@@ -90,7 +90,7 @@ def _apple_chip() -> str | None:
 
 def detect() -> Device:
     """Best-effort local device. Never imports torch. Raises nothing; unknown fields stay None."""
-    ram = system_ram_gb()
+    ram = system_ram_gib()
     os_name = _os_name()
     prov = Provenance(
         source_url="local://detect", fetched_at="now", note="rightsize.hardware.detect"
@@ -102,8 +102,8 @@ def detect() -> Device:
         dev = Device(
             name=g["name"],
             vendor="nvidia",
-            memory_gb=g["memory_gb"],
-            system_ram_gb=ram,
+            memory_gib=g["memory_gib"],
+            system_ram_gib=ram,
             backends=["cuda", "vulkan"],
             os=os_name,
             usable_fraction=0.92,
@@ -117,8 +117,8 @@ def detect() -> Device:
         dev = Device(
             name=chip,
             vendor="apple",
-            memory_gb=ram or 8.0,
-            system_ram_gb=ram,
+            memory_gib=ram or 8.0,
+            system_ram_gib=ram,
             backends=["metal"],
             os=os_name,
             usable_fraction=0.70,
@@ -131,8 +131,8 @@ def detect() -> Device:
     return Device(
         name=cpu,
         vendor="cpu",
-        memory_gb=ram or 8.0,
-        system_ram_gb=ram,
+        memory_gib=ram or 8.0,
+        system_ram_gib=ram,
         backends=["cpu"],
         os=os_name,
         usable_fraction=0.80,
@@ -145,7 +145,7 @@ def _fill_from_preset(dev: Device) -> None:
     from rightsize.hardware.db import get
 
     try:
-        p = get(f"{dev.name} {int(round(dev.memory_gb))}GB")
+        p = get(f"{dev.name} {int(round(dev.memory_gib))}GB")
     except KeyError:
         try:
             p = get(dev.name)

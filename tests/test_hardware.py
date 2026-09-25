@@ -13,7 +13,7 @@ def test_presets_have_provenance_and_bandwidth() -> None:
     assert len(table) >= 14
     for dev in table.values():
         assert dev.provenance and dev.provenance.source_url.startswith("https://")
-        assert dev.bandwidth_gbps and dev.memory_gb > 0
+        assert dev.bandwidth_gbps and dev.memory_gib > 0
 
 
 @pytest.mark.parametrize(
@@ -36,7 +36,7 @@ def test_unknown_preset_raises_with_hint() -> None:
 
 
 def test_resolve_accepts_device_or_name() -> None:
-    d = Device(name="x", memory_gb=8)
+    d = Device(name="x", memory_gib=8)
     assert resolve(d) is d
     assert resolve("RTX 3060").name == "RTX 3060 12GB"
 
@@ -47,7 +47,7 @@ def test_nvidia_smi_parser(monkeypatch) -> None:
     )
     gpus = probe.nvidia_gpus()
     assert gpus == [
-        {"name": "NVIDIA GeForce RTX 4070 Ti SUPER", "memory_gb": 16.0, "driver": "610.88"}
+        {"name": "NVIDIA GeForce RTX 4070 Ti SUPER", "memory_gib": 16.0, "driver": "610.88"}
     ]
 
 
@@ -55,13 +55,29 @@ def test_detect_fills_bandwidth_from_preset(monkeypatch) -> None:
     monkeypatch.setattr(
         probe,
         "nvidia_gpus",
-        lambda: [{"name": "NVIDIA GeForce RTX 4070 Ti SUPER", "memory_gb": 16.0, "driver": "x"}],
+        lambda: [{"name": "NVIDIA GeForce RTX 4070 Ti SUPER", "memory_gib": 16.0, "driver": "x"}],
     )
-    monkeypatch.setattr(probe, "system_ram_gb", lambda: 64.0)
+    monkeypatch.setattr(probe, "system_ram_gib", lambda: 64.0)
     dev = probe.detect()
-    assert dev.vendor == "nvidia" and dev.memory_gb == 16.0 and dev.system_ram_gb == 64.0
+    assert dev.vendor == "nvidia" and dev.memory_gib == 16.0 and dev.system_ram_gib == 64.0
     assert dev.bandwidth_gbps == 672 and dev.compute_arch == "ada"
 
 
 def test_norm_strips_vendor_words() -> None:
     assert db._norm("NVIDIA GeForce RTX 4090 24 GB") == "rtx 4090 24gb"
+
+
+def test_device_memory_is_gib_and_converts_to_decimal_gb() -> None:
+    """A "16 GB" card holds 16 GiB, which is 17.18 decimal GB.
+
+    Presets and detection speak GiB, because that is what the vendor and nvidia-smi say
+    (this card reports 16376 MiB). Every model size in rightsize is decimal GB, so the fit
+    engine reads Device.memory_gb. Treating the 16 as decimal made every verdict on this
+    card 7% pessimistic, which is exactly the margin borderline models live in.
+    """
+    dev = get("RTX 4070 Ti SUPER")
+    assert dev.memory_gib == 16
+    assert dev.memory_gb == 17.18
+    assert pytest.approx(dev.memory_gib, abs=0.01) == 16376 / 1024
+    assert Device(name="cpu box", memory_gib=8, system_ram_gib=64).system_ram_gb == 68.719
+    assert Device(name="no ram", memory_gib=8).system_ram_gb is None
