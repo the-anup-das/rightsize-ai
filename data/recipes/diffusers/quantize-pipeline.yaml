@@ -1,0 +1,32 @@
+id: diffusers/quantize-pipeline
+framework: diffusers
+stage: quantize
+families: [diffusion]
+hardware: { vendors: [nvidia, amd, intel] }
+install_line: pip install -U diffusers transformers accelerate bitsandbytes
+kind: config
+language: python
+inputs:
+  model: { type: str, required: true }
+  components: { type: str, default: '["transformer", "text_encoder_2"]', help: "the components to quantize; FLUX: transformer and text_encoder_2 (T5)" }
+  offload: { type: bool, default: false, help: "enable_model_cpu_offload instead of moving the pipeline to the GPU" }
+template: |
+  import torch
+  from diffusers import DiffusionPipeline
+  from diffusers.quantizers import PipelineQuantizationConfig
+
+  quant = PipelineQuantizationConfig(
+      quant_backend="bitsandbytes_4bit",
+      quant_kwargs={"load_in_4bit": True, "bnb_4bit_quant_type": "nf4",
+                    "bnb_4bit_compute_dtype": torch.bfloat16},
+      components_to_quantize={{ components }},
+  )
+  pipe = DiffusionPipeline.from_pretrained("{{ model }}", quantization_config=quant, dtype=torch.bfloat16)
+  {% if offload %}pipe.enable_model_cpu_offload(){% endif %}{% if not offload %}pipe.to("cuda"){% endif %}
+notes:
+  - "rightsize estimate MODEL --quant nf4 --te-quant nf4 --offload model sizes this before you download it"
+  - "dtype= replaces torch_dtype= (passing both is an error)"
+  - "torchao instead: quant_mapping={'transformer': TorchAoConfig(Int8WeightOnlyConfig())}; TorchAoConfig no longer takes strings, and the docs' Int8WeightOnlyConfig(group_size=128, version=2) fails on torchao 0.18"
+source_doc_url: https://huggingface.co/docs/diffusers/en/quantization/overview
+version_tested: 0.40.0
+verified: docs

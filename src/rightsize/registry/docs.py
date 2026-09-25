@@ -51,7 +51,8 @@ def page(framework: str, recipes: list[Recipe]) -> str:
                      + (f" at {r.version_tested}." if r.version_tested else "."))
         if r.install_line:
             lines += ["", f"Install: {r.install_line}"]
-        lines += ["", "```" + ("bash" if r.kind == "command" else ""), _example(r), "```", ""]
+        fence = "bash" if r.kind == "command" else (r.language or "")
+        lines += ["", "```" + fence, _example(r), "```", ""]
         if r.inputs:
             lines += ["| input | type | default | notes |", "|---|---|---|---|"]
             for name, spec in r.inputs.items():

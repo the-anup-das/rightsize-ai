@@ -1,0 +1,23 @@
+id: mlx-lm/lora
+framework: mlx-lm
+stage: finetune
+families: [llm]
+hardware: { vendors: [apple] }
+install_line: pip install mlx-lm
+kind: command
+inputs:
+  model: { type: str, required: true, help: "Hub id or local path; a quantized model trains QLoRA" }
+  data: { type: path, default: data, help: "a directory with train.jsonl (and valid.jsonl), or a Hub dataset" }
+  iters: { type: int, default: 1000 }
+  batch_size: { type: int, default: 4 }
+  adapter_dir: { type: path, default: adapters }
+template: >-
+  mlx_lm.lora --model {{ model }} --train --data {{ data }} --iters {{ iters }} --batch-size {{ batch_size }} --adapter-path {{ adapter_dir }}
+notes:
+  - "QLoRA means a quantized model: convert with mlx_lm.convert -q first, or start from a 4-bit mlx-community repo"
+  - "rank, scale and dropout have no flags: set lora_parameters in a YAML passed with -c (the key is scale, not alpha)"
+  - "--fine-tune-type dora or full switches the method; --num-layers (default 16) sets how many layers train"
+  - "the result is an adapter: fuse it into a 16-bit model before converting to GGUF"
+source_doc_url: https://github.com/ml-explore/mlx-lm/blob/main/mlx_lm/LORA.md
+version_tested: 0.31.3
+verified: docs

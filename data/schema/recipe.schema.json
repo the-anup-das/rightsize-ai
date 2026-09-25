@@ -117,6 +117,25 @@
       "title": "Kind",
       "type": "string"
     },
+    "language": {
+      "anyOf": [
+        {
+          "enum": [
+            "bash",
+            "python",
+            "yaml",
+            "modelfile"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "what a config renders to; tests parse python and yaml renders",
+      "title": "Language"
+    },
     "notes": {
       "items": {
         "type": "string"

@@ -1,0 +1,27 @@
+id: transformers/bnb-nf4
+framework: transformers
+stage: quantize
+families: [llm]
+hardware: { vendors: [nvidia, amd, intel] }
+install_line: pip install --upgrade transformers accelerate bitsandbytes
+kind: config
+language: python
+inputs:
+  model: { type: str, required: true }
+  double_quant: { type: enum, values: ["True", "False"], default: "True", help: "saves about 0.4 bits per parameter" }
+template: |
+  import torch
+  from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+
+  bnb_config = BitsAndBytesConfig(
+      load_in_4bit=True, bnb_4bit_quant_type="nf4",
+      bnb_4bit_compute_dtype=torch.bfloat16, bnb_4bit_use_double_quant={{ double_quant }})
+  model = AutoModelForCausalLM.from_pretrained(
+      "{{ model }}", quantization_config=bnb_config, device_map="auto", dtype=torch.bfloat16)
+  tokenizer = AutoTokenizer.from_pretrained("{{ model }}")
+notes:
+  - "quantizes while loading; nothing is written to disk"
+  - "transformers 5 removed load_in_4bit= as a from_pretrained argument, and dtype= replaces torch_dtype="
+source_doc_url: https://huggingface.co/docs/transformers/en/quantization/bitsandbytes
+version_tested: 5.17.0
+verified: docs

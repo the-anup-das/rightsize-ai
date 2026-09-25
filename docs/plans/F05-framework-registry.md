@@ -120,14 +120,24 @@ The 14 MVP recipes above plus 4 serve recipes; docs generation; entry point disc
 - [ ] `data/schema/recipe.schema.json`; `FrameworkInfo`, `RenderedStep` types
       (partial: recipe schema exported and every recipe validated in CI; no `FrameworkInfo` yet)
 - [x] Minimal template renderer with tests (token-by-token, so Windows paths survive)
-- [ ] Loader for bundled recipes + entry-point discovery
-      (partial: bundled loader works; no entry points)
-- [ ] 14 MVP quantize / fine-tune recipes + 4 serve recipes, each with `source_doc_url` and `version_tested`
-      (partial: five llama.cpp recipes - convert, imatrix, quantize, KLD base, KLD eval)
+- [x] Loader for bundled recipes + entry-point discovery (`rightsize.recipes`; a plugin may
+      add recipes but not replace a bundled one)
+- [x] 14 MVP quantize / fine-tune recipes + 4 serve recipes, each with `source_doc_url` and `version_tested`:
+      24 recipes over 14 frameworks. llama.cpp's six were run (`verified: run`, `help` for the
+      server). The other 18 (Unsloth, TRL, Axolotl, MLX-LM x3, vLLM, Ollama x2, Optimum Intel,
+      llm-compressor x2, transformers + bnb, diffusers, whisper.cpp x2, CTranslate2,
+      sentence-transformers) were checked on 2026-09-25 against each tool's current docs and,
+      where the docs were stale, its source: `verified: docs`, nothing run yet. Traps the check
+      found, each now a recipe note: Unsloth pins trl<=0.24 and datasets<4.4 (its own
+      environment); vLLM 0.30 moved bitsandbytes and GGUF into plugins; whisper.cpp's quantize
+      binary is whisper-quantize; transformers 5 dropped `load_in_4bit=` and `torch_dtype=`;
+      the diffusers docs' torchao example fails on torchao 0.18. Config recipes declare a
+      `language`, and CI parses every Python and YAML render
 - [ ] TensorRT Model Optimizer recipes: FP8, INT8 SmoothQuant, INT4 AWQ, NVFP4 (`mtq.quantize` + `export_hf_checkpoint`) with serve targets vLLM / SGLang / TensorRT-LLM
 - [ ] AutoQuantize recipe with `effective_bits` supplied by F3's budget-to-bits helper
-- [ ] `render()` and `Plan.render()`
-      (partial: `render()` works; `Plan.render()` lands with F4, which produces Plans)
-- [ ] `docs.py` generator; CI diff check
+- [x] `render()` and `Plan.render()`. Two-stage plans render the fine-tune too: Unsloth on
+      NVIDIA and Intel, Axolotl on AMD, MLX-LM on Apple (with an `mlx_lm.convert -q` step first
+      for QLoRA); llama.cpp then converts the merged model. Full fine-tunes have no recipe yet
+- [x] `docs.py` generator; CI diff check (tests/test_framework_docs.py)
 - [ ] Nightly dry-run workflow
 - [ ] Verify the two **(verify)** items

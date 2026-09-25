@@ -1,0 +1,22 @@
+id: ollama/modelfile
+framework: ollama
+stage: serve
+families: [llm]
+hardware: { vendors: [any] }
+install_line: 'curl -fsSL https://ollama.com/install.sh | sh (Linux, macOS); irm https://ollama.com/install.ps1 | iex (Windows)'
+kind: config
+language: modelfile
+inputs:
+  model_gguf: { type: path, required: true, help: "the GGUF to import, absolute or relative to the Modelfile" }
+  num_ctx: { type: int, default: 8192, help: context length the plan was sized for }
+template: |
+  FROM {{ model_gguf }}
+  PARAMETER num_ctx {{ num_ctx }}
+notes:
+  - "save as Modelfile, then run the ollama/create step"
+  - "Ollama imports a GGUF as is; ollama create -q quantizes safetensors only"
+  - "chat models may need a TEMPLATE block (Go template syntax); check what Ollama detected with ollama show --modelfile NAME"
+  - "set num_ctx explicitly: the docs give 2048 on the Modelfile page and 4096 in the FAQ"
+source_doc_url: https://docs.ollama.com/import
+version_tested: v0.34.4
+verified: docs

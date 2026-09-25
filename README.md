@@ -135,7 +135,7 @@ every verdict on that card 7% pessimistic.
 | F2 Hardware DB + detection | [F02](docs/plans/F02-hardware.md) | 259 devices ingested, bandwidth for ~200, detection, `bench`, HF profile import |
 | F3 Fit engine | [F03](docs/plans/F03-fit-engine.md) | LLM memory, KV and speed; fine-tune memory; diffusion (offload phases), Whisper, vision and embedding memory, each checked against published measurements |
 | F4 Rules + ranking | [F04](docs/plans/F04-rules-engine.md) | `recommend` both flows, 31 sourced rules, plans that render to commands |
-| F5 Framework registry + recipes | [F05](docs/plans/F05-framework-registry.md) | first slice: five llama.cpp recipes |
+| F5 Framework registry + recipes | [F05](docs/plans/F05-framework-registry.md) | 24 recipes over 14 frameworks (fine-tune, quantize, export, serve); plans render the whole chain; generated [framework pages](docs/frameworks/README.md) |
 | F6 SDK / CLI / MCP | [F06](docs/plans/F06-surfaces.md) | SDK, CLI and MCP server (seven tools, stdio) over the same functions; Plan JSON Schema in `schema/` |
 | F7 Cloud fallback | [F07](docs/plans/F07-cloud-fallback.md) | planned |
 | F8 Execution + eval gate | [F08](docs/plans/F08-execution-eval.md) | first slice: llama.cpp adapter with KL-divergence gate |

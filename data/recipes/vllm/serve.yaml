@@ -1,0 +1,22 @@
+id: vllm/serve
+framework: vllm
+stage: serve
+families: [llm]
+hardware: { vendors: [nvidia, amd] }
+install_line: uv pip install vllm --torch-backend=auto
+kind: command
+inputs:
+  model: { type: str, required: true, help: "Hub id or local directory" }
+  quantization: { type: str, help: "leave empty for pre-quantized checkpoints (AWQ, GPTQ, FP8), which name their own method" }
+  max_model_len: { type: int, default: 8192, help: prompt plus output }
+  gpu_memory_utilization: { type: float, default: 0.92 }
+  port: { type: int, default: 8000 }
+template: >-
+  vllm serve {{ model }} {% if quantization %}--quantization {{ quantization }}{% endif %} --max-model-len {{ max_model_len }} --gpu-memory-utilization {{ gpu_memory_utilization }} --port {{ port }}
+notes:
+  - "vLLM 0.30 moved bitsandbytes and GGUF out of the main package: uv pip install vllm-bnb-plugin or vllm-gguf-plugin first"
+  - "--quantization values are listed in vllm/model_executor/layers/quantization/__init__.py (awq, gptq, fp8, compressed-tensors, mxfp4, ...)"
+  - "--gpu-memory-utilization is per instance and defaults to 0.92: vLLM preallocates that share for the KV cache"
+source_doc_url: https://docs.vllm.ai/en/stable/cli/serve/
+version_tested: 0.30.0
+verified: docs

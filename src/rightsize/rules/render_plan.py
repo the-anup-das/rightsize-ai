@@ -17,7 +17,10 @@ from rightsize.registry.schema import RenderedStep
 
 def _defaults(plan: Any) -> dict[str, Any]:
     slug = plan.model.ref.repo.replace("/", "__")
-    quant = next((s.quant.variant for s in plan.steps if s.quant and s.quant.variant), "Q4_K_M")
+    # the GGUF type from the quantize step: a fine-tune step's quant (QLoRA's nf4) comes
+    # first in a two-stage plan and is not a llama.cpp type
+    quant = next((s.quant.variant for s in plan.steps
+                  if s.quant and s.quant.method == "gguf" and s.quant.variant), "Q4_K_M")
     return {
         # llama.cpp binaries, found on PATH or under .tools/llama.cpp
         "convert_script": "convert_hf_to_gguf.py",
@@ -39,13 +42,47 @@ def _defaults(plan: Any) -> dict[str, Any]:
     }
 
 
+def _finetune_values(plan: Any, values: dict[str, Any]) -> None:
+    """Inputs for a fine-tune step, and the directory the convert step reads after it.
+
+    llama.cpp converts a whole 16-bit model. Unsloth writes one (merged_dir); the other
+    trainers write an adapter, and their recipes say to merge it into merged_dir first, so
+    the convert step reads the same directory whichever trainer ran."""
+    ft = next((s for s in plan.steps if s.stage == "finetune" and s.recipe_id), None)
+    if ft is None:
+        return
+    slug = plan.model.ref.repo.replace("/", "__")
+    qlora = ft.quant is not None
+    values.update({
+        "model": plan.model.ref.repo,
+        "load_in_4bit": qlora,
+        "adapter": "qlora" if qlora else "lora",
+        "output_dir": f"{slug}-finetune",
+        "merged_dir": f"{slug}-merged",
+        "adapter_dir": f"{slug}-adapters",
+        "mlx_path": f"{slug}-mlx-4bit",
+        "bits": "4",
+    })
+    values["model_dir"] = values["merged_dir"]
+
+
+def _typed(recipe: Any, name: str, value: Any) -> Any:
+    """A value in the form the recipe declares: Python recipes spell booleans True/False."""
+    spec = recipe.inputs[name]
+    if isinstance(value, bool) and spec.type == "enum" and spec.values:
+        return next((v for v in spec.values if v.lower() == str(value).lower()), value)
+    return value
+
+
 def render_plan(plan: Any, **inputs: Any) -> list[RenderedStep]:
     values = _defaults(plan)
+    _finetune_values(plan, values)
     serve = next((s for s in plan.steps if s.stage == "serve"), None)
     if serve is not None and serve.runtime and serve.runtime.ctx:
         values["ctx"] = serve.runtime.ctx
     values["model_gguf_served"] = values["output_gguf"]
-    has_imatrix = any(s.recipe_id == "llama.cpp/imatrix" for s in plan.steps)
+    recipe_ids = {s.recipe_id for s in plan.steps}
+    has_imatrix = "llama.cpp/imatrix" in recipe_ids
     if has_imatrix:
         values["imatrix"] = values["output_file"]
     values.update(inputs)
@@ -54,8 +91,10 @@ def render_plan(plan: Any, **inputs: Any) -> list[RenderedStep]:
         if not step.recipe_id:
             continue
         recipe = get_recipe(step.recipe_id)
-        wanted = {k: v for k, v in values.items() if k in recipe.inputs}
+        wanted = {k: _typed(recipe, k, v) for k, v in values.items() if k in recipe.inputs}
         if step.stage == "serve" and "model_gguf" in recipe.inputs:
             wanted["model_gguf"] = values.get("model_gguf_served", wanted.get("model_gguf"))
+        if step.recipe_id == "mlx-lm/lora" and "mlx-lm/convert" in recipe_ids:
+            wanted["model"] = values["mlx_path"]  # train on the model MLX just quantized
         out.append(render(recipe, **wanted))
     return out

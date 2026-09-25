@@ -1,0 +1,34 @@
+id: llm-compressor/gptq-w4a16
+framework: llm-compressor
+stage: quantize
+families: [llm]
+hardware: { vendors: [nvidia] }
+install_line: pip install llmcompressor
+kind: config
+language: python
+inputs:
+  model: { type: str, required: true }
+  dataset: { type: str, default: perfectblend, help: "a name llm-compressor registers (perfectblend, ultrachat_200k, open_platypus, wikitext, ...)" }
+  split: { type: str, default: "train[:512]" }
+  num_samples: { type: int, default: 512 }
+  max_seq_length: { type: int, default: 2048 }
+  output_dir: { type: path, default: model-W4A16-G128 }
+template: |
+  from llmcompressor import oneshot
+  from llmcompressor.modifiers.gptq import GPTQModifier
+
+  oneshot(
+      model="{{ model }}",
+      dataset="{{ dataset }}",
+      splits="{{ split }}",
+      recipe=GPTQModifier(targets="Linear", scheme="W4A16", ignore=["lm_head"]),
+      max_seq_length={{ max_seq_length }},
+      num_calibration_samples={{ num_samples }},
+      output_dir="{{ output_dir }}",
+  )
+notes:
+  - "int4 weights, group 128, 16-bit activations, calibrated on the dataset; serve the directory with vllm serve"
+  - "dataset and split follow examples/quantization_w4a16/llama3_example.py at 0.14.0; other data: pass a datasets.Dataset with a text column"
+source_doc_url: https://github.com/vllm-project/llm-compressor/blob/0.14.0/examples/quantization_w4a16/llama3_example.py
+version_tested: 0.14.0
+verified: docs

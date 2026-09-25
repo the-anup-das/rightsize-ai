@@ -1,0 +1,26 @@
+id: llm-compressor/fp8-dynamic
+framework: llm-compressor
+stage: quantize
+families: [llm]
+hardware: { vendors: [nvidia] }
+install_line: pip install llmcompressor
+kind: config
+language: python
+inputs:
+  model: { type: str, required: true }
+  output_dir: { type: path, default: model-FP8-Dynamic }
+template: |
+  from llmcompressor import oneshot
+  from llmcompressor.modifiers.quantization import QuantizationModifier
+
+  oneshot(
+      model="{{ model }}",
+      recipe=QuantizationModifier(targets="Linear", scheme="FP8_DYNAMIC", ignore=["lm_head"]),
+      output_dir="{{ output_dir }}",
+  )
+notes:
+  - "no calibration data: FP8 weights with dynamic per-token activation scales; serve the directory with vllm serve"
+  - "from llmcompressor.transformers import oneshot is gone in 0.14"
+source_doc_url: https://docs.vllm.ai/projects/llm-compressor/en/latest/guides/entrypoints/oneshot/
+version_tested: 0.14.0
+verified: docs

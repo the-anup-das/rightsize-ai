@@ -121,3 +121,32 @@ def test_moe_counts_as_the_geometric_mean() -> None:
 def test_plans_round_trip_as_json() -> None:
     p = rightsize.recommend("chat", "RTX 4090")[0]
     assert Plan.model_validate_json(p.to_json()) == p
+
+
+def test_two_stage_plans_render_the_fine_tune_and_convert_its_output() -> None:
+    """The fine-tune step renders its trainer's recipe, and llama.cpp converts the merged
+    model it leads to, not the base model. The quantize step keeps the GGUF type even though
+    the QLoRA step before it carries nf4 (rendering used to pick that up and fail)."""
+    import rightsize
+
+    plan = rightsize.recommend("chat", "RTX 4070 12GB", finetune_device="T4 16GB",
+                               mode="qlora", top_k=1)[0]
+    steps = {s.recipe_id: s for s in plan.render()}
+    assert "load_in_4bit=True" in steps["unsloth/sft"].text
+    slug = plan.model.ref.repo.replace("/", "__")
+    assert f"{slug}-merged" in steps["unsloth/sft"].text
+    assert f"{slug}-merged" in steps["llama.cpp/convert"].text
+    quant = next(s.quant.variant for s in plan.steps if s.recipe_id == "llama.cpp/quantize")
+    assert steps["llama.cpp/quantize"].argv[-1] == quant
+
+
+def test_qlora_on_a_mac_quantizes_with_mlx_first() -> None:
+    import rightsize
+
+    plan = rightsize.recommend("chat", "RTX 4070 12GB", finetune_device="M4 Max 64GB",
+                               mode="qlora", top_k=1)[0]
+    rendered = plan.render()
+    ids = [s.recipe_id for s in rendered]
+    assert ids[:2] == ["mlx-lm/convert", "mlx-lm/lora"]
+    mlx_dir = rendered[0].argv[-1]
+    assert rendered[1].argv[rendered[1].argv.index("--model") + 1] == mlx_dir

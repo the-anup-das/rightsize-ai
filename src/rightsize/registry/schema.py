@@ -25,6 +25,10 @@ class Recipe(BaseModel):
     install_line: str | None = None
     inputs: dict[str, RecipeInput] = Field(default_factory=dict)
     kind: Literal["command", "config"] = "command"
+    language: Literal["bash", "python", "yaml", "modelfile"] | None = Field(
+        default=None,
+        description="what a config renders to; tests parse python and yaml renders",
+    )
     template: str
     notes: list[str] = Field(default_factory=list)
     source_doc_url: str

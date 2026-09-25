@@ -1,0 +1,19 @@
+id: mlx-lm/convert
+framework: mlx-lm
+stage: quantize
+families: [llm]
+hardware: { vendors: [apple] }
+install_line: pip install mlx-lm
+kind: command
+inputs:
+  model: { type: str, required: true }
+  bits: { type: enum, values: ["2", "3", "4", "5", "6", "8"], default: "4" }
+  mlx_path: { type: path, default: mlx_model, help: must not exist yet }
+template: >-
+  mlx_lm.convert --hf-path {{ model }} -q --q-bits {{ bits }} --mlx-path {{ mlx_path }}
+notes:
+  - "affine quantization with group size 64 by default (--q-group-size); --q-mode also takes mxfp4, nvfp4 and mxfp8"
+  - "flags checked against mlx_lm/convert.py at v0.31.3; --model is an alias of --hf-path"
+source_doc_url: https://github.com/ml-explore/mlx-lm/blob/main/README.md
+version_tested: 0.31.3
+verified: docs
