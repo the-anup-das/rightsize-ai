@@ -31,8 +31,11 @@ def test_fuzzy_lookup(query: str, expected: str) -> None:
 
 
 def test_unknown_preset_raises_with_hint() -> None:
-    with pytest.raises(KeyError, match="known"):
+    with pytest.raises(KeyError, match="no device matches"):
         get("Voodoo 3")
+    # a near miss suggests rather than dumping all 250-odd catalogue names
+    with pytest.raises(KeyError, match="did you mean"):
+        get("RTX 9999")
 
 
 def test_resolve_accepts_device_or_name() -> None:
@@ -81,3 +84,82 @@ def test_device_memory_is_gib_and_converts_to_decimal_gb() -> None:
     assert pytest.approx(dev.memory_gib, abs=0.01) == 16376 / 1024
     assert Device(name="cpu box", memory_gib=8, system_ram_gib=64).system_ram_gb == 68.719
     assert Device(name="no ram", memory_gib=8).system_ram_gb is None
+
+
+def test_catalog_is_ingested_and_joined_to_bandwidth() -> None:
+    """The catalogue comes from Hugging Face's SKU table; bandwidth comes from ours.
+
+    HF publishes memory, TFLOPS and compute capability for ~250 accelerators but no memory
+    bandwidth, so the two files are joined on the device name. A device we have no
+    bandwidth for still resolves - the fit engine gives a memory verdict without a tok/s.
+    """
+    cat = db.catalog()
+    assert len(cat) > 200, "the whole HF table, one entry per memory option"
+    assert cat["RTX 4090 24GB"].bandwidth_gbps == 1008.0
+    assert cat["H200 141GB"].bandwidth_gbps is None, "not curated yet, and it says so"
+    assert cat["RTX 4090 24GB"].compute_arch == "sm_89"
+    for dev in cat.values():
+        assert dev.provenance and dev.provenance.source_url.startswith("https://")
+
+
+def test_bandwidth_is_computed_from_bus_width_and_speed() -> None:
+    """256-bit GDDR6X at 21 Gbps is 672 GB/s, which is what this card actually does.
+
+    Storing the two facts the vendor publishes, rather than a bandwidth figure copied out
+    of someone's database, means the number carries its own derivation.
+    """
+    table = db.bandwidth()
+    ti = table[db._norm("RTX 4070 Ti Super")]
+    assert ti["gbps"] == 672.0
+    assert ti["how"] == "256-bit GDDR6X at 21 Gbps"
+    assert ti["formula_id"] == "mem.bandwidth.bus_x_rate.v0"
+    # HBM and unified memory do not divide cleanly, so those are the vendor's own figure
+    assert table[db._norm("H100")]["how"] == "stated by the vendor"
+    assert table[db._norm("Apple M4 Max")]["gbps"] == 546.0
+
+
+def test_lookup_prefers_presets_then_falls_through_to_the_catalog() -> None:
+    assert get("RTX 4070 Ti SUPER").usable_fraction == 0.92  # curated preset
+    desktop = get("RTX 5080")
+    assert desktop.name == "RTX 5080 16GB", "a bare name means the desktop card, not Mobile"
+
+
+# ---------------------------------------------------------------- Hub profile hardware
+
+#: The shape https://huggingface.co/api/users/<name>/overview really returns.
+_OVERVIEW = {
+    "hardwareItems": [
+        {"sku": ["GPU", "NVIDIA", "RTX 3090"], "mem": 24, "num": 2},
+        {"sku": ["Apple Silicon", "-", "Apple M4 Max"], "mem": 64, "num": 1, "isPrimary": True},
+        {"sku": ["GPU", "NVIDIA", "RTX 4090"], "mem": 48, "num": 1},
+    ]
+}
+
+
+def _stub(payload, status=200):
+    import httpx
+
+    return httpx.MockTransport(lambda request: httpx.Response(status, json=payload))
+
+
+def test_from_hf_reads_saved_hardware() -> None:
+    from rightsize.hardware.hf import from_hf as impl
+
+    devices = impl("someone", transport=_stub(_OVERVIEW))
+    assert devices[0].name == "Apple M4 Max 64GB", "the primary machine comes first"
+    assert devices[0].bandwidth_gbps == 546.0, "resolved against our own tables"
+    assert [d.name for d in devices[1:3]] == ["RTX 3090 24GB #1", "RTX 3090 24GB #2"]
+    # 48GB is not a stock 4090; keep the catalogue record but take the user's word on size
+    odd = devices[-1]
+    assert odd.memory_gib == 48 and odd.vendor == "nvidia"
+    assert all(d.provenance and "profile" in (d.provenance.note or "") for d in devices)
+
+
+def test_from_hf_is_loud_when_there_is_nothing_to_read() -> None:
+    from rightsize.hardware.hf import HubHardwareError
+    from rightsize.hardware.hf import from_hf as impl
+
+    with pytest.raises(HubHardwareError, match="no Hugging Face profile"):
+        impl("ghost", transport=_stub({}, status=404))
+    with pytest.raises(HubHardwareError, match="no hardware saved"):
+        impl("empty", transport=_stub({"hardwareItems": []}))

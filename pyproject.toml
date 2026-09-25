@@ -116,6 +116,8 @@ select = ["E", "F", "I", "UP", "B", "SIM", "T20"]
 "tests/**" = ["T20"]
 # notebook cell sources are embedded strings; wrapping them would wrap the cells
 "scripts/make_notebooks.py" = ["E501", "T20"]
+# ingest scripts are run by hand and report what they fetched
+"scripts/ingest_hf_hardware.py" = ["T20"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

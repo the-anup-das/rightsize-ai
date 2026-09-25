@@ -1,0 +1,115 @@
+# Memory bandwidth, the number the speed model runs on (tok/s ~ bandwidth / bytes per token).
+#
+# No public table carries this under a licence we can redistribute: Hugging Face's SKU table
+# has TFLOPS but no bandwidth, Wikidata has no such property, and the databases that do have
+# it are scraped from TechPowerUp. So rather than copy a derived figure, we record the two
+# primary facts the vendor publishes and do the arithmetic ourselves:
+#
+#     bandwidth_gbps = bus_width_bits * memory_speed_gbps / 8      (mem.bandwidth.bus_x_rate.v0)
+#
+# For GDDR parts that is exact. HBM parts and Apple silicon do not divide cleanly, because the
+# clock is not a round number, and their vendors state bandwidth outright - those records carry
+# `bandwidth_gbps` directly and say so with `stated: true`.
+#
+# `name` matches data/hardware/gpus.yaml, so the two files join. `aliases` catch the names
+# people actually type. Every record is hand-entered from the cited page: hand: true.
+formula_id: mem.bandwidth.bus_x_rate.v0
+devices:
+  - name: RTX 3060
+    aliases: [RTX 3060 12GB]
+    memory_type: GDDR6
+    bus_width_bits: 192
+    memory_speed_gbps: 15
+    provenance: { source_url: https://www.techpowerup.com/gpu-specs/geforce-rtx-3060-12-gb.c3682, fetched_at: "2026-09-25", hand: true }
+  - name: RTX 4070
+    aliases: [RTX 4070 12GB]
+    memory_type: GDDR6X
+    bus_width_bits: 192
+    memory_speed_gbps: 21
+    provenance: { source_url: https://www.techpowerup.com/gpu-specs/geforce-rtx-4070.c3924, fetched_at: "2026-09-25", hand: true }
+  - name: RTX 4070 Ti Super
+    aliases: [RTX 4070 Ti SUPER 16GB, GeForce RTX 4070 Ti SUPER]
+    memory_type: GDDR6X
+    bus_width_bits: 256
+    memory_speed_gbps: 21
+    provenance: { source_url: https://www.techpowerup.com/gpu-specs/geforce-rtx-4070-ti-super.c4187, fetched_at: "2026-09-25", hand: true }
+  - name: RTX 4090
+    aliases: [RTX 4090 24GB]
+    memory_type: GDDR6X
+    bus_width_bits: 384
+    memory_speed_gbps: 21
+    provenance: { source_url: https://www.techpowerup.com/gpu-specs/geforce-rtx-4090.c3889, fetched_at: "2026-09-25", hand: true }
+  - name: RTX 5060 Ti
+    aliases: [RTX 5060 Ti 16GB]
+    memory_type: GDDR7
+    bus_width_bits: 128
+    memory_speed_gbps: 28
+    provenance: { source_url: https://www.techpowerup.com/gpu-specs/geforce-rtx-5060-ti-16-gb.c4292, fetched_at: "2026-09-25", hand: true }
+  - name: RTX 5090
+    aliases: [RTX 5090 32GB]
+    memory_type: GDDR7
+    bus_width_bits: 512
+    memory_speed_gbps: 28
+    provenance: { source_url: https://www.techpowerup.com/gpu-specs/geforce-rtx-5090.c4216, fetched_at: "2026-09-25", hand: true }
+  - name: T4
+    aliases: [T4 16GB, Tesla T4]
+    memory_type: GDDR6
+    bus_width_bits: 256
+    memory_speed_gbps: 10
+    provenance: { source_url: https://www.techpowerup.com/gpu-specs/tesla-t4.c3316, fetched_at: "2026-09-25", hand: true }
+  - name: L4
+    aliases: [L4 24GB]
+    memory_type: GDDR6
+    bus_width_bits: 192
+    memory_speed_gbps: 12.5
+    provenance: { source_url: https://www.techpowerup.com/gpu-specs/l4.c4091, fetched_at: "2026-09-25", hand: true }
+  - name: A100
+    aliases: [A100 80GB, A100 SXM4 80 GB]
+    memory_type: HBM2e
+    bandwidth_gbps: 2039
+    stated: true
+    provenance: { source_url: https://www.techpowerup.com/gpu-specs/a100-sxm4-80-gb.c3746, fetched_at: "2026-09-25", hand: true }
+  - name: H100
+    aliases: [H100 80GB, H100 SXM5 80 GB]
+    memory_type: HBM3
+    bandwidth_gbps: 3350
+    stated: true
+    provenance: { source_url: https://www.techpowerup.com/gpu-specs/h100-sxm5-80-gb.c3900, fetched_at: "2026-09-25", hand: true }
+  - name: MI300X
+    aliases: [MI300X 192GB, Instinct MI300X]
+    memory_type: HBM3
+    bandwidth_gbps: 5300
+    stated: true
+    note: not in the Hugging Face table, which carries no Instinct parts
+    provenance: { source_url: https://www.amd.com/en/products/accelerators/instinct/mi300/mi300x.html, fetched_at: "2026-09-25", hand: true }
+  - name: Apple M4 Max
+    aliases: [M4 Max 64GB, M4 Max]
+    memory_type: LPDDR5X unified
+    bandwidth_gbps: 546
+    stated: true
+    provenance: { source_url: https://www.apple.com/newsroom/2024/10/apple-introduces-m4-pro-and-m4-max/, fetched_at: "2026-09-25", hand: true }
+  - name: Apple M4 Pro
+    aliases: [M4 Pro 24GB, M4 Pro]
+    memory_type: LPDDR5X unified
+    bandwidth_gbps: 273
+    stated: true
+    provenance: { source_url: https://www.apple.com/newsroom/2024/10/apple-introduces-m4-pro-and-m4-max/, fetched_at: "2026-09-25", hand: true }
+  - name: Apple M4
+    aliases: [M4 16GB, M4]
+    memory_type: LPDDR5X unified
+    bandwidth_gbps: 120
+    stated: true
+    provenance: { source_url: https://www.apple.com/newsroom/2024/05/apple-introduces-m4-chip/, fetched_at: "2026-09-25", hand: true }
+  - name: GB10
+    aliases: [DGX Spark 128GB, DGX Spark]
+    memory_type: LPDDR5X unified
+    bandwidth_gbps: 273
+    stated: true
+    provenance: { source_url: https://www.nvidia.com/en-us/products/workstations/dgx-spark/, fetched_at: "2026-09-25", hand: true }
+  - name: CPU only
+    aliases: [CPU only 32GB, cpu]
+    memory_type: DDR5 dual channel
+    bandwidth_gbps: 60
+    stated: true
+    note: a typical desktop pair of DDR5-5600 sticks; real machines vary widely
+    provenance: { source_url: https://en.wikipedia.org/wiki/DDR5_SDRAM, fetched_at: "2026-09-25", hand: true }
