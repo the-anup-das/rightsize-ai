@@ -30,7 +30,7 @@ Adapters register via the `rightsize.adapters` entry point and live behind extra
 
 ## MVP scope (phase 2)
 
-Unsloth QLoRA adapter (fine-tune -> merged or GGUF), llama.cpp quantize adapter, evaluation gate for LLMs. Diffusion and audio execution later.
+Unsloth QLoRA adapter (fine-tune -> merged or GGUF), llama.cpp quantize adapter, evaluation gate for LLMs. Diffusion and audio execution later. **Local machine only** by decision (2026-09-25); the same `Adapter` protocol is reused by the cloud connectors in F10 (phase 3), so design it with provision / execute / teardown hooks even though the local adapter only implements execute.
 
 ## Follow-up research
 

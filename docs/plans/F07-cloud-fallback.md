@@ -40,7 +40,7 @@ Cache: `data/cloud/prices.json` refreshed hourly by a scheduled job in the data 
 
 ## MVP scope
 
-Price ladder from ComputePrices with RunPod as the live source; "rent this" line in the plan.
+Price ladder from ComputePrices with RunPod as the live source; "rent this" line in the plan. **Advisory only:** launching the job on the provider is F10 (phase 3); until then the plan prints the offer and the rendered recipe for the user to run there.
 
 ## Follow-up research
 

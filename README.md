@@ -47,6 +47,7 @@ rightsize --version
 | F7 Cloud fallback | [F07](docs/plans/F07-cloud-fallback.md) | planned |
 | F8 Execution + eval gate | [F08](docs/plans/F08-execution-eval.md) | phase 2 |
 | F9 Calibration loop | [F09](docs/plans/F09-calibration.md) | phase 2 |
+| F10 Cloud provider connectors | [F10](docs/plans/F10-cloud-connectors.md) | phase 3 |
 
 ## Contributing
 

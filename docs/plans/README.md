@@ -18,6 +18,7 @@ One file per major feature. Each has the same sections: Goal, Why it beats what 
 | F7 | [Cloud rental fallback](F07-cloud-fallback.md) | 1 | planned |
 | F8 | [Execution and evaluation gate](F08-execution-eval.md) | 2 | planned |
 | F9 | [Calibration loop](F09-calibration.md) | 2 | planned |
+| F10 | [Cloud provider connectors](F10-cloud-connectors.md) | 3 | planned (local-only until then) |
 
 ## Build order
 
@@ -29,7 +30,8 @@ One file per major feature. Each has the same sections: Goal, Why it beats what 
 | 3 | hardware DB, presets, detection; 40 rules; ranking; `rightsize recommend` both flows | F2, F4 |
 | 4 | 14 MVP recipes, `Plan.render`, generated framework docs, MCP server, Plan JSON Schema | F5, F6 |
 | 5 | diffusion / audio / vision / embedding estimators; cloud fallback; tag `v0.1.0` | F3 (rest), F7 |
-| 6+ | execution adapters, eval gate, calibration | F8, F9 |
+| 6+ | execution adapters (local only), eval gate, calibration | F8, F9 |
+| phase 3 | cloud provider connectors: run a plan step on a rented GPU | F10 |
 
 ## Lightweight rules (all features)
 
