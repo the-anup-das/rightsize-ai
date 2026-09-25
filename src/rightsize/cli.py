@@ -9,15 +9,11 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
+from pathlib import Path
 
 from rightsize import __version__
-
-_PLANS = {
-    "plan": ("F5 recipe rendering", "docs/plans/F05-framework-registry.md"),
-    "data": ("data package updates", "data/README.md"),
-}
-_ROADMAP = "https://github.com/the-anup-das/rightsize-ai/tree/main/"
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -29,6 +25,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--no-color", action="store_true", help="plain text (also: NO_COLOR=1)")
     p.add_argument("-v", "--verbose", action="store_true", help="echo tool output as it runs")
     p.add_argument("-q", "--quiet", action="store_true", help="only failures and final tables")
+    p.add_argument(
+        "--offline", dest="offline_all", action="store_true",
+        help="no network: model facts and prices from the cache only (also RIGHTSIZE_OFFLINE=1)",
+    )
     sub = p.add_subparsers(dest="command")
 
     r = sub.add_parser("recommend", help="rank the models that fit your hardware, with plans")
@@ -183,15 +183,20 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub.add_parser("mcp", help="run the MCP server on stdio (needs the mcp extra)")
 
-    pl = sub.add_parser("plan", help="work with saved plans")
+    pl = sub.add_parser("plan", help="work with saved plans (recommend --json writes them)")
     pl_sub = pl.add_subparsers(dest="plan_command")
-    pr = pl_sub.add_parser("render")
-    pr.add_argument("plan_file")
-    pr.add_argument("--framework")
+    pr = pl_sub.add_parser("render", help="the commands of a saved plan")
+    pr.add_argument("plan_file", help="a Plan as JSON, or a list of them (recommend --json)")
+    pr.add_argument("--rank", type=int, default=1, help="which plan of a list (default 1)")
+    pr.add_argument("--set", action="append", default=[], metavar="NAME=VALUE",
+                    help="override a recipe input, e.g. --set quantize_bin=/opt/llama-quantize")
 
-    d = sub.add_parser("data", help="manage the rightsize-data package")
+    d = sub.add_parser("data", help="newer hardware, quantization, rules and recipe data")
     d_sub = d.add_subparsers(dest="data_command")
-    d_sub.add_parser("update")
+    du = d_sub.add_parser("update", help="download, validate and switch to newer data")
+    du.add_argument("--ref", default="main", help="git ref of the project: main or a tag")
+    d_sub.add_parser("status", help="which data is in use")
+    d_sub.add_parser("reset", help="back to the data this release shipped with")
     return p
 
 
@@ -200,17 +205,6 @@ def _console(args: argparse.Namespace):
 
     color = False if (args.no_color or args.json) else None
     return Console(color=color, verbose=args.verbose, quiet=args.quiet or args.json)
-
-
-def _not_yet(command: str, as_json: bool) -> int:
-    feature, plan = _PLANS[command]
-    if as_json:
-        print(json.dumps({"status": "not_implemented", "feature": feature, "plan": plan}))
-    else:
-        print(f"rightsize {command}: not implemented yet in this release.")
-        print(f"  feature: {feature}")
-        print(f"  plan:    {_ROADMAP}{plan}")
-    return 0
 
 
 def cmd_detect(args: argparse.Namespace) -> int:
@@ -640,6 +634,64 @@ def cmd_telemetry(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_data(args: argparse.Namespace) -> int:
+    from rightsize import data_update
+
+    if args.data_command == "update":
+        try:
+            marker = data_update.update(args.ref)
+        except data_update.DataUpdateError as exc:
+            print(f"rightsize data update: {exc}", file=sys.stderr)
+            return 1
+        if args.json:
+            print(json.dumps(marker, indent=2))
+        else:
+            print(f"data updated to {marker['repo']}@{marker['ref']} "
+                  f"({marker['files']} files, validated); 'rightsize data reset' undoes it")
+        return 0
+    if args.data_command == "reset":
+        removed = data_update.reset()
+        print("back to the bundled data" if removed else "already on the bundled data")
+        return 0
+    st = data_update.status()
+    if args.json:
+        print(json.dumps(st, indent=2))
+    else:
+        print(f"in use: {st['in_use']}")
+        if st["override"]:
+            print("  (RIGHTSIZE_DATA_DIR overrides everything)")
+        elif st["updated"]:
+            u = st["updated"]
+            print(f"  updated from {u['repo']}@{u['ref']} on {u['fetched_at']}")
+        else:
+            print("  the data this release shipped with")
+    return 0
+
+
+def cmd_plan(args: argparse.Namespace) -> int:
+    from rightsize.types import Plan
+
+    if args.plan_command != "render":
+        print("rightsize plan render PLAN.json", file=sys.stderr)
+        return 2
+    raw = json.loads(Path(args.plan_file).read_text(encoding="utf-8"))
+    plans = [Plan.model_validate(p) for p in (raw if isinstance(raw, list) else [raw])]
+    plan = next((p for p in plans if p.rank == args.rank), None)
+    if plan is None:
+        print(f"no plan with rank {args.rank} in {args.plan_file}", file=sys.stderr)
+        return 1
+    inputs = dict(kv.split("=", 1) for kv in args.set)
+    steps = plan.render(**inputs)
+    if args.json:
+        print(json.dumps([s.model_dump(mode="json") for s in steps], indent=2))
+        return 0
+    for step in steps:
+        print(f"# {step.recipe_id} ({step.verified})")
+        print(("$ " if step.kind == "command" else "") + step.text)
+        print()
+    return 0
+
+
 def cmd_mcp(args: argparse.Namespace) -> int:
     from rightsize.mcp_server import main as serve
 
@@ -801,7 +853,11 @@ def main(argv: list[str] | None = None) -> int:
     if not args.command:
         parser.print_help()
         return 0
+    if args.offline_all:
+        os.environ["RIGHTSIZE_OFFLINE"] = "1"
     handlers = {
+        "data": cmd_data,
+        "plan": cmd_plan,
         "mcp": cmd_mcp,
         "cloud": cmd_cloud,
         "calibrate": cmd_calibrate,
@@ -814,9 +870,7 @@ def main(argv: list[str] | None = None) -> int:
         "tools": cmd_tools,
         "bench": cmd_bench,
     }
-    if args.command in handlers:
-        return handlers[args.command](args)
-    return _not_yet(args.command, args.json)
+    return handlers[args.command](args)
 
 
 if __name__ == "__main__":

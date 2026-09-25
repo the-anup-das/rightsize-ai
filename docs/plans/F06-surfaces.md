@@ -28,7 +28,7 @@ Plan.schema_json() -> str          # the platform's TypeScript types come from t
 
 Devices accept a `Device`, a preset name (`"RTX 4090"`), or `"detect"`.
 
-**CLI** (argparse, stdlib): `rightsize recommend | estimate | detect | frameworks [name] | plan render <plan.json> --framework X | data update`, all with `--json`. Placeholder subcommands exist today and print the plan they belong to.
+**CLI** (argparse, stdlib): `rightsize recommend | estimate | detect | frameworks [name] | plan render <plan.json> | data update|status|reset | cloud | calibrate | telemetry | bench | quantize | tools | mcp`, all with `--json`, and `--offline` for all of them.
 
 **MCP** (`[mcp]` extra, stdio transport): tools `recommend`, `estimate_memory`, `list_hardware`, `detect_hardware`, `list_frameworks`, `render_recipe`. Input and output schemas are generated from the Pydantic types so SDK, CLI and MCP never drift. Also deployed as a Gradio MCP Space in the platform repo so the official HF MCP server can call it.
 
@@ -37,7 +37,7 @@ Devices accept a `Device`, a preset name (`"RTX 4090"`), or `"detect"`.
 - `import rightsize` stays stdlib-only via PEP 562 lazy exports (already implemented; enforced by `tests/budgets/test_imports.py`).
 - Public functions are pure: JSON-serialisable inputs, `Plan` outputs, no global state except the on-disk cache.
 - CLI prints a compact human table by default; `--json` emits the `Plan` list verbatim. Exit codes: 0 plans found, 2 nothing fits, 1 error.
-- `rightsize data update` downloads the latest `rightsize-data` release into `~/.cache/rightsize/data/` and pins its version; `--offline` everywhere.
+- `rightsize data update` downloads the `data/` directory of a ref of this repository (main or a tag) into `~/.cache/rightsize/data/current`, and switches to it only when every file validates against the installed release's schemas and none of the files it reads is missing; `data reset` goes back to the shipped copy. `--offline` (or `RIGHTSIZE_OFFLINE=1`) answers model facts and prices from the cache only.
 - MCP tool descriptions are written for agent consumption (what to pass, what comes back, when to call).
 
 ## SDK contract for the platform (out of scope here, listed for completeness)
@@ -69,7 +69,12 @@ All three surfaces over F1–F5; `data update`; README quickstart with three exa
       the CLI and over MCP; devices coerce from a preset or catalogue name, `"detect"` or
       `"@hf-username"`
 - [x] Human-readable table output; exit codes (colour and progress through the optional `rich`)
-- [ ] `rightsize data update` and `--offline`
+- [x] `rightsize data update` and `--offline`. Tried against the real repository: main's
+      data (from before memory moved to GiB) and a branch that lacked 33 files were both
+      refused; tests check that archive entries outside data/, links and executables are
+      never extracted
+- [x] `rightsize plan render PLAN.json [--rank N] [--set input=value]` for plans saved with
+      `recommend --json`
 - [x] MCP server with six tools; schema snapshot test. Seven tools (`recommend_for_model` is
       the seventh), stdio via `rightsize mcp` or `rightsize-mcp`; input schemas pinned in
       `tests/fixtures/mcp_tools.json`; a slow test drives the real stdio transport. Works with

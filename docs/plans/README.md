@@ -25,7 +25,7 @@ One file per major feature. Each has the same sections: Goal, Why it beats what 
 | Run | Delivers | Features |
 |---|---|---|
 | 0 | repo, placeholder package 0.0.1, CI with lightweight budgets, these plans | this |
-| 1 | data seed: GPU table, GGUF bits-per-weight, quant x hardware matrices, KV overrides, schemas, `data update`; verify all items marked **(verify)** | F2, F3, F4 data |
+| 1 | data seed: GPU table, GGUF bits-per-weight, quant x hardware matrices, KV overrides, schemas, `data update`; verify all items marked **(verify)**. Done except the two F5 **(verify)** items | F2, F3, F4 data |
 | 2 | catalog + LLM estimator with golden tests; `rightsize estimate` end to end for a GGUF vs Ollama `/api/ps` | F1, F3 (LLM) |
 | 3 | hardware DB, presets, detection; 40 rules; ranking; `rightsize recommend` both flows | F2, F4 |
 | 4 | 14 MVP recipes, `Plan.render`, generated framework docs, MCP server, Plan JSON Schema | F5, F6 |

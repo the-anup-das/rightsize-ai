@@ -58,7 +58,9 @@ def _cache_dir() -> Path:
 def fetch_csv(provider: str, *, ttl_s: float = 24 * 3600, offline: bool = False,
               client=None) -> tuple[str, str] | None:
     """(csv text, fetched date) for one provider, from the cache when it is fresh enough.
-    None when there is neither a cache nor a network answer."""
+    None when there is neither a cache nor a network answer. RIGHTSIZE_OFFLINE=1 is the
+    same as ``offline=True``."""
+    offline = offline or os.environ.get("RIGHTSIZE_OFFLINE") == "1"
     path = _cache_dir() / f"{provider}.csv"
     fresh = path.exists() and (offline or time.time() - path.stat().st_mtime < ttl_s)
     if fresh:

@@ -207,7 +207,9 @@ def facts(
     timeout: float = 30.0,
     transport: httpx.BaseTransport | None = None,
 ) -> ModelFacts:
-    """Return ModelFacts for a Hub repo. Weights are never downloaded."""
+    """Return ModelFacts for a Hub repo. Weights are never downloaded. ``offline`` (or
+    RIGHTSIZE_OFFLINE=1) answers from the cache only, however old."""
+    offline = offline or os.environ.get("RIGHTSIZE_OFFLINE") == "1"
     cache = _cache_path(repo, revision)
     cached = None if transport else _read_cache(cache, ttl_s if not offline else float("inf"))
     if cached is not None:

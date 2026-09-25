@@ -48,11 +48,17 @@ def test_cli_json_flag(capsys) -> None:
     assert plans[0]["steps"][-1]["stage"] == "serve"
 
 
-def test_commands_still_waiting_on_their_feature_say_where(capsys) -> None:
-    assert main(["--json", "plan", "render", "x.json"]) == 0
-    payload = json.loads(capsys.readouterr().out)
-    assert payload["status"] == "not_implemented"
-    assert payload["plan"].endswith("F05-framework-registry.md")
+def test_a_saved_plan_renders_from_the_cli(tmp_path, capsys) -> None:
+    """recommend --json writes plans; plan render turns one back into commands, with any
+    recipe input overridden."""
+    assert main(["--json", "recommend", "--device", "RTX 4090", "--top", "2"]) == 0
+    saved = tmp_path / "plans.json"
+    saved.write_text(capsys.readouterr().out, encoding="utf-8")
+    assert main(["--json", "plan", "render", str(saved), "--rank", "2",
+                 "--set", "quantize_bin=/opt/llama/llama-quantize"]) == 0
+    steps = json.loads(capsys.readouterr().out)
+    assert any(s["argv"] and s["argv"][0] == "/opt/llama/llama-quantize" for s in steps)
+    assert main(["plan", "render", str(saved), "--rank", "9"]) == 1
 
 
 def test_public_recommend_returns_plans() -> None:

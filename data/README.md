@@ -1,6 +1,6 @@
 # rightsize-data (seed)
 
-Everything Rightsize knows that is a *number* or a *table* lives here, not in Python. This folder is the seed of the `rightsize-data` package, which will get its own version and weekly release once the first ingest lands (run 1 of the roadmap). The core package pins a minimum data version and refreshes with `rightsize data update` into `~/.cache/rightsize/`.
+Everything Rightsize knows that is a *number* or a *table* lives here, not in Python. The package ships this folder, and `rightsize data update [--ref main|TAG]` fetches a newer one from this repository into `~/.cache/rightsize/data/current`. An update is used only if every file validates against the installed release's schemas and every file that release reads is present; otherwise it is refused and the current data stays. `rightsize data status` says which data is in use, `rightsize data reset` returns to the shipped copy, and `RIGHTSIZE_DATA_DIR` overrides both. A separate `rightsize-data` repository with its own releases can take over later without changing this.
 
 | Folder | Contents | Source (to ingest) | Owner |
 |---|---|---|---|
@@ -9,7 +9,8 @@ Everything Rightsize knows that is a *number* or a *table* lives here, not in Py
 | `rules/` | Hard gates and penalties with `source_url` and a test each | HF/vLLM/SGLang quantization matrices, toolkit docs | F4 |
 | `recipes/` | Renderable command/config templates per framework and stage | Each toolkit's docs, pinned by version | F5 |
 | `quality/` | Base-model quality and quant penalty tables | Unsloth KL tables, Artificial Analysis, own `llama-perplexity` runs | F4 |
-| `cloud/` | GPU rental price ladder (hourly cache) | ComputePrices API, RunPod GraphQL | F7 |
+| `cloud/` | Datasheet tensor TFLOPS for the job-time estimate; prices are fetched at run time from SkyPilot's catalog and never stored here | NVIDIA / AMD datasheets | F7 |
+| `runtimes/` | How each runtime lays out the KV cache, its memory overheads (refit from calibration records), diffusers and Whisper memory models with the measurements behind them | llama.cpp source, published benchmarks, `rightsize calibrate` | F3, F9 |
 | `schema/` | JSON Schemas every file above must validate against | this repo | all |
 
 ## Rules for every record

@@ -53,6 +53,7 @@ rightsize tools install llama.cpp        # pinned binaries + converter into .too
 rightsize quantize Qwen/Qwen3-1.7B --quant Q4_K_M --imatrix --eval
 rightsize bench Qwen/Qwen3-1.7B           # measure this machine's real memory bandwidth
 rightsize calibrate                       # predicted vs measured for what Ollama / LM Studio has loaded
+rightsize data update                     # newer hardware / quant / rules data, validated before use
 ```
 
 `pip install rightsize` works too, but until the next release it installs the 0.0.1 placeholder.

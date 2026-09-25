@@ -13,9 +13,20 @@ from typing import Any
 
 
 def data_dir() -> Path:
+    """Where the data is read from: RIGHTSIZE_DATA_DIR, else the data a ``rightsize data
+    update`` installed (validated before it was switched to), else the bundled seed."""
     override = os.environ.get("RIGHTSIZE_DATA_DIR")
     if override:
         return Path(override)
+    base = Path(os.environ.get("RIGHTSIZE_CACHE_DIR", Path.home() / ".cache" / "rightsize"))
+    updated = base / "data" / "current"
+    if (updated / ".rightsize-data.json").is_file():
+        return updated
+    return bundled_dir()
+
+
+def bundled_dir() -> Path:
+    """The data this release shipped with: the wheel's copy, or data/ in a checkout."""
     here = Path(__file__).resolve().parent
     bundled = here / "_data"
     if bundled.is_dir():
