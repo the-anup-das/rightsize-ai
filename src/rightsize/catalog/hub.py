@@ -93,7 +93,7 @@ def _cache_path(repo: str, revision: str) -> Path:
 #: Bump whenever facts() starts keeping something new. A cached entry from an older
 #: version is refetched rather than trusted: without this, adding the attention fields left
 #: every warm cache describing LFM2 as all-attention, 166% over what llama.cpp allocates.
-CACHE_VERSION = 3
+CACHE_VERSION = 4
 
 
 def _read_cache(path: Path, ttl_s: float) -> dict[str, Any] | None:
@@ -161,6 +161,39 @@ def _family(cfg: dict[str, Any], pipeline_tag: str | None) -> Family:
     return Family.llm
 
 
+def _moe_active(
+    total: int, tc: dict[str, Any], experts: int, k: int, hidden: int | None
+) -> tuple[int, str]:
+    """Parameters that run for each token of a mixture-of-experts model.
+
+    Only the routed experts are sparse. Attention, embeddings, the router and any shared
+    experts run for every token, so the active count is the total minus the experts that sit
+    idle: expert_params * (1 - k / experts), where each routed expert is a SwiGLU block of
+    3 * hidden * moe_intermediate_size in every MoE layer.
+
+    Scaling the whole model by k / experts, as this first did, ignored the always-on part:
+    it put Qwen3-30B-A3B at 1.9B active where the name says 3B, and made MoE speed estimates
+    up to 74% too fast."""
+    inter = tc.get("moe_intermediate_size") or tc.get("intermediate_size")
+    layers = tc.get("num_hidden_layers") or 0
+    dense_lead = tc.get("first_k_dense_replace") or 0
+    step = tc.get("decoder_sparse_step") or 1
+    moe_layers = len([i for i in range(dense_lead, layers) if (i + 1) % step == 0])
+    # Multi-token-prediction layers ship in the checkpoint but plain decoding never runs
+    # them; DeepSeek-V3's is about 14B of its 685B, the gap between 51B and the stated 37B.
+    mtp = tc.get("num_nextn_predict_layers") or tc.get("mtp_num_hidden_layers") or 0
+    if inter and hidden and moe_layers:
+        expert_params = moe_layers * experts * 3 * hidden * inter
+        if 0 < expert_params < total:
+            per_layer = expert_params / moe_layers + (total - expert_params) / (layers + mtp)
+            idle = expert_params * (1 - k / experts) + mtp * per_layer
+            how = "total minus idle routed experts"
+            if mtp:
+                how += f" and {mtp} prediction layer{'s' if mtp > 1 else ''}"
+            return int(total - idle), how
+    return int(total * k / experts), "approximate: total x active/experts (expert size unknown)"
+
+
 def facts(
     repo: str,
     revision: str = "main",
@@ -217,8 +250,8 @@ def facts(
     head_dim = tc.get("head_dim") or (hidden // heads if hidden and heads else None)
     kv_heads = tc.get("num_key_value_heads") or heads
     dominant = max(by_dtype, key=by_dtype.get) if by_dtype else cfg.get("torch_dtype")
-    experts = tc.get("num_experts") or tc.get("num_local_experts")
-    active_experts = tc.get("num_experts_per_tok")
+    experts = tc.get("num_experts") or tc.get("num_local_experts") or tc.get("n_routed_experts")
+    active_experts = tc.get("num_experts_per_tok") or tc.get("experts_per_token")
 
     facts_ = ModelFacts(
         ref=ModelRef(repo=repo, revision=revision),
@@ -251,10 +284,9 @@ def facts(
         },
     )
     if experts and active_experts and total:
-        # Rough MoE active-parameter estimate: attention + shared parts count fully,
-        # expert FFNs scale by active/total. Marked in extra so callers know it is approximate.
-        facts_.params_active = int(total * (active_experts / experts))
-        facts_.extra["params_active_note"] = "approximate: total x active/experts"
+        active, how = _moe_active(total, tc, experts, active_experts, hidden)
+        facts_.params_active = active
+        facts_.extra["params_active_note"] = how
     if transport is None:
         _write_cache(cache, facts_.model_dump(mode="json"))
     return facts_

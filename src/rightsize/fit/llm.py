@@ -69,6 +69,18 @@ def kv_cache_gb(facts: ModelFacts, ctx: int, batch: int = 1, kv_bytes: float = 2
     return _kv.kv_cache_gb(facts, ctx, batch, kv_bytes)
 
 
+def read_per_token(facts: ModelFacts) -> int:
+    """Weights a decode step reads: active parameters, less the input embedding table when
+    it is separate from the output head. Looking a token up reads one row of the table; the
+    output head is read in full. With tied embeddings they are one matrix, read in full."""
+    params = facts.params_active or facts.params_total or 0
+    extra = facts.extra or {}
+    vocab, hidden = extra.get("vocab_size"), extra.get("hidden_size")
+    if vocab and hidden and extra.get("tie_word_embeddings") is False:
+        params -= vocab * hidden
+    return max(params, 0)
+
+
 def estimate(
     facts: ModelFacts,
     quant: QuantSpec | str,
@@ -113,8 +125,7 @@ def estimate(
 
     speed = None
     if device.bandwidth_gbps:
-        active = facts.params_active or facts.params_total
-        active_gb = active * bpw / 8 / 1e9
+        active_gb = read_per_token(facts) * bpw / 8 / 1e9
         speed = _DECODE_EFFICIENCY * device.bandwidth_gbps / (active_gb + kv)
         if verdict is Verdict.offload:
             speed = speed * 0.15  # CPU-bound once layers spill; refit by F9

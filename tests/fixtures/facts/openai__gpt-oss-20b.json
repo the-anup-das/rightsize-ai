@@ -6,7 +6,7 @@
  },
  "family": "llm",
  "params_total": 20914757184,
- "params_active": 2614344648,
+ "params_active": 4193246784,
  "dtype": "U8",
  "num_layers": 24,
  "num_kv_heads": 8,
@@ -69,6 +69,6 @@
   "hidden_size": 2880,
   "intermediate_size": 2880,
   "num_attention_heads": 64,
-  "params_active_note": "approximate: total x active/experts"
+  "params_active_note": "total minus idle routed experts"
  }
 }

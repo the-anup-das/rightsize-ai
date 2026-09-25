@@ -6,6 +6,7 @@ import json
 import struct
 
 import httpx
+import pytest
 
 from rightsize.catalog import facts, safetensors_header
 
@@ -131,3 +132,31 @@ def test_a_cache_from_an_older_catalog_is_refetched(tmp_path, monkeypatch) -> No
     stale["_cache_version"] = hub.CACHE_VERSION - 1
     path.write_text(json.dumps(stale), encoding="utf-8")
     assert hub._read_cache(path, ttl_s=3600) is None, "older version: refetch"
+
+
+def test_moe_active_parameters_count_the_always_on_part() -> None:
+    """Qwen3-30B-A3B: 128 experts of 3 x 2048 x 768 in 48 layers, 8 routed per token. Only
+    idle experts are subtracted; attention and embeddings run every token. Scaling the whole
+    model by 8/128 gave 1.9B, where the name and the model card say 3.3B."""
+    from rightsize.catalog.hub import _moe_active
+
+    tc = {"moe_intermediate_size": 768, "num_hidden_layers": 48}
+    active, how = _moe_active(30_532_122_624, tc, experts=128, k=8, hidden=2048)
+    assert active / 1e9 == pytest.approx(3.35, abs=0.02)
+    assert "idle routed experts" in how
+
+
+def test_moe_prediction_layers_are_not_active() -> None:
+    """DeepSeek-V3.1 ships a multi-token-prediction layer that plain decoding never runs;
+    without subtracting it the active count is 51B against a published 37B."""
+    from rightsize.catalog.hub import _moe_active
+
+    tc = {
+        "moe_intermediate_size": 2048,
+        "num_hidden_layers": 61,
+        "first_k_dense_replace": 3,
+        "num_nextn_predict_layers": 1,
+    }
+    active, how = _moe_active(684_531_386_000, tc, experts=256, k=8, hidden=7168)
+    assert 36e9 < active < 41e9
+    assert "prediction layer" in how
