@@ -18,6 +18,7 @@ from pathlib import Path
 import httpx
 
 from rightsize import __version__
+from rightsize._console import Console
 from rightsize.catalog import facts as hub_facts
 from rightsize.execution.llamacpp import (
     LlamaCppTools,
@@ -35,6 +36,7 @@ from rightsize.execution.llamacpp import (
     run_step,
     write_manifest,
 )
+from rightsize.execution.progress import parser_for
 from rightsize.fit import estimate, predicted_file_gb
 from rightsize.hardware import resolve as resolve_device
 from rightsize.types import Device, Measurement, ModelRef, RunManifest, RunStep
@@ -85,6 +87,23 @@ def _skipped(recipe_id: str, argv: list[str], note: str) -> RunStep:
     )
 
 
+def _tensor_count(snapshot: Path) -> int | None:
+    """Number of tensors the convert step will print, from the local safetensors index/header."""
+    import json
+    import struct
+
+    index = snapshot / "model.safetensors.index.json"
+    if index.exists():
+        return len(json.loads(index.read_text(encoding="utf-8")).get("weight_map", {}))
+    single = snapshot / "model.safetensors"
+    if single.exists():
+        with single.open("rb") as fh:
+            (n,) = struct.unpack("<Q", fh.read(8))
+            header = json.loads(fh.read(n))
+        return len([k for k in header if k != "__metadata__"])
+    return None
+
+
 def quantize_model(
     repo: str,
     quants: list[str],
@@ -104,6 +123,7 @@ def quantize_model(
     token: str | None = None,
     dry_run: bool = False,
     log: Log = print,
+    console: Console | None = None,
 ) -> RunManifest:
     quants = [q.upper() for q in quants]
     facts = hub_facts(repo, revision, token=token)
@@ -140,16 +160,39 @@ def quantize_model(
             f"{fr.verdict.value:7s} {fr.speed or '?'} {fr.speed_unit or ''}"
         )
 
-    def run(step, *, sample_vram=False):
-        rs, text, peak = run_step(
-            step,
-            log_path=run_dir
-            / "logs"
-            / f"{len(manifest.steps):02d}-{step.stage}-{Path(step.argv[-1]).stem[:40]}.log",
-            log=lambda line: log("  " + line),
-            extra_path=tc.root,
-            sample_vram=sample_vram,
+    def run(step, *, sample_vram=False, label="", total=None):
+        log_path = (
+            run_dir / "logs" / f"{len(manifest.steps):02d}-{step.stage}-{label or step.stage}.log"
         )
+        parser = parser_for(step.recipe_id, total_tensors=total)
+        desc = f"{step.stage} {label}".strip()
+        if console is None:
+            rs, text, peak = run_step(
+                step,
+                log_path=log_path,
+                log=lambda line: log("  " + line),
+                extra_path=tc.root,
+                sample_vram=sample_vram,
+            )
+        else:
+            with console.progress(desc, total=total) as bar:
+
+                def on_text(captured: str) -> None:
+                    got = parser(captured) if parser else None
+                    if got:
+                        cur, tot = got
+                        if tot and bar.total != tot:
+                            bar.set_total(tot)
+                        bar.update(cur)
+
+                rs, text, peak = run_step(
+                    step,
+                    log_path=log_path,
+                    log=lambda line: console.debug("  " + line),
+                    on_text=on_text,
+                    extra_path=tc.root,
+                    sample_vram=sample_vram,
+                )
         manifest.steps.append(rs)
         if rs.returncode != 0:
             manifest.status = "failed"
@@ -171,7 +214,7 @@ def quantize_model(
         snapshot = ensure_snapshot(repo, models, revision, token)
         conv = convert_step(tc, snapshot, base_gguf, outtype)
         log(f"convert: {conv.text}")
-        rs, _, _ = run(conv)
+        rs, _, _ = run(conv, label=base_gguf.stem, total=_tensor_count(snapshot))
         rs.measurements.append(
             Measurement(
                 kind="file_size_gb",
@@ -197,7 +240,7 @@ def quantize_model(
                 tc, base_gguf, calib, imat, gpu_layers=gpu_layers, chunks=imatrix_chunks
             )
             log(f"imatrix: {st.text}")
-            run(st, sample_vram=True)
+            run(st, sample_vram=True, label="imatrix")
         manifest.artifacts["imatrix"] = str(imat)
 
     # ---- quantize
@@ -209,7 +252,7 @@ def quantize_model(
         if dry_run:
             manifest.steps.append(_skipped(st.recipe_id, st.argv or [], "dry run"))
             continue
-        rs, _, _ = run(st)
+        rs, _, _ = run(st, label=q)
         rs.measurements.append(
             Measurement(
                 kind="file_size_gb",
@@ -237,7 +280,7 @@ def quantize_model(
                 tc, base_gguf, wiki, logits, gpu_layers=gpu_layers, chunks=eval_chunks
             )
             log(f"kld-base: {st.text}")
-            rs, text, peak = run(st, sample_vram=True)
+            rs, text, peak = run(st, sample_vram=True, label="reference")
             pred = estimate(facts, "BF16", dev, ctx=EVAL_CTX)
             if peak:
                 rs.measurements.append(
@@ -253,7 +296,7 @@ def quantize_model(
         for q, out in outputs.items():
             st = kld_eval_step(tc, out, wiki, logits, gpu_layers=gpu_layers, chunks=eval_chunks)
             log(f"kld-eval {q}: {st.text}")
-            rs, text, peak = run(st, sample_vram=True)
+            rs, text, peak = run(st, sample_vram=True, label=q)
             metrics = parse_perplexity_output(text)
             pred = estimate(facts, q, dev, ctx=EVAL_CTX)
             if peak:

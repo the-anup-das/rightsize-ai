@@ -14,7 +14,7 @@ import sys
 HEAVY = {"torch", "transformers", "numpy", "diffusers", "unsloth", "mcp", "jinja2"}
 # `import rightsize` is stdlib-only by design (PEP 562 lazy exports), so it must also
 # not pull in the three core deps until a type is touched.
-CORE_LAZY = {"pydantic", "httpx", "yaml"}
+CORE_LAZY = {"pydantic", "httpx", "yaml", "rich"}
 
 IMPORT_BUDGET_SECONDS = 0.15
 

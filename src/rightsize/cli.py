@@ -1,7 +1,8 @@
 """Command-line interface. Standard-library argparse only (lightweight rule).
 
 Every subcommand mirrors an SDK function (docs/plans/F06-surfaces.md). Commands whose
-feature has not landed print where its plan lives and exit 0.
+feature has not landed print where its plan lives and exit 0. Colour and progress bars come
+from the optional ``rich`` package (extras ``cli`` / ``llamacpp``); without it, plain text.
 """
 
 from __future__ import annotations
@@ -25,7 +26,10 @@ def build_parser() -> argparse.ArgumentParser:
         prog="rightsize", description="Quantize and fit any model to your hardware."
     )
     p.add_argument("--version", action="version", version=f"rightsize {__version__}")
-    p.add_argument("--json", action="store_true", help="machine-readable output")
+    p.add_argument("--json", action="store_true", help="machine-readable output, no colour")
+    p.add_argument("--no-color", action="store_true", help="plain text (also: NO_COLOR=1)")
+    p.add_argument("-v", "--verbose", action="store_true", help="echo tool output as it runs")
+    p.add_argument("-q", "--quiet", action="store_true", help="only failures and final tables")
     sub = p.add_subparsers(dest="command")
 
     r = sub.add_parser("recommend", help="hardware-first: rank models that fit your devices")
@@ -55,7 +59,7 @@ def build_parser() -> argparse.ArgumentParser:
     q.add_argument("--device", default="detect")
     q.add_argument("--ctx", type=int, default=8192, help="context used for the VRAM prediction")
     q.add_argument("--imatrix", action="store_true", help="compute an importance matrix first")
-    q.add_argument("--eval", action="store_true", help="KL-divergence gate vs the 16-bit reference")
+    q.add_argument("--eval", action="store_true", help="KL-divergence gate vs the 16-bit file")
     q.add_argument("--eval-chunks", type=int, default=100, help="perplexity chunks (0 = all)")
     q.add_argument("--imatrix-chunks", type=int, default=None)
     q.add_argument("--outtype", default="auto", choices=["auto", "f16", "bf16", "f32"])
@@ -78,6 +82,13 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
+def _console(args: argparse.Namespace):
+    from rightsize._console import Console
+
+    color = False if (args.no_color or args.json) else None
+    return Console(color=color, verbose=args.verbose, quiet=args.quiet or args.json)
+
+
 def _not_yet(command: str, as_json: bool) -> int:
     feature, plan = _PLANS[command]
     if as_json:
@@ -89,30 +100,33 @@ def _not_yet(command: str, as_json: bool) -> int:
     return 0
 
 
-def _table(rows: list[list[str]], header: list[str]) -> str:
-    widths = [max(len(str(r[i])) for r in [header, *rows]) for i in range(len(header))]
-    fmt = "  ".join("{:<" + str(w) + "}" for w in widths)
-    lines = [fmt.format(*header), fmt.format(*["-" * w for w in widths])]
-    lines += [fmt.format(*[str(c) for c in r]) for r in rows]
-    return "\n".join(lines)
-
-
 def cmd_detect(args: argparse.Namespace) -> int:
     from rightsize.hardware import detect
 
     dev = detect()
     if args.json:
         print(dev.model_dump_json(indent=2))
-    else:
-        print(
-            f"{dev.name}  vendor={dev.vendor}  memory={dev.memory_gb} GB  "
-            f"bandwidth={dev.bandwidth_gbps} GB/s  arch={dev.compute_arch}  "
-            f"ram={dev.system_ram_gb} GB  os={dev.os}"
-        )
+        return 0
+    con = _console(args)
+    con.table(
+        ["device", "vendor", "memory", "bandwidth", "arch", "system RAM", "os"],
+        [
+            [
+                dev.name,
+                dev.vendor,
+                f"{dev.memory_gb} GB",
+                f"{dev.bandwidth_gbps or '?'} GB/s",
+                dev.compute_arch or "?",
+                f"{dev.system_ram_gb or '?'} GB",
+                dev.os,
+            ]
+        ],
+    )
     return 0
 
 
 def cmd_estimate(args: argparse.Namespace) -> int:
+    from rightsize._console import verdict_style
     from rightsize.catalog import facts
     from rightsize.fit import estimate, predicted_file_gb
     from rightsize.hardware import resolve
@@ -122,24 +136,22 @@ def cmd_estimate(args: argparse.Namespace) -> int:
     quants = [q.upper() for q in (args.quant or ["Q4_K_M"])]
     results = {q: estimate(fx, q, dev, runtime=args.runtime, ctx=args.ctx) for q in quants}
     if args.json:
-        print(
-            json.dumps(
-                {
-                    "model": fx.model_dump(mode="json"),
-                    "device": dev.model_dump(mode="json"),
-                    "ctx": args.ctx,
-                    "results": {q: r.model_dump(mode="json") for q, r in results.items()},
-                },
-                indent=2,
-            )
-        )
+        payload = {
+            "model": fx.model_dump(mode="json"),
+            "device": dev.model_dump(mode="json"),
+            "ctx": args.ctx,
+            "results": {q: r.model_dump(mode="json") for q, r in results.items()},
+        }
+        print(json.dumps(payload, indent=2))
         return 0
-    print(
-        f"{args.model}: {fx.params_total / 1e9:.2f}B params, {fx.num_layers} layers, "
+    con = _console(args)
+    con.title(f"{args.model} on {dev.name}")
+    con.info(
+        f"{fx.params_total / 1e9:.2f}B params, {fx.num_layers} layers, "
         f"kv_heads {fx.num_kv_heads}, head_dim {fx.head_dim}  |  "
-        f"{dev.name} {dev.memory_gb} GB, ctx {args.ctx}"
+        f"{dev.memory_gb} GB, {dev.bandwidth_gbps or '?'} GB/s, ctx {args.ctx}"
     )
-    rows = []
+    rows, styles = [], []
     for q, r in results.items():
         rows.append(
             [
@@ -153,11 +165,14 @@ def cmd_estimate(args: argparse.Namespace) -> int:
                 f"{r.confidence:.1f}",
             ]
         )
-    print(
-        _table(rows, ["quant", "file GB", "weights", "kv", "vram GB", "verdict", "speed", "conf"])
+        styles.append(verdict_style(r.verdict.value))
+    con.table(
+        ["quant", "file GB", "weights", "kv", "vram GB", "verdict", "speed", "conf"],
+        rows,
+        styles=styles,
     )
     first = next(iter(results.values()))
-    print(f"formula {first.formula_id}; notes: {'; '.join(first.notes)}")
+    con.debug(f"formula {first.formula_id}; notes: {'; '.join(first.notes)}")
     return 0
 
 
@@ -170,17 +185,21 @@ def cmd_frameworks(args: argparse.Namespace) -> int:
     if args.json:
         print(json.dumps({k: v.model_dump(mode="json") for k, v in recipes.items()}, indent=2))
         return 0
+    con = _console(args)
     rows = [
         [r.framework, r.stage, r.id, r.version_tested or "", ", ".join(r.families)]
         for r in recipes.values()
     ]
-    print(_table(rows, ["framework", "stage", "recipe", "tested", "families"]))
+    con.table(["framework", "stage", "recipe", "tested", "families"], rows)
     return 0
 
 
 def cmd_quantize(args: argparse.Namespace) -> int:
+    from rightsize._console import error_style
     from rightsize.execution import quantize_model
 
+    con = _console(args)
+    con.title(f"rightsize quantize {args.model}")
     manifest = quantize_model(
         args.model,
         args.quant or ["Q4_K_M"],
@@ -197,34 +216,42 @@ def cmd_quantize(args: argparse.Namespace) -> int:
         gpu_layers=args.gpu_layers,
         revision=args.revision,
         dry_run=args.dry_run,
-        log=(lambda s: None) if args.json else (lambda s: print(s, flush=True)),
+        log=(lambda s: None) if args.json else con.info,
+        console=None if args.json else con,
     )
     if args.json:
         print(manifest.model_dump_json(indent=2))
         return 0
-    rows = []
+    rows, styles = [], []
     for step in manifest.steps:
         for m in step.measurements:
-            if m.predicted is not None or m.kind in ("kld_mean", "top1_agreement", "ppl"):
-                rows.append(
-                    [
-                        step.recipe_id,
-                        m.kind,
-                        m.note or "",
-                        f"{m.predicted:.3f}" if m.predicted is not None else "",
-                        f"{m.value:.3f}",
-                        f"{(m.value - m.predicted) / m.predicted * 100:+.1f}%"
-                        if m.predicted
-                        else "",
-                    ]
-                )
-    print()
-    print(_table(rows, ["step", "measure", "what", "predicted", "measured", "error"]))
+            if m.predicted is None and m.kind not in ("kld_mean", "top1_agreement", "ppl"):
+                continue
+            err = (m.value - m.predicted) / m.predicted * 100 if m.predicted else None
+            rows.append(
+                [
+                    step.recipe_id,
+                    m.kind,
+                    m.note or "",
+                    f"{m.predicted:.3f}" if m.predicted is not None else "",
+                    f"{m.value:.3f}",
+                    f"{err:+.1f}%" if err is not None else "",
+                ]
+            )
+            styles.append(error_style(err))
+    if rows:
+        con.out()
+        con.table(
+            ["step", "measure", "what", "predicted", "measured", "error"], rows, styles=styles
+        )
     for q, g in manifest.gate.items():
-        print(f"gate {q}: {g['verdict']}")
-    print(
-        f"status {manifest.status}; artifacts: "
-        + ", ".join(f"{k}={v}" for k, v in manifest.artifacts.items())
+        line = (
+            f"gate {q}: {g['verdict']}  (mean KLD {g.get('kld_mean', '?')}, "
+            f"top-1 agreement {g.get('top1_agreement', '?')})"
+        )
+        {"pass": con.ok, "warn": con.warn}.get(g["verdict"], con.fail)(line)
+    (con.ok if manifest.status == "succeeded" else con.fail)(
+        f"{manifest.status}: " + ", ".join(f"{k}={v}" for k, v in manifest.artifacts.items())
     )
     return 0 if manifest.status == "succeeded" else 1
 

@@ -37,12 +37,15 @@ dependencies = [
 [project.optional-dependencies]
 # Surfaces
 mcp = ["mcp>=1.2"]
+# Colour, tables and progress bars in the terminal; plain text without it.
+cli = ["rich>=13.7"]
 # Hardware detection uses subprocess + httpx only today; extra reserved for optional probes.
 detect = []
 # Execution adapters (F8). Imported lazily, never at startup.
 # llamacpp: converting safetensors -> GGUF runs llama.cpp's convert_hf_to_gguf.py, which needs
 # torch + transformers. Quantizing an existing GGUF needs only the llama.cpp binaries.
 llamacpp = [
+  "rich>=13.7",
   "gguf>=0.17",
   "numpy>=1.26",
   "torch>=2.4",
@@ -109,6 +112,7 @@ select = ["E", "F", "I", "UP", "B", "SIM", "T20"]
 [tool.ruff.lint.per-file-ignores]
 # T20: print() is allowed in the CLI and in tests only.
 "src/rightsize/cli.py" = ["T20"]
+"src/rightsize/_console.py" = ["T20"]
 "tests/**" = ["T20"]
 # notebook cell sources are embedded strings; wrapping them would wrap the cells
 "scripts/make_notebooks.py" = ["E501", "T20"]

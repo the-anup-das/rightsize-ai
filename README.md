@@ -61,23 +61,21 @@ rightsize quantize Qwen/Qwen3-1.7B --quant Q4_K_M --imatrix --eval
 | F9 Calibration loop | [F09](docs/plans/F09-calibration.md) | phase 2 |
 | F10 Cloud provider connectors | [F10](docs/plans/F10-cloud-connectors.md) | phase 3 |
 
-## Where this project is honestly at
+## Where this project is at, and where it is going
 
-I'm one developer building this in my spare time, and I want to be upfront about what that means before you rely on a number it gives you.
+I'm one developer building this in my spare time, and I'd rather tell you exactly what has been exercised than let a clean table imply more than it should.
 
-**The hardware I have.** Day to day I work on a Windows 11 desktop with an RTX 4070 Ti SUPER (16 GB) and 64 GB of RAM. I also have a Linux machine, an OpenMediaVault 8 server that is CPU-only, and a Mac. There is no cloud budget. So the paths that get exercised most are GGUF quantization and evaluation of models up to roughly 8B on a single NVIDIA card, plus whatever I can run on CPU. The Linux, NAS and Apple Silicon paths get real runs as I get to them, not on every change.
+**What is verified today.** My daily machine is a Windows 11 desktop with an RTX 4070 Ti SUPER (16 GB) and 64 GB of RAM, and I also have a Linux box, an OpenMediaVault 8 server (CPU only) and a Mac. GGUF quantization and evaluation of models up to roughly 8B on a single NVIDIA card is the path that runs on every change, with CPU-only runs alongside. Every real run writes a `runs/<run>/manifest.json` with predicted next to measured, and those numbers are what keep the estimator honest.
 
-**What that means for you.**
+**What is next on the hardware side.** Linux and CPU-only runs on the NAS, then Apple Silicon on the Mac, are the next real-run targets. AMD, Intel, multi-GPU and data-center GPUs are modelled from vendor spec sheets for now: every preset links the page it came from, and the estimate carries a lower confidence on purpose, so you know which numbers to double-check. As people with that hardware send back measurements, those move into the verified column.
 
-- Estimates for NVIDIA consumer cards and CPU-only boxes are checked against real runs on my machines. The `runs/*/manifest.json` files record predicted versus measured, and I keep the constants honest from those.
-- Estimates for AMD, Intel, Apple, multi-GPU and data-center GPUs are built from documentation and vendor spec sheets. Every preset carries the URL it came from so you can check it, and the estimate carries a lower confidence on purpose. Treat them as a starting point until someone with that hardware confirms them.
-- Fine-tuning estimates, the rules engine, the MCP server, the cloud fallback and the calibration loop are not built yet. Each has a plan with a TODO list in `docs/plans/`, and the roadmap table above says which is which.
+**What is next on the feature side.** The roadmap table above is the plan: fine-tuning estimators, the rules and ranking engine, the MCP server, the cloud fallback and the calibration loop each have a plan file with a TODO list in `docs/plans/`, in build order. The pieces that exist today are the foundation the rest is built on, and each new feature lands with tests and a notebook.
 
-**How you can help, in five minutes.** If a number is off on your hardware, that is the single most useful thing you can send me.
+**How you can help, in five minutes.** If a number is off on your hardware, that is the single most useful thing you can send.
 
 > **[Open an issue](https://github.com/the-anup-das/rightsize-ai/issues/new)** with the output of `rightsize detect` and `rightsize estimate <model>`, or attach a `runs/<run>/manifest.json` from a real run. If you know the right bandwidth or memory figure for a device, the presets are a YAML file; a one-line PR with the source URL is perfect.
 
-When better hardware or cloud access becomes affordable, the "from documentation" list shrinks and the "checked" list grows. Until then I'd rather tell you exactly what has been tested than let a clean-looking table imply more than it should.
+There is no cloud budget behind this yet. When better hardware or cloud access becomes affordable, the verified column grows faster; until then, measurements from the community are how it grows.
 
 ## Contributing
 

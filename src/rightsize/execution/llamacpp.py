@@ -6,6 +6,7 @@ writes a RunManifest. Heavy imports (huggingface_hub for downloads) happen insid
 
 from __future__ import annotations
 
+import codecs
 import datetime as _dt
 import json
 import os
@@ -134,11 +135,17 @@ def run_step(
     *,
     log_path: Path,
     log: Log | None = None,
+    on_text: Callable[[str], None] | None = None,
     cwd: Path | None = None,
     extra_path: Path | None = None,
     sample_vram: bool = False,
 ) -> tuple[RunStep, str, float | None]:
-    """Run a rendered command, stream its output, return (RunStep, captured text, peak VRAM GB)."""
+    """Run a rendered command, stream its output, return (RunStep, captured text, peak VRAM GB).
+
+    Output is read in chunks, not lines, so tools that print progress without newlines
+    (llama-perplexity's ``[1]4.97,[2]5.88,`` ...) still drive ``on_text`` live. ``log`` receives
+    complete lines; ``on_text`` receives everything captured so far, partial line included.
+    """
     assert step.argv, "run_step needs a command recipe"
     env = dict(os.environ)
     if extra_path:
@@ -148,28 +155,37 @@ def run_step(
     captured: list[str] = []
     t0 = time.perf_counter()
     sampler = _VramSampler() if sample_vram else None
+    decoder = codecs.getincrementaldecoder("utf-8")(errors="replace")
+    pending = ""
     with log_path.open("w", encoding="utf-8", errors="replace") as fh:
         fh.write("$ " + " ".join(step.argv) + "\n")
         proc = subprocess.Popen(
-            step.argv,
-            cwd=cwd,
-            env=env,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            bufsize=1,
+            step.argv, cwd=cwd, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
         )
         if sampler:
             sampler.__enter__()
         try:
             assert proc.stdout is not None
-            for line in proc.stdout:
-                fh.write(line)
-                captured.append(line)
+            while True:
+                data = proc.stdout.read1(65536)
+                if not data:
+                    break
+                text = decoder.decode(data)
+                if not text:
+                    continue
+                fh.write(text)
+                fh.flush()
+                captured.append(text)
+                pending += text
+                *lines, pending = pending.replace("\r", "\n").split("\n")
                 if log:
-                    log(line.rstrip("\n"))
+                    for line in lines:
+                        if line:
+                            log(line)
+                if on_text:
+                    on_text("".join(captured))
+            if pending and log:
+                log(pending)
             rs.returncode = proc.wait()
         finally:
             if sampler:
