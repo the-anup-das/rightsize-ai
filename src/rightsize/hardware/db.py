@@ -142,7 +142,9 @@ def catalog() -> dict[str, Device]:
         for mem in rec.get("memory_gib") or []:
             gbps, hit = _bandwidth_for(rec["name"], vendor, mem)
             prov = (hit or {}).get("provenance") or rec.get("provenance")
-            name = f"{rec['name']} {mem:g}GB"
+            # Some names already carry their size ("Jetson Orin Nano 8GB"); do not repeat it
+            suffix = f"{mem:g}GB"
+            name = rec["name"] if rec["name"].endswith(suffix) else f"{rec['name']} {suffix}"
             out[name] = Device(
                 name=name,
                 vendor=vendor,

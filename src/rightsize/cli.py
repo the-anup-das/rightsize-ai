@@ -70,6 +70,16 @@ def build_parser() -> argparse.ArgumentParser:
     q.add_argument("--revision", default="main")
     q.add_argument("--dry-run", action="store_true", help="render every step, run nothing")
 
+    b = sub.add_parser("bench", help="measure this machine's real memory bandwidth")
+    b.add_argument("model", help="Hub id of the model in the GGUF, e.g. Qwen/Qwen3-0.6B")
+    b.add_argument("--gguf", default=None, help="the .gguf to run (default: search runs/, models/)")
+    b.add_argument("--quant", default="Q4_K_M", help="quantization of that file")
+    b.add_argument("--device", default="detect")
+    b.add_argument("--gpu-layers", default="all")
+    b.add_argument("--tools", default=None)
+    b.add_argument("--revision", default="main")
+    b.add_argument("--no-save", action="store_true", help="print it but do not remember it")
+
     t = sub.add_parser("tools", help="install pinned toolchains into .tools/")
     t_sub = t.add_subparsers(dest="tools_command")
     ti = t_sub.add_parser("install", help="download a toolchain (binaries + converter)")
@@ -287,6 +297,58 @@ def cmd_quantize(args: argparse.Namespace) -> int:
     return 0 if manifest.status == "succeeded" else 1
 
 
+def cmd_bench(args: argparse.Namespace) -> int:
+    from rightsize.catalog import facts as hub_facts
+    from rightsize.execution.bench import BenchError, measure
+    from rightsize.hardware import resolve
+
+    con = _console(args)
+    fx = hub_facts(args.model, args.revision)
+    dev = resolve(args.device)
+    gguf = _find_gguf(args)
+    if gguf is None:
+        con.fail(
+            f"no GGUF found for {args.model}. Pass --gguf, or make one with "
+            f"'rightsize quantize {args.model} --quant {args.quant}'."
+        )
+        return 2
+    try:
+        record = measure(
+            dev, fx, args.quant.upper(), gguf,
+            tools=None if args.tools is None else __import__(
+                "rightsize.execution.llamacpp", fromlist=["find_tools"]
+            ).find_tools(args.tools),
+            gpu_layers=args.gpu_layers,
+            save=not args.no_save,
+            log=(lambda s: None) if args.json else con.info,
+        )
+    except BenchError as exc:
+        con.fail(str(exc))
+        return 1
+    if args.json:
+        print(json.dumps({dev.name: record}, indent=2))
+        return 0
+    con.ok(f"{dev.name}: {record['bandwidth_gbps']} GB/s effective")
+    return 0
+
+
+def _find_gguf(args: argparse.Namespace):
+    """The file named on the command line, else the newest match under runs/ or models/."""
+    from pathlib import Path
+
+    if args.gguf:
+        p = Path(args.gguf)
+        return p if p.exists() else None
+    slug = args.model.replace("/", "__")
+    found = [
+        p
+        for root in (Path("runs"), Path("models"))
+        if root.is_dir()
+        for p in root.rglob(f"{slug}*{args.quant.upper()}*.gguf")
+    ]
+    return max(found, key=lambda p: p.stat().st_mtime) if found else None
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -299,6 +361,7 @@ def main(argv: list[str] | None = None) -> int:
         "frameworks": cmd_frameworks,
         "quantize": cmd_quantize,
         "tools": cmd_tools,
+        "bench": cmd_bench,
     }
     if args.command in handlers:
         return handlers[args.command](args)

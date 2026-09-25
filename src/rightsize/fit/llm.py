@@ -109,6 +109,15 @@ def estimate(
             notes.append("speed assumes partial offload (large penalty)")
         if speed < _SLOW_TOK_S:
             notes.append(f"below {_SLOW_TOK_S:g} tok/s; fits but will feel slow")
+    else:
+        # Say so rather than showing a blank column. Some devices have no published
+        # bandwidth at all - NVIDIA gives laptop GPUs a bus width but no bandwidth,
+        # because the memory speed is the laptop maker's choice - so measuring beats
+        # hunting for a number that does not exist.
+        notes.append(
+            "no speed estimate: memory bandwidth unknown for this device. "
+            "Measure it with 'rightsize bench', or pass one you trust."
+        )
 
     return FitResult(
         verdict=verdict,
