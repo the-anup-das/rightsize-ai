@@ -48,6 +48,8 @@ PAGES = (
     ("Apple silicon", "apple"),
 )
 TOLERANCE = 0.02
+#: Beyond this gap between our arithmetic and the page, we stop trusting our parsed rate.
+TRUST_STATED_ABOVE = 0.15
 
 # Header cells we need, matched case-insensitively against the sub-header row.
 WANT = {
@@ -248,8 +250,21 @@ def rows_from(grid: list[list[str]]) -> list[dict[str, Any]]:
             rec["rate"] = _rate_from_mts(row[cols["mem_rate_mts"]])
         if rec["bandwidth"] and rec["bus_width"]:
             _fix_clock_vs_rate(rec)
-            out.append(rec)
+            if _plausible(rec):
+                out.append(rec)
     return out
+
+
+def _plausible(rec: dict[str, Any]) -> bool:
+    """Reject a row whose bandwidth cannot go with its bus width.
+
+    A bus can only run between RATE_RANGE Gbps, so the two numbers bound each other. An
+    MI250 row parsed to 2 GB/s on a 4096-bit bus, which would need a rate of 0.004; the
+    real card does 3276. Better to have no number than that one.
+    """
+    width = rec["bus_width"]
+    value = width * rec["rate"] / 8 if rec.get("rate") else rec["bandwidth"]
+    return width * RATE_RANGE[0] / 8 <= value <= width * RATE_RANGE[1] / 8
 
 
 def _fix_clock_vs_rate(rec: dict[str, Any]) -> None:
@@ -277,6 +292,14 @@ def _fix_clock_vs_rate(rec: dict[str, Any]) -> None:
             rec["rate"] = scaled
             rec["rate_was_clock"] = True
             return
+    if off > TRUST_STATED_ABOVE:
+        # Far apart and no data-rate multiple reconciles them, so the rate we parsed is not
+        # a rate. An H100 row gives 1.0 against a 5120-bit bus, which would be 640 GB/s
+        # where the same row says 2039. Keep the source's published figure and drop ours;
+        # a small gap still favours the arithmetic, which is how the RTX 3060 12 GB stays
+        # at the 360 GB/s NVIDIA publishes rather than the 336 the column claims.
+        rec.pop("rate", None)
+        rec["rate_rejected"] = True
 
 
 def _type_and_width(cell: str) -> tuple[str | None, float | None]:
@@ -327,7 +350,30 @@ def collapse(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
 #: Wikipedia lists datacenter parts as "A10 GPU Accelerator", "H200 GPU Accelerator SXM
 #: card"; the catalogue and everyone else say "A10" and "H200". Only ever stripped from the
 #: end, so an "RTX A400 card" does not become "RTX A400" plus something else.
-_PACKAGING = re.compile(r"(?:\s+\b(?:gpu|accelerator|pcie|sxm|oam|card|module|board)\b)+$")
+_PACKAGING = re.compile(
+    r"(?:\s+\b(?:gpu|accelerator|pcie|sxm|oam|card|module|board|generation)\b)+$"
+)
+#: A memory size usually trails the packaging words: "V100 GPU Accelerator 16GB".
+_SIZE_TAIL = re.compile(r"\s+(\d+(?:\.\d+)?gb)$")
+
+
+def _short_key(key: str) -> tuple[str | None, str | None]:
+    """(with size, without size) for a name carrying packaging words, else (None, None).
+
+    'v100 gpu accelerator 16gb' gives ('v100 16gb', 'v100'). Peeling the size off first
+    keeps the strip anchored to the end, which is the only place these words are safe to
+    remove; stripping them anywhere collided an H100 with an unrelated row at 640 GB/s.
+
+    Names without packaging words alias to nothing at all, because dropping a size from one
+    is not a synonym but a different card: 'rtx 3060 12gb' is 360 GB/s and the plain
+    'rtx 3060' is the 8 GB, 240 GB/s version.
+    """
+    m = _SIZE_TAIL.search(key)
+    head = key[: m.start()] if m else key
+    stripped = _PACKAGING.sub("", head).strip()
+    if not stripped or stripped == head:
+        return None, None
+    return (f"{stripped} {m.group(1)}" if m else stripped), stripped
 
 
 def _add_short_keys(out: dict[str, dict[str, Any]]) -> None:
@@ -340,12 +386,14 @@ def _add_short_keys(out: dict[str, dict[str, Any]]) -> None:
     SXM A100 - and the faster wins, with bandwidth.yaml overriding where it matters.
     """
     for key in list(out):
-        short = _PACKAGING.sub("", key).strip()
-        if not short or short == key:
-            continue
-        current = out.get(short)
-        if current is None or value_of(out[key]) > value_of(current):
-            out[short] = out[key]
+        # "v100 gpu accelerator 16gb" gives both "v100 16gb" and the bare "v100"
+        short, bare = _short_key(key)
+        for alias in {short, bare}:
+            if not alias or alias == key:
+                continue
+            current = out.get(alias)
+            if current is None or value_of(out[key]) > value_of(current):
+                out[alias] = out[key]
 
 
 def value_of(rec: dict[str, Any]) -> float:

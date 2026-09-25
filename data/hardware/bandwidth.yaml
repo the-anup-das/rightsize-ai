@@ -106,6 +106,16 @@ devices:
     stated: true
     note: not in the Hugging Face table, which carries no Instinct parts
     provenance: { source_url: https://www.amd.com/en/products/accelerators/instinct/mi300/mi300x.html, fetched_at: "2026-09-25", hand: true }
+  - name: Apple M2
+    vendor: apple
+    aliases: [M2]
+    memory_type: LPDDR5-6400 unified
+    bandwidth_gbps: 100
+    stated: true
+    note: >-
+      Apple states 100GB/s. The base M2 is the one chip missing from Wikipedia's Apple
+      silicon table, which carries M1, M3, M4 and M5 but not this row.
+    provenance: { source_url: https://www.apple.com/newsroom/2022/06/apple-unveils-m2-with-breakthrough-performance-and-capabilities/, fetched_at: "2026-09-25", hand: true }
   - name: Apple M4 Max
     vendor: apple
     aliases: [M4 Max 64GB, M4 Max]

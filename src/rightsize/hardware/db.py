@@ -169,7 +169,7 @@ def _arch(rec: dict) -> str | None:
 
 def _norm(s: str) -> str:
     s = s.lower()
-    s = re.sub(r"\b(nvidia|geforce|amd|radeon|apple|intel|laptop gpu)\b", " ", s)
+    s = re.sub(r"\b(nvidia|geforce|amd|radeon|instinct|apple|intel|laptop gpu|laptop)\b", " ", s)
     s = re.sub(r"(\d+)\s*gb\b", r"\1gb", s)
     return re.sub(r"[^a-z0-9]+", " ", s).strip()
 

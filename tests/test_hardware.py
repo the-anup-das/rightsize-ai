@@ -241,3 +241,26 @@ def test_intel_arc_comes_from_intels_own_spec_pages() -> None:
     # the A770 runs its 16GB variant faster than its 8GB one, 17.5 Gbps against 16
     assert cat["Arc A770 8GB"].bandwidth_gbps == 512.0
     assert cat["Arc A770 16GB"].bandwidth_gbps == 560.0
+
+
+def test_implausible_rows_are_dropped_rather_than_published() -> None:
+    """An MI250 row parsed to 2 GB/s on a 4096-bit bus. No number beats a wrong one.
+
+    A bus can only run between RATE_RANGE Gbps, so bus width and bandwidth bound each
+    other; a pair that cannot go together means the parse failed on that row.
+    """
+    cat = db.catalog()
+    assert cat["MI250 128GB"].bandwidth_gbps is None
+    # its siblings parse cleanly and are kept
+    assert cat["MI210 64GB"].bandwidth_gbps == 1638.4  # 4096-bit HBM2E at 3.2
+    assert cat["MI100 32GB"].bandwidth_gbps == 1228.8
+
+
+def test_mobile_parts_resolve_after_the_laptop_suffix_is_normalised() -> None:
+    """Wikipedia names these "GeForce RTX 3060 Mobile/ Laptop"; the catalogue says
+    "RTX 3060 Mobile". The trailing "laptop" token kept ~30 devices from matching.
+
+    NVIDIA publishes a bus width but not a bandwidth for laptop GPUs, because the memory
+    speed is an OEM choice, so these come from the list rather than the vendor.
+    """
+    assert db.catalog()["RTX 3060 Mobile 6GB"].bandwidth_gbps == 288.0
