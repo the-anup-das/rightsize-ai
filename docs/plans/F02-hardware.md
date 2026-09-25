@@ -63,12 +63,41 @@ Table + presets + NVIDIA / Apple / CPU detection. AMD and Intel detection in pha
 
 ## TODO
 
-- [ ] `Device` finalised; `data/schema/device.schema.json`, `preset.schema.json`
-- [ ] `scripts/ingest_hardware.py`: `hardware.ts` -> `gpus.json` / `cpus.json` / `apple.json` with provenance
-- [ ] Bandwidth merge: TechPowerUp or `dbgpu`; Apple hand table marked `hand: true`
-- [ ] `data/hardware/presets.yaml` (14 presets)
-- [ ] Fuzzy lookup + ambiguity handling
-- [ ] `detect()`: nvidia-smi, sysctl / system_profiler, RAM read, Ollama `/api/ps`, LM Studio `/api/v0/models`
-- [ ] `from_hf()` via the public overview API
-- [ ] Fixtures and tests
-- [ ] Verify the two **(verify)** items and record outcomes here
+- [x] `Device` finalised: memory authored in GiB (`memory_gib`), `memory_gb` converts to the
+      decimal GB the fit engine works in. Schemas still to write.
+- [x] `scripts/ingest_hf_hardware.py`: huggingface.js SKU tables -> `data/hardware/gpus.yaml`,
+      pinned to a commit, 259 devices with provenance per record
+- [x] Bandwidth: **not** TechPowerUp (captcha, `noindex,nofollow`) and **not** `dbgpu` (a
+      pickle, and a scrape of the same source). `scripts/ingest_bandwidth.py` takes bus width,
+      memory type and clock from Wikipedia's GPU lists and computes
+      `bus_width_bits * memory_speed_gbps / 8`; vendors' own pages are curated in
+      `bandwidth.yaml` where the arithmetic cannot reach (HBM, Apple, Intel Arc).
+      ~200 of 259 covered.
+- [x] `data/hardware/presets.yaml` (16 presets, now the curated layer above the catalogue)
+- [x] Fuzzy lookup + ambiguity handling, preferring presets, then the catalogue; desktop
+      parts beat Mobile variants on a tie; size-qualified names beat bare ones
+- [x] `detect()`: nvidia-smi, sysctl / system_profiler, RAM read
+- [ ] `detect()`: Ollama `/api/ps`, LM Studio `/api/v0/models` as additional sources
+- [x] `from_hf()` via the public overview API, resolving SKU triples against the catalogue
+- [x] Fixtures and tests
+- [x] `rightsize bench`: measure effective bandwidth when nothing publishes one, and prefer
+      a measurement of this machine over any table
+- [ ] Remaining coverage: Jetson modules, RTX PRO workstation cards, export variants
+      (A800, H20, L20), Max-Q laptop parts. Vendor pages, one search and verify each.
+- [ ] `data/schema/device.schema.json`, `preset.schema.json`
+
+## Verified while building
+
+- **TechPowerUp**: closed to us. Serves a Cloudflare captcha and marks pages
+  `noindex,nofollow`. LTT Labs is the same posture despite an allow-all robots.txt.
+- **dbgpu**: MIT and ~2000 GPUs, but ships its database as a pickle and the data is scraped
+  from TechPowerUp. Not used.
+- **Wikidata**: has no memory-bandwidth property at all.
+- **CPU-Z / valid.x86.fr**: a validation database of user-submitted CPU, mainboard and RAM
+  readings. No GPU bandwidth field, no bulk access.
+- **A source can be consistently wrong and no internal check will catch it.** Wikipedia gives
+  the H200 the H100's 3360 GB/s and the V100 829 instead of 900, with bus width and clock
+  agreeing in both cases. Only spot-checks against vendor pages found them; those records
+  carry `source_disagrees: true`.
+- **Laptop GPUs have no single correct bandwidth.** NVIDIA publishes a bus width but not a
+  memory speed, because that is the laptop maker's choice. Measuring is the answer there.
