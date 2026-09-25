@@ -1,0 +1,170 @@
+{
+  "$defs": {
+    "RecipeInput": {
+      "properties": {
+        "default": {
+          "default": null,
+          "title": "Default"
+        },
+        "help": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Help"
+        },
+        "required": {
+          "default": false,
+          "title": "Required",
+          "type": "boolean"
+        },
+        "type": {
+          "default": "str",
+          "enum": [
+            "path",
+            "str",
+            "int",
+            "float",
+            "bool",
+            "enum"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "values": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Values"
+        }
+      },
+      "title": "RecipeInput",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "families": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Families",
+      "type": "array"
+    },
+    "framework": {
+      "title": "Framework",
+      "type": "string"
+    },
+    "hardware": {
+      "additionalProperties": true,
+      "title": "Hardware",
+      "type": "object"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "inputs": {
+      "additionalProperties": {
+        "$ref": "#/$defs/RecipeInput"
+      },
+      "title": "Inputs",
+      "type": "object"
+    },
+    "install_extra": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Install Extra"
+    },
+    "install_line": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Install Line"
+    },
+    "kind": {
+      "default": "command",
+      "enum": [
+        "command",
+        "config"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "notes": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Notes",
+      "type": "array"
+    },
+    "source_doc_url": {
+      "title": "Source Doc Url",
+      "type": "string"
+    },
+    "stage": {
+      "enum": [
+        "convert",
+        "finetune",
+        "quantize",
+        "export",
+        "serve",
+        "calibrate",
+        "evaluate"
+      ],
+      "title": "Stage",
+      "type": "string"
+    },
+    "template": {
+      "title": "Template",
+      "type": "string"
+    },
+    "version_tested": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Version Tested"
+    }
+  },
+  "required": [
+    "id",
+    "framework",
+    "stage",
+    "template",
+    "source_doc_url"
+  ],
+  "title": "Recipe",
+  "type": "object"
+}

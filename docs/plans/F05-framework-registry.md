@@ -118,6 +118,7 @@ The 14 MVP recipes above plus 4 serve recipes; docs generation; entry point disc
 ## TODO
 
 - [ ] `data/schema/recipe.schema.json`; `FrameworkInfo`, `RenderedStep` types
+      (partial: recipe schema exported and every recipe validated in CI; no `FrameworkInfo` yet)
 - [x] Minimal template renderer with tests (token-by-token, so Windows paths survive)
 - [ ] Loader for bundled recipes + entry-point discovery
       (partial: bundled loader works; no entry points)

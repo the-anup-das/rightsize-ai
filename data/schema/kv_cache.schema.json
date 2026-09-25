@@ -1,0 +1,211 @@
+{
+  "$defs": {
+    "KvRule": {
+      "additionalProperties": false,
+      "properties": {
+        "hybrid": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/_Hybrid"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "mla": {
+          "default": false,
+          "title": "Mla",
+          "type": "boolean"
+        },
+        "model_types": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Model Types",
+          "type": "array"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        },
+        "sliding": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/_Sliding"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "source_url": {
+          "title": "Source Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "model_types",
+        "source_url"
+      ],
+      "title": "KvRule",
+      "type": "object"
+    },
+    "_Hybrid": {
+      "additionalProperties": false,
+      "properties": {
+        "interval_default": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Interval Default"
+        },
+        "rule": {
+          "enum": [
+            "full_attention_interval",
+            "attn_layer_period",
+            "hybrid_override_pattern",
+            "layer_types",
+            "parallel"
+          ],
+          "title": "Rule",
+          "type": "string"
+        }
+      },
+      "required": [
+        "rule"
+      ],
+      "title": "_Hybrid",
+      "type": "object"
+    },
+    "_KvDefaults": {
+      "additionalProperties": false,
+      "properties": {
+        "n_ubatch": {
+          "exclusiveMinimum": 0,
+          "title": "N Ubatch",
+          "type": "integer"
+        },
+        "recurrent_state_bytes": {
+          "exclusiveMinimum": 0,
+          "title": "Recurrent State Bytes",
+          "type": "integer"
+        },
+        "swa_pad": {
+          "exclusiveMinimum": 0,
+          "title": "Swa Pad",
+          "type": "integer"
+        },
+        "swa_source_url": {
+          "title": "Swa Source Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "n_ubatch",
+        "swa_pad",
+        "recurrent_state_bytes",
+        "swa_source_url"
+      ],
+      "title": "_KvDefaults",
+      "type": "object"
+    },
+    "_Sliding": {
+      "additionalProperties": false,
+      "properties": {
+        "pattern": {
+          "minimum": 1,
+          "title": "Pattern",
+          "type": "integer"
+        },
+        "window_default": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Window Default"
+        },
+        "window_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Window Key"
+        }
+      },
+      "required": [
+        "pattern"
+      ],
+      "title": "_Sliding",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "data/runtimes/<runtime>/kv_cache.yaml: how a runtime lays out the KV cache (F3).",
+  "properties": {
+    "architectures": {
+      "items": {
+        "$ref": "#/$defs/KvRule"
+      },
+      "title": "Architectures",
+      "type": "array"
+    },
+    "defaults": {
+      "$ref": "#/$defs/_KvDefaults"
+    },
+    "fetched_at": {
+      "title": "Fetched At",
+      "type": "string"
+    },
+    "runtime": {
+      "title": "Runtime",
+      "type": "string"
+    },
+    "source_url": {
+      "title": "Source Url",
+      "type": "string"
+    },
+    "version": {
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "runtime",
+    "version",
+    "source_url",
+    "fetched_at",
+    "defaults",
+    "architectures"
+  ],
+  "title": "KvCacheFile",
+  "type": "object"
+}

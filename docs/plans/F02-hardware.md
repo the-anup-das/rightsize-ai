@@ -84,7 +84,7 @@ Table + presets + NVIDIA / Apple / CPU detection. AMD and Intel detection in pha
       a measurement of this machine over any table
 - [ ] Remaining coverage: Jetson modules, RTX PRO workstation cards, export variants
       (A800, H20, L20), Max-Q laptop parts. Vendor pages, one search and verify each.
-- [ ] `data/schema/device.schema.json`, `preset.schema.json`
+- [x] Schemas for presets, the catalogue and both bandwidth files (`data/schema/`), validated in CI
 
 ## Verified while building
 

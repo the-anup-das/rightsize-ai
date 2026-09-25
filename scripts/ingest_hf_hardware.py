@@ -27,6 +27,9 @@ from pathlib import Path
 from typing import Any
 
 import httpx
+import yaml
+
+from rightsize.data_models import GpuCatalogFile
 
 REPO = "huggingface/huggingface.js"
 FILES = ("hardware.ts", "hardware-nvidia.ts", "hardware-amd.ts")
@@ -161,7 +164,11 @@ def main() -> int:
     skus["GPU"]["AMD"] = ts_to_python(object_literal(text["hardware-amd.ts"], "AMD_GPU_SKUS"))
 
     rows = records(skus, urls, fetched)
-    OUT.write_text(to_yaml(rows, sha, fetched), encoding="utf-8")
+    text = to_yaml(rows, sha, fetched)
+    # refuse to write a file the schema would reject; CI would catch it later, but a
+    # generator that can emit invalid data should find out while it is running
+    GpuCatalogFile.model_validate(yaml.safe_load(text))
+    OUT.write_text(text, encoding="utf-8")
     by_vendor: dict[str, int] = {}
     for r in rows:
         by_vendor[r["vendor"]] = by_vendor.get(r["vendor"], 0) + 1

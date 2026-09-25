@@ -34,6 +34,8 @@ from typing import Any
 import httpx
 import yaml
 
+from rightsize.data_models import BandwidthFile
+
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data" / "hardware" / "bandwidth_wikipedia.yaml"
 CURATED = ROOT / "data" / "hardware" / "bandwidth.yaml"
@@ -529,7 +531,10 @@ def main() -> int:
         for p_ in problems:
             print("  " + p_)
         return 1
-    OUT.write_text(to_yaml(records, sources, fetched), encoding="utf-8")
+    text = to_yaml(records, sources, fetched)
+    # refuse to write a file the schema would reject
+    BandwidthFile.model_validate(yaml.safe_load(text))
+    OUT.write_text(text, encoding="utf-8")
     print(f"wrote {OUT}")
     return 0
 

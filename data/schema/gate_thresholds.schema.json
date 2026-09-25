@@ -1,0 +1,105 @@
+{
+  "$defs": {
+    "Source": {
+      "additionalProperties": false,
+      "description": "Where a number came from. Required on every record (lightweight rule 2).",
+      "properties": {
+        "fetched_at": {
+          "title": "Fetched At",
+          "type": "string"
+        },
+        "hand": {
+          "default": false,
+          "title": "Hand",
+          "type": "boolean"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        },
+        "source_url": {
+          "title": "Source Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_url",
+        "fetched_at"
+      ],
+      "title": "Source",
+      "type": "object"
+    },
+    "_AgreementBand": {
+      "additionalProperties": false,
+      "properties": {
+        "pass_above": {
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "title": "Pass Above",
+          "type": "number"
+        },
+        "warn_above": {
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "title": "Warn Above",
+          "type": "number"
+        }
+      },
+      "required": [
+        "pass_above",
+        "warn_above"
+      ],
+      "title": "_AgreementBand",
+      "type": "object"
+    },
+    "_KldBand": {
+      "additionalProperties": false,
+      "properties": {
+        "pass_below": {
+          "exclusiveMinimum": 0,
+          "title": "Pass Below",
+          "type": "number"
+        },
+        "warn_below": {
+          "exclusiveMinimum": 0,
+          "title": "Warn Below",
+          "type": "number"
+        }
+      },
+      "required": [
+        "pass_below",
+        "warn_below"
+      ],
+      "title": "_KldBand",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "data/quality/gate_thresholds.yaml: the quantization quality gate (F8).",
+  "properties": {
+    "kld": {
+      "$ref": "#/$defs/_KldBand"
+    },
+    "provenance": {
+      "$ref": "#/$defs/Source"
+    },
+    "top1_agreement": {
+      "$ref": "#/$defs/_AgreementBand"
+    }
+  },
+  "required": [
+    "provenance",
+    "kld",
+    "top1_agreement"
+  ],
+  "title": "GateThresholdsFile",
+  "type": "object"
+}
