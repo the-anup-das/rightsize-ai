@@ -118,6 +118,41 @@ def pick_variant(files: list[str]) -> tuple[list[str], str | None]:
     return sorted(groups[v]), v
 
 
+_SHARD_OF = re.compile(r"-\d{5}-of-(\d{5})$")
+
+
+def pick_copy(
+    files: list[str], sizes: dict[str, int | None]
+) -> tuple[list[str], str | None, list[str]]:
+    """One copy of the weights among ``files``: (files, variant, other checkpoints).
+
+    Beyond variants (fp16 beside fp32), a folder can hold the same weights sharded twice -
+    LTX-2.5's transformer ships a 4-shard and an 8-shard set, which counted together made a
+    19B model 38B - and a repo root can hold several different checkpoints side by side
+    (LTX-2.3: dev, distilled, and LoRAs). A second sharding is dropped silently; different
+    checkpoints are returned as the third item so the facts can say the count is a choice.
+    The copy kept is a complete set, then the largest, then the fewest files, then the
+    shortest name (ltx-2.3-22b-dev over ltx-2.3-22b-distilled-1.1)."""
+    chosen_files, variant = pick_variant(files)
+    sets: dict[tuple[str, str | None], list[str]] = {}
+    for f in chosen_files:
+        stem = f.rsplit(".", 1)[0]
+        m = _SHARD_OF.search(stem)
+        sets.setdefault((_SHARD_OF.sub("", stem), m.group(1) if m else None), []).append(f)
+    if len(sets) <= 1:
+        return chosen_files, variant, []
+
+    def score(item: tuple[tuple[str, str | None], list[str]]) -> tuple:
+        (stem, total), fs = item
+        complete = total is None or len(fs) == int(total)
+        nbytes = float(f"{sum(sizes.get(f) or 0 for f in fs):.3g}")  # a few bytes apart: a tie
+        return (complete, nbytes, -len(fs), -len(stem))
+
+    (stem, _), best = max(sets.items(), key=score)
+    others = sorted(f for (s, _t), fs in sets.items() if s != stem for f in fs)
+    return sorted(best), variant, others
+
+
 def _bytes_per_param(groups: dict[str | None, list[str]], chosen: str | None,
                      sizes: dict[str, int | None]) -> tuple[float, str]:
     """Bytes per parameter for a set of files whose headers cannot be read."""
@@ -245,7 +280,7 @@ def pipeline_components(
         files = [f for f in sizes if f.startswith(name + "/") and f.count("/") == 1
                  and f.endswith(".safetensors")]
         groups = variant_groups(files)
-        chosen_files, chosen = pick_variant(files)
+        chosen_files, chosen, _ = pick_copy(files, sizes)
         params, by_dtype, how = count_files(client, base, chosen_files, sizes, groups, chosen)
         config = None
         if f"{name}/config.json" in sizes:

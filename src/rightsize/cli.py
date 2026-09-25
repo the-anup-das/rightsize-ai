@@ -143,6 +143,19 @@ def build_parser() -> argparse.ArgumentParser:
     va.add_argument("--all", action="store_true",
                     help="include repos whose name is not the base model's (fine-tunes, drafts)")
 
+    se = sub.add_parser(
+        "search", help="curated models by family, task and size: LLM, diffusion, audio, ..."
+    )
+    se.add_argument("--family", choices=["llm", "diffusion", "audio", "vision", "embedding"])
+    se.add_argument("--task", help="chat, coding, text-to-image, text-to-speech, ...; "
+                    "'--task list' shows them all")
+    se.add_argument("--max-b", type=float, default=None, help="at most this many billion params")
+    se.add_argument("--min-b", type=float, default=None, help="at least this many billion params")
+    se.add_argument("--publisher", default=None)
+    se.add_argument("--license", default=None, help="e.g. apache-2.0, mit")
+    se.add_argument("--no-gated", action="store_true", help="leave out repos with terms to accept")
+    se.add_argument("--limit", type=int, default=20)
+
     sub.add_parser("detect", help="detect this machine as a device")
 
     f = sub.add_parser("frameworks", help="list frameworks and recipes in the registry")
@@ -721,6 +734,37 @@ def cmd_mcp(args: argparse.Namespace) -> int:
     return serve()
 
 
+def cmd_search(args: argparse.Namespace) -> int:
+    from rightsize.catalog.curated import search, tasks
+
+    if args.task == "list":
+        known = tasks()
+        if args.json:
+            print(json.dumps(known, indent=2))
+        else:
+            for family, names in known.items():
+                print(f"{family:10s} {', '.join(names)}")
+        return 0
+    found = search(
+        args.family, args.task,
+        max_params=args.max_b * 1e9 if args.max_b is not None else None,
+        min_params=args.min_b * 1e9 if args.min_b is not None else None,
+        publisher=args.publisher, license=args.license, include_gated=not args.no_gated,
+        limit=args.limit,
+    )
+    if args.json:
+        print(json.dumps([e.model_dump(mode="json") for e in found], indent=2))
+        return 0
+    con = _console(args)
+    rows = [[e.family.value, e.repo, ", ".join(e.tasks), f"{e.params_total / 1e9:.2f}",
+             str(e.license or "?"), "yes" if e.gated else "", f"{e.downloads_30d or 0:,}"]
+            for e in found]
+    con.table(["family", "repo", "tasks", "B params", "license", "gated", "downloads"], rows)
+    if not found:
+        con.info("nothing on the curated lists matches; any Hub id can still be estimated")
+    return 0
+
+
 def cmd_variants(args: argparse.Namespace) -> int:
     from rightsize.catalog import variants
 
@@ -917,12 +961,47 @@ def main(argv: list[str] | None = None) -> int:
         "detect": cmd_detect,
         "estimate": cmd_estimate,
         "variants": cmd_variants,
+        "search": cmd_search,
         "frameworks": cmd_frameworks,
         "quantize": cmd_quantize,
         "tools": cmd_tools,
         "bench": cmd_bench,
     }
-    return handlers[args.command](args)
+    try:
+        return handlers[args.command](args)
+    except Exception as exc:
+        message = _expected_error(exc)
+        if message is None or args.verbose:
+            raise
+        print(f"rightsize {args.command}: {message}", file=sys.stderr)
+        return 1
+
+
+#: The Hub answers 401 for a repo that does not exist as well as for a private one, so as
+#: not to say which private repos exist.
+_UNAUTHORIZED = (" (no such repo, or a private or gated one: check the name, or accept its "
+                 "terms on the Hub and set HF_TOKEN)")
+_GATED = " (gated: accept its terms on the Hub and set HF_TOKEN)"
+
+
+def _expected_error(exc: BaseException) -> str | None:
+    """One line for the errors a user can act on: a name that is not known, a repo that is
+    missing or gated, an offline cache miss, the network being down. Anything else keeps its
+    traceback, and -v shows the traceback for these too."""
+    from rightsize.errors import RightsizeError
+
+    kind = type(exc).__name__
+    if kind == "HTTPStatusError":
+        status = exc.response.status_code
+        hint = {401: _UNAUTHORIZED, 403: _GATED, 404: " (no such repo or file: check the name)"}
+        return f"HTTP {status} from {exc.request.url}{hint.get(status, '')}"
+    if kind in ("ConnectError", "ConnectTimeout", "ReadTimeout"):
+        return f"cannot reach the network ({exc}); --offline answers from the cache"
+    if isinstance(exc, KeyError):
+        return str(exc.args[0]) if exc.args else "not found"
+    if isinstance(exc, (RightsizeError, FileNotFoundError, ValueError)):
+        return str(exc)
+    return None
 
 
 if __name__ == "__main__":

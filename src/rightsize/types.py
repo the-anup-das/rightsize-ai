@@ -134,6 +134,21 @@ class Variant(BaseModel):
     files: list[str] = Field(default_factory=list, description="GGUF parts, in order")
 
 
+class CatalogEntry(BaseModel):
+    """A model on rightsize's curated lists: what search() returns (F1)."""
+
+    repo: str
+    family: Family
+    tasks: list[str] = Field(description="chat / coding for LLMs, else the Hub's task names")
+    publisher: str
+    params_total: int
+    params_active: int | None = Field(default=None, description="MoE active parameters")
+    license: str | list[str] | None = None
+    gated: bool = False
+    created_at: str | None = None
+    downloads_30d: int | None = None
+
+
 class ModelFacts(BaseModel):
     """What the catalog knows about a model without downloading it (F1)."""
 

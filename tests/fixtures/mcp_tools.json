@@ -374,5 +374,81 @@
     ],
     "title": "render_recipeArguments",
     "type": "object"
+  },
+  "search_models": {
+    "properties": {
+      "family": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Family"
+      },
+      "include_gated": {
+        "default": true,
+        "title": "Include Gated",
+        "type": "boolean"
+      },
+      "license": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "License"
+      },
+      "limit": {
+        "default": 20,
+        "title": "Limit",
+        "type": "integer"
+      },
+      "max_params_b": {
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Max Params B"
+      },
+      "min_params_b": {
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Min Params B"
+      },
+      "task": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Task"
+      }
+    },
+    "title": "search_modelsArguments",
+    "type": "object"
   }
 }

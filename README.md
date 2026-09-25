@@ -30,6 +30,8 @@ Surfaces: Python SDK, CLI with `--json`, MCP server so agents can call it.
 
 Read [Choosing a model format](docs/guide/choosing-a-model-format.md): what GGUF is, how to read a quant name like Q4_K_M, what the alternatives are (safetensors, bnb, AWQ, GPTQ, FP8, NVFP4, EXL3, MLX, OpenVINO, ONNX, MLC, Core ML) and their pros and cons, and which hardware each one reaches.
 
+Read [How Rightsize knows a model without downloading it](docs/guide/model-facts.md) for where each number comes from (config, safetensors and GGUF headers), what `confidence` means, and how the cache stays current.
+
 ## Try it
 
 ```bash
@@ -46,6 +48,9 @@ rightsize estimate Qwen/Qwen3-4B --device "RTX 5080"           # or any of 259 c
 rightsize estimate Qwen/Qwen3-4B --device @your-hf-username    # or the hardware on your HF profile
 rightsize estimate black-forest-labs/FLUX.1-dev --quant nf4 --te-quant nf4 --offload none --offload model
 rightsize estimate openai/whisper-large-v3-turbo --quant int8 --quant q5_0   # audio, vision, embeddings too
+rightsize estimate unsloth/Qwen3-4B-GGUF --quant UD-Q4_K_XL    # a GGUF repo: sized from its own files
+rightsize variants Qwen/Qwen3-4B          # GGUF, MLX, AWQ, FP8 ... copies already on the Hub
+rightsize search --family diffusion --task text-to-image --max-b 13   # curated lists, offline
 
 # To actually produce files:
 uv sync --group dev --extra llamacpp     # torch CPU + transformers for the conversion step
@@ -61,9 +66,9 @@ rightsize data update                     # newer hardware / quant / rules data,
 ### From an agent (MCP)
 
 `rightsize mcp` serves the same functions as MCP tools over stdio: `recommend`,
-`recommend_for_model`, `estimate_memory`, `list_hardware`, `detect_hardware`,
-`list_frameworks` and `render_recipe`. Each plan comes back with its trace and the commands
-to carry it out. Most MCP clients take a config like this:
+`recommend_for_model`, `estimate_memory`, `cloud_offers`, `list_variants`, `search_models`,
+`list_hardware`, `detect_hardware`, `list_frameworks` and `render_recipe`. Each plan comes
+back with its trace and the commands to carry it out. Most MCP clients take a config like this:
 
 ```json
 {
@@ -135,12 +140,12 @@ every verdict on that card 7% pessimistic.
 | Feature | Plan | Status |
 |---|---|---|
 | Competitor landscape | [00-competitors](docs/plans/00-competitors.md) | research done |
-| F1 Model catalog | [F01](docs/plans/F01-model-catalog.md) | first slice: facts from Hub headers |
+| F1 Model catalog | [F01](docs/plans/F01-model-catalog.md) | facts from config, safetensors and GGUF headers without downloading; published quantizations (`variants`); curated lists and `search` for all five families ([how](docs/guide/model-facts.md)) |
 | F2 Hardware DB + detection | [F02](docs/plans/F02-hardware.md) | 259 devices ingested, bandwidth for ~200, detection, `bench`, HF profile import |
 | F3 Fit engine | [F03](docs/plans/F03-fit-engine.md) | LLM memory, KV and speed; fine-tune memory; diffusion (offload phases), Whisper, vision and embedding memory, each checked against published measurements |
 | F4 Rules + ranking | [F04](docs/plans/F04-rules-engine.md) | `recommend` both flows, 31 sourced rules, plans that render to commands |
 | F5 Framework registry + recipes | [F05](docs/plans/F05-framework-registry.md) | 24 recipes over 14 frameworks (fine-tune, quantize, export, serve); plans render the whole chain; generated [framework pages](docs/frameworks/README.md) |
-| F6 SDK / CLI / MCP | [F06](docs/plans/F06-surfaces.md) | SDK, CLI and MCP server (seven tools, stdio) over the same functions; Plan JSON Schema in `schema/` |
+| F6 SDK / CLI / MCP | [F06](docs/plans/F06-surfaces.md) | SDK, CLI and MCP server (ten tools, stdio) over the same functions; Plan JSON Schema in `schema/` |
 | F7 Cloud fallback | [F07](docs/plans/F07-cloud-fallback.md) | cheapest rental GPU for a fine-tune that does not fit, from SkyPilot's open price catalog; job time and cost per 10M tokens (low confidence) |
 | F8 Execution + eval gate | [F08](docs/plans/F08-execution-eval.md) | first slice: llama.cpp adapter with KL-divergence gate |
 | F9 Calibration loop | [F09](docs/plans/F09-calibration.md) | `rightsize calibrate` compares predictions with what Ollama or LM Studio models hold; opt-in local records; refit script for the overhead constants |

@@ -201,6 +201,33 @@ def build_server():
         return [v.model_dump(mode="json") for v in found
                 if include_unmatched or v.name_matches_base]
 
+    @server.tool(
+        description="Models on rightsize's curated lists, by family, task and size: LLMs "
+        "(chat, coding), diffusion, audio, vision and embedding models."
+    )
+    def search_models(
+        family: str | None = None,
+        task: str | None = None,
+        max_params_b: float | None = None,
+        min_params_b: float | None = None,
+        license: str | None = None,
+        include_gated: bool = True,
+        limit: int = 20,
+    ) -> list[dict[str, Any]]:
+        """family: llm, diffusion, audio, vision, embedding. task: chat or coding for LLMs,
+        else a Hub task (text-to-image, text-to-video, automatic-speech-recognition,
+        text-to-speech, object-detection, sentence-similarity, text-ranking, ...). Sizes in
+        billions of parameters."""
+        from rightsize.catalog import search
+
+        found = search(
+            family, task,
+            max_params=max_params_b * 1e9 if max_params_b is not None else None,
+            min_params=min_params_b * 1e9 if min_params_b is not None else None,
+            license=license, include_gated=include_gated, limit=limit,
+        )
+        return [e.model_dump(mode="json") for e in found]
+
     @server.tool(description="Devices rightsize knows, filtered by a name fragment.")
     def list_hardware(query: str = "", limit: int = 50) -> list[dict[str, Any]]:
         from rightsize.hardware import catalog, presets

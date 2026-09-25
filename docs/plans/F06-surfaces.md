@@ -28,9 +28,9 @@ Plan.schema_json() -> str          # the platform's TypeScript types come from t
 
 Devices accept a `Device`, a preset name (`"RTX 4090"`), or `"detect"`.
 
-**CLI** (argparse, stdlib): `rightsize recommend | estimate | detect | frameworks [name] | plan render <plan.json> | data update|status|reset | cloud | calibrate | telemetry | bench | quantize | tools | mcp`, all with `--json`, and `--offline` for all of them.
+**CLI** (argparse, stdlib): `rightsize recommend | estimate | variants | search | detect | frameworks [name] | plan render <plan.json> | data update|status|reset | cloud | calibrate | telemetry | bench | quantize | tools | mcp`, all with `--json`, and `--offline` for all of them.
 
-**MCP** (`[mcp]` extra, stdio transport): tools `recommend`, `estimate_memory`, `list_hardware`, `detect_hardware`, `list_frameworks`, `render_recipe`. Input and output schemas are generated from the Pydantic types so SDK, CLI and MCP never drift. Also deployed as a Gradio MCP Space in the platform repo so the official HF MCP server can call it.
+**MCP** (`[mcp]` extra, stdio transport): tools `recommend`, `recommend_for_model`, `estimate_memory`, `cloud_offers`, `list_variants`, `search_models`, `list_hardware`, `detect_hardware`, `list_frameworks`, `render_recipe`. Input and output schemas are generated from the Pydantic types so SDK, CLI and MCP never drift. Also deployed as a Gradio MCP Space in the platform repo so the official HF MCP server can call it.
 
 ## Design
 

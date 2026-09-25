@@ -109,7 +109,9 @@ NOTEBOOKS["01-model-catalog.ipynb"] = [
 # F1. Model catalog: facts without downloading
 
 `facts()` reads `config.json` and the safetensors **headers** of a Hub repo over HTTP Range requests
-(a few KB), never the weights. Results are cached for 7 days under `~/.cache/rightsize/models/`.
+(a few KB), never the weights. Results are cached under `~/.cache/rightsize/models/`; after 7 days
+one ~100-byte request checks whether the repo's commit changed before anything is read again.
+Where each number comes from: [docs/guide/model-facts.md](../docs/guide/model-facts.md).
 """),
     code("""
 from rightsize.catalog import facts
@@ -136,6 +138,38 @@ from rightsize.catalog import safetensors_header
 with httpx.Client(follow_redirects=True) as c:
     hdr = safetensors_header(c, "https://huggingface.co/Qwen/Qwen3-0.6B/resolve/main/model.safetensors")
 list(hdr.items())[:3]
+"""),
+    md("""
+## GGUF repos
+
+A repo of GGUFs has no `config.json`. Its facts come from the header of one file (its Q4_K_M
+unless you name one with `file=`): every tensor's type and shape, and the architecture numbers
+llama.cpp will use. The tokenizer lists stored in the header are walked, not kept.
+"""),
+    code("""
+gg = facts("unsloth/Qwen3-4B-GGUF")
+gg.ref.file, gg.dtype, gg.params_total, gg.num_layers, gg.extra["tie_word_embeddings"]
+"""),
+    md("Every quantization the repo holds, with its size; estimates use these files directly:"),
+    code("""
+{q: round(f["bytes"] / 1e9, 2) for q, f in gg.extra["gguf_files"].items()}
+"""),
+    md("""
+## Quantized copies already on the Hub
+
+Model cards name their base model, and the Hub lists everything that says it is a quantization
+of one. The format of each is told by `data/models/variants.yaml`.
+"""),
+    code("""
+from rightsize.catalog import variants
+found = variants("Qwen/Qwen3-4B", limit=8)
+[(v.format, v.ref.repo, v.quant, v.size_bytes and round(v.size_bytes / 1e9, 2))
+ for v in found if v.name_matches_base][:12]
+"""),
+    md("## Curated lists, searched offline"),
+    code("""
+from rightsize.catalog import search
+[(e.repo, round(e.params_total / 1e9, 1)) for e in search("diffusion", "text-to-image", max_params=13e9)]
 """),
 ]
 

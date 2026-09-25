@@ -5,7 +5,8 @@ Everything Rightsize knows that is a *number* or a *table* lives here, not in Py
 | Folder | Contents | Source (to ingest) | Owner |
 |---|---|---|---|
 | `hardware/` | `gpus.yaml` (ingested SKU catalogue), `bandwidth.yaml` (hand-typed) + `bandwidth_wikipedia.yaml` (ingested), `presets.yaml` (curated setups) | huggingface.js SKU tables (MIT); Wikipedia GPU lists (CC BY-SA); vendor pages | F2 |
-| `quants/` | Real bits-per-weight per GGUF type; per-architecture KV overrides (MLA, sliding window, hybrid); MLX/bnb/AWQ/GPTQ/FP8 descriptors | `@huggingface/gguf` `quant-descriptions.ts`, model configs | F1, F3 |
+| `quants/` | Real bits-per-weight per GGUF type; how GGUF headers number tensor and file types (`ggml_types.yaml`); MLX/bnb/AWQ/GPTQ/FP8 descriptors | `@huggingface/gguf` `quant-descriptions.ts`; llama.cpp `gguf-py` at the pinned tag | F1, F3 |
+| `models/` | The LLM pool `recommend` ranks (`candidates.yaml`); curated diffusion, audio, vision and embedding models (`families.yaml`); how quantized copies are published on the Hub (`variants.yaml`: tags, libraries, name patterns, runtimes, known publishers) | Hub download listings, filtered by `scripts/ingest_candidates.py` and `scripts/ingest_families.py`; each format's docs | F1, F4 |
 | `rules/` | Hard gates and penalties with `source_url` and a test each | HF/vLLM/SGLang quantization matrices, toolkit docs | F4 |
 | `recipes/` | Renderable command/config templates per framework and stage | Each toolkit's docs, pinned by version | F5 |
 | `quality/` | Base-model quality and quant penalty tables | Unsloth KL tables, Artificial Analysis, own `llama-perplexity` runs | F4 |

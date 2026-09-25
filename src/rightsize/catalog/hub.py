@@ -21,7 +21,7 @@ import httpx
 from rightsize.catalog import gguf
 from rightsize.catalog.weights import (
     count_files,
-    pick_variant,
+    pick_copy,
     pipeline_components,
     stored_head,
     torch_weights,
@@ -288,11 +288,15 @@ def _touch(path: Path) -> None:
         os.utime(path)
 
 
+_PYTORCH_BIN = re.compile(r"(^|/)pytorch_model([.-][^/]*)?\.bin$")
+
+
 def _has_weights(sizes: dict[str, int | None]) -> bool:
     """Whether a repo holds weights other than GGUF: safetensors, a diffusers pipeline,
-    PyTorch files."""
+    PyTorch files. Other .bin files (an importance matrix beside the GGUFs) do not count."""
     return any(
-        f == "model_index.json" or f.endswith((".safetensors", ".bin", ".pth", ".pt", ".ckpt"))
+        f == "model_index.json" or f.endswith((".safetensors", ".pth", ".pt", ".ckpt"))
+        or _PYTORCH_BIN.search(f)
         for f in sizes
     )
 
@@ -312,6 +316,7 @@ def _hf_facts(
 
     pipeline = pipeline_components(c, base, sizes) if "model_index.json" in sizes else None
     shards: list[str] = []
+    alternatives: list[str] = []
     total = 0
     by_dtype: dict[str, int] = {}
     counted_from = None
@@ -335,11 +340,14 @@ def _hf_facts(
         counted_from = "Hub parameter summary"
     else:
         root = [f for f in siblings if f.endswith(".safetensors") and "/" not in f]
-        shards, chosen = pick_variant(root)
+        shards, chosen, alternatives = pick_copy(root, sizes)
         if shards:
             total, by_dtype, counted_from = count_files(
                 c, base, shards, sizes, variant_groups(root), chosen
             )
+            if alternatives:
+                counted_from += (f"; one of several checkpoints in the repo ({shards[0]}), "
+                                 f"not the {len(alternatives)} other files beside it")
         else:
             torch = torch_weights(sizes, cfg.get("torch_dtype"))
             if torch:
@@ -353,10 +361,10 @@ def _hf_facts(
     stored = 0
     if tied and total and counted_from in ("Hub parameter summary", "safetensors headers"):
         stored, _ = stored_head(c, base, sizes)
-    hidden = tc.get("hidden_size")
-    heads = tc.get("num_attention_heads")
-    head_dim = tc.get("head_dim") or (hidden // heads if hidden and heads else None)
-    kv_heads = tc.get("num_key_value_heads") or heads
+    hidden = _int(tc.get("hidden_size"))
+    heads = _int(tc.get("num_attention_heads"))
+    head_dim = _int(tc.get("head_dim")) or (hidden // heads if hidden and heads else None)
+    kv_heads = _int(tc.get("num_key_value_heads")) or heads
     dominant = max(by_dtype, key=by_dtype.get) if by_dtype else cfg.get("torch_dtype")
     experts = tc.get("num_experts") or tc.get("num_local_experts") or tc.get("n_routed_experts")
     active_experts = tc.get("num_experts_per_tok") or tc.get("experts_per_token")
@@ -368,10 +376,10 @@ def _hf_facts(
         params_total=total or None,
         params_active=None,
         dtype=str(dominant).upper() if dominant else None,
-        num_layers=tc.get("num_hidden_layers"),
+        num_layers=_int(tc.get("num_hidden_layers")),
         num_kv_heads=kv_heads,
         head_dim=head_dim,
-        context_max=tc.get("max_position_embeddings"),
+        context_max=_int(tc.get("max_position_embeddings")),
         license=(meta.get("cardData") or {}).get("license"),
         base_model=_base_model(meta),
         confidence=_confidence(total, counted_from),
@@ -387,6 +395,7 @@ def _hf_facts(
             "gated": meta.get("gated", False),
             "private": meta.get("private"),
             "sha": meta.get("sha"),
+            "other_checkpoints": alternatives or None,
             "num_experts": experts,
             "num_experts_per_tok": active_experts,
             "sliding_window": tc.get("sliding_window"),
@@ -565,12 +574,18 @@ def _gated_gguf_facts(
     )
 
 
+def _int(value: Any) -> int | None:
+    """An integer config value, or None. Hierarchical vision models give per-stage lists
+    (SegFormer: num_attention_heads [1, 2, 5, 8]); those have no single head count to use."""
+    return value if isinstance(value, int) and not isinstance(value, bool) else None
+
+
 def _confidence(total: int, counted_from: str | None) -> float:
     """1.0 when the parameters were counted from the weights themselves; less when they
     were inferred from file sizes, which means assuming a dtype."""
     if not total:
         return 0.5
-    if counted_from and "file sizes" in counted_from:
+    if counted_from and ("file sizes" in counted_from or "several checkpoints" in counted_from):
         return 0.7
     return 1.0
 

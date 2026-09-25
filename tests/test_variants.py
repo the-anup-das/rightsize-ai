@@ -161,3 +161,11 @@ def test_the_cli_lists_them_and_hides_look_alikes(monkeypatch, capsys) -> None:
     assert main(["--json", "variants", BASE, "--all"]) == 0
     rows = json.loads(capsys.readouterr().out)
     assert len(rows) == len(found)
+
+
+def test_an_offline_miss_is_one_line_not_a_traceback(capsys) -> None:
+    from rightsize.cli import main
+
+    assert main(["--offline", "variants", "nobody/nothing"]) == 1
+    err = capsys.readouterr().err
+    assert err.startswith("rightsize variants: no cached variants for nobody/nothing")

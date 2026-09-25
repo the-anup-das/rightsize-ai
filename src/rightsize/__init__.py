@@ -20,6 +20,7 @@ __version__ = "0.0.1"
 # Names that live in rightsize.types and are re-exported lazily.
 _TYPE_EXPORTS = frozenset(
     {
+        "CatalogEntry",
         "Device",
         "Family",
         "FitResult",

@@ -93,6 +93,10 @@ About 40 rules; LLM quant penalty from Unsloth KL tables; non-LLM families ranke
       than on "CPU", and the ~70% Apple GPU memory share has no primary source.
 - [x] Candidate generation for both flows, from a pool built out of the Hub's download
       rankings (`scripts/ingest_candidates.py`), not a hand-written list
+- [ ] Plans that download a ready-made quantization instead of making one: `variants()`
+      (F1) finds the published GGUF, MLX, AWQ or FP8 copies; a plan needs a download step and
+      recipe for them. Until then, model-first recommend on a GGUF repo says what to run
+      instead
 - [ ] Quant penalty table from Unsloth KL data; base quality table with sources - the penalty
       comes from llama.cpp's own per-type perplexity figures instead; no licensed cross-model
       quality benchmark yet, so size (with a conservative recency term) stands in, and the trace
