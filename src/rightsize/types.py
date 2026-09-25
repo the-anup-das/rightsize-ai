@@ -78,6 +78,9 @@ class Device(BaseModel):
     compute_arch: str | None = Field(
         default=None, description="e.g. ada, hopper, blackwell, rdna3, m4, sm_89"
     )
+    compute_capability: float | None = Field(
+        default=None, description="CUDA compute capability, e.g. 8.9; what most NVIDIA gates key on"
+    )
     backends: list[str] = Field(default_factory=list, description="cuda, rocm, metal, vulkan, ...")
     os: Literal["linux", "windows", "macos", "ios", "android", "unknown"] = "unknown"
     usable_fraction: float = Field(default=1.0, gt=0, le=1.0)

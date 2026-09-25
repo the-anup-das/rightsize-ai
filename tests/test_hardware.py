@@ -46,12 +46,33 @@ def test_resolve_accepts_device_or_name() -> None:
 
 def test_nvidia_smi_parser(monkeypatch) -> None:
     monkeypatch.setattr(
-        probe, "_run", lambda cmd, timeout=15.0: "NVIDIA GeForce RTX 4070 Ti SUPER, 16376, 610.88\n"
+        probe,
+        "_run",
+        lambda cmd, timeout=15.0: "NVIDIA GeForce RTX 4070 Ti SUPER, 16376, 610.88, 8.9\n",
     )
-    gpus = probe.nvidia_gpus()
-    assert gpus == [
-        {"name": "NVIDIA GeForce RTX 4070 Ti SUPER", "memory_gib": 16.0, "driver": "610.88"}
+    assert probe.nvidia_gpus() == [
+        {
+            "name": "NVIDIA GeForce RTX 4070 Ti SUPER",
+            "memory_gib": 16.0,
+            "driver": "610.88",
+            "compute_capability": 8.9,
+        }
     ]
+
+
+def test_old_drivers_without_compute_cap_still_detect(monkeypatch) -> None:
+    """A driver that does not know compute_cap rejects the whole query; ask again without it
+    rather than reporting no GPU at all."""
+    calls: list[str] = []
+
+    def fake_run(cmd, timeout=15.0):
+        calls.append(cmd[1])
+        return None if "compute_cap" in cmd[1] else "Tesla T4, 15360, 470.82\n"
+
+    monkeypatch.setattr(probe, "_run", fake_run)
+    gpus = probe.nvidia_gpus()
+    assert len(calls) == 2 and gpus[0]["name"] == "Tesla T4"
+    assert gpus[0]["compute_capability"] is None
 
 
 def test_detect_fills_bandwidth_from_preset(monkeypatch) -> None:

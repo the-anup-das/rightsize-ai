@@ -40,6 +40,7 @@ def _to_device(rec: dict) -> Device:
         system_ram_gib=rec.get("system_ram_gib"),
         bandwidth_gbps=rec.get("bandwidth_gbps"),
         compute_arch=rec.get("compute_arch"),
+        compute_capability=rec.get("compute_capability"),
         backends=list(rec.get("backends", [])),
         os=rec.get("os", "unknown"),
         usable_fraction=rec.get("usable_fraction", 1.0),
@@ -151,6 +152,7 @@ def catalog() -> dict[str, Device]:
                 memory_gib=mem,
                 bandwidth_gbps=gbps,
                 compute_arch=rec.get("gfx_version") or _arch(rec),
+                compute_capability=rec.get("compute_capability"),
                 backends=list(_BACKENDS.get(vendor, [])),
                 usable_fraction=_USABLE.get(vendor, 0.9),
                 provenance=Provenance(

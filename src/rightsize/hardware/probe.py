@@ -60,24 +60,34 @@ def system_ram_gib() -> float | None:
 
 
 def nvidia_gpus() -> list[dict]:
-    out = _run(
-        [
-            "nvidia-smi",
-            "--query-gpu=name,memory.total,driver_version",
-            "--format=csv,noheader,nounits",
-        ]
-    )
+    """GPUs as the driver reports them. compute_cap is asked for last: drivers too old to
+    know the field reject the whole query, so on failure we ask again without it."""
+    fields = "name,memory.total,driver_version,compute_cap"
+    out = _run(["nvidia-smi", f"--query-gpu={fields}", "--format=csv,noheader,nounits"])
+    if not out:
+        out = _run(
+            [
+                "nvidia-smi",
+                "--query-gpu=name,memory.total,driver_version",
+                "--format=csv,noheader,nounits",
+            ]
+        )
     gpus = []
     if not out:
         return gpus
     for line in out.strip().splitlines():
         parts = [p.strip() for p in line.split(",")]
         if len(parts) >= 2:
+            try:
+                cc = float(parts[3]) if len(parts) > 3 else None
+            except ValueError:
+                cc = None
             gpus.append(
                 {
                     "name": parts[0],
                     "memory_gib": round(int(parts[1]) / 1024, 1),
                     "driver": parts[2] if len(parts) > 2 else None,
+                    "compute_capability": cc,
                 }
             )
     return gpus
@@ -103,6 +113,7 @@ def detect() -> Device:
             name=g["name"],
             vendor="nvidia",
             memory_gib=g["memory_gib"],
+            compute_capability=g.get("compute_capability"),
             system_ram_gib=ram,
             backends=["cuda", "vulkan"],
             os=os_name,
