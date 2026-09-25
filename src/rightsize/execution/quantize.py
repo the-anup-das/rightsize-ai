@@ -31,7 +31,9 @@ from rightsize.execution.llamacpp import (
     imatrix_step,
     kld_base_step,
     kld_eval_step,
+    log_tail,
     parse_perplexity_output,
+    preflight_vram,
     quantize_step,
     run_step,
     write_manifest,
@@ -51,6 +53,19 @@ _IQ_TYPES = re.compile(r"^(IQ\d|TQ\d)", re.IGNORECASE)
 
 def _slug(repo: str) -> str:
     return repo.replace("/", "__")
+
+
+def _logits_gb(facts, chunks: int | None, ctx: int = EVAL_CTX) -> float:
+    """Size of the ``--kl-divergence-base`` file llama.cpp is about to write.
+
+    ``llama-perplexity`` stores the whole probability distribution for every scored token:
+    ``2*((n_vocab+1)/2) + 4`` uint16 values per token, over ``ctx/2 - 1`` tokens per chunk
+    (llama.cpp scores the second half of each window). For a 150k-vocab model that is about
+    78 MB per chunk, so the default 100 chunks costs ~8 GB of disk. Worth saying out loud.
+    """
+    vocab = (facts.extra or {}).get("vocab_size") or 32000
+    per_token = (2 * ((vocab + 1) // 2) + 4) * 2
+    return per_token * (ctx // 2 - 1) * (chunks or 640) / 1e9
 
 
 def _now_id() -> str:
@@ -197,8 +212,10 @@ def quantize_model(
         if rs.returncode != 0:
             manifest.status = "failed"
             write_manifest(manifest, run_dir)
+            tail = log_tail(log_path)
             raise RuntimeError(
                 f"{step.recipe_id} failed with exit code {rs.returncode}; see {rs.log_path}"
+                + (f"\nlast output:\n{tail}" if tail else "")
             )
         return rs, text, peak
 
@@ -240,6 +257,10 @@ def quantize_model(
                 tc, base_gguf, calib, imat, gpu_layers=gpu_layers, chunks=imatrix_chunks
             )
             log(f"imatrix: {st.text}")
+            if gpu_layers != "0":
+                preflight_vram(
+                    estimate(facts, "BF16", dev, ctx=EVAL_CTX).vram_gb, what="imatrix", log=log
+                )
             run(st, sample_vram=True, label="imatrix")
         manifest.artifacts["imatrix"] = str(imat)
 
@@ -276,12 +297,21 @@ def quantize_model(
             log("kld-base: reference logits exist, skipping")
             manifest.steps.append(_skipped("llama.cpp/kld-base", [], "logits exist"))
         else:
-            st = kld_base_step(
-                tc, base_gguf, wiki, logits, gpu_layers=gpu_layers, chunks=eval_chunks
-            )
+            # Written to .part and renamed on success: a crashed reference pass leaves a
+            # truncated file, and a later run must not mistake it for a finished one.
+            part = logits.with_suffix(logits.suffix + ".part")
+            part.unlink(missing_ok=True)
+            st = kld_base_step(tc, base_gguf, wiki, part, gpu_layers=gpu_layers, chunks=eval_chunks)
             log(f"kld-base: {st.text}")
-            rs, text, peak = run(st, sample_vram=True, label="reference")
             pred = estimate(facts, "BF16", dev, ctx=EVAL_CTX)
+            if gpu_layers != "0":
+                preflight_vram(pred.vram_gb, what="the reference pass", log=log)
+            log(
+                f"kld-base: writing about {_logits_gb(facts, eval_chunks):.1f} GB of reference "
+                f"logits to {part.name}"
+            )
+            rs, text, peak = run(st, sample_vram=True, label="reference")
+            part.replace(logits)
             if peak:
                 rs.measurements.append(
                     Measurement(
@@ -296,9 +326,11 @@ def quantize_model(
         for q, out in outputs.items():
             st = kld_eval_step(tc, out, wiki, logits, gpu_layers=gpu_layers, chunks=eval_chunks)
             log(f"kld-eval {q}: {st.text}")
+            pred = estimate(facts, q, dev, ctx=EVAL_CTX)
+            if gpu_layers != "0":
+                preflight_vram(pred.vram_gb, what=f"the {q} pass", log=log)
             rs, text, peak = run(st, sample_vram=True, label=q)
             metrics = parse_perplexity_output(text)
-            pred = estimate(facts, q, dev, ctx=EVAL_CTX)
             if peak:
                 rs.measurements.append(
                     Measurement(

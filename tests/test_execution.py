@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+from rightsize.execution import llamacpp
 from rightsize.execution.llamacpp import (
     ToolchainError,
     find_tools,
@@ -91,3 +92,53 @@ def test_run_step_streams_and_measures(tmp_path: Path) -> None:
     assert "hello" in lines and "PPL = 3.5" in text
     assert rs.measurements[0].kind == "wall_s"
     assert (tmp_path / "log.txt").read_text().startswith("$ ")
+
+
+# ---------------------------------------------------------------- GPU preflight
+
+_SMI_MEM = ["3887, 16376"]
+_SMI_APPS = [
+    r"C:\Windows\explorer.exe, [N/A]",
+    r"C:\Users\me\.lmstudio\backends\llama-server.exe, [N/A]",
+    "/usr/bin/ollama, 8192",
+]
+
+
+def test_gpu_memory_parses_free_and_total(monkeypatch) -> None:
+    monkeypatch.setattr(llamacpp, "_smi", lambda q: _SMI_MEM)
+    assert llamacpp.gpu_memory() == (4.08, 17.17)
+    monkeypatch.setattr(llamacpp, "_smi", lambda q: [])
+    assert llamacpp.gpu_memory() is None
+
+
+def test_gpu_holders_keeps_runtimes_and_handles_missing_sizes(monkeypatch) -> None:
+    monkeypatch.setattr(llamacpp, "_smi", lambda q: _SMI_APPS)
+    holders = llamacpp.gpu_holders()
+    assert holders == ["llama-server", "ollama (8.6 GB)"], "explorer.exe is not worth reporting"
+
+
+def test_preflight_warns_and_names_the_holder(monkeypatch) -> None:
+    monkeypatch.setattr(llamacpp, "_smi", lambda q: _SMI_MEM if "gpu=" in q else _SMI_APPS)
+    said: list[str] = []
+    assert llamacpp.preflight_vram(5.0, what="the reference pass", log=said.append) is False
+    assert "only 4.1 GB free" in said[0] and "needs about 5.0 GB" in said[0]
+    assert "llama-server" in said[1]
+    said.clear()
+    assert llamacpp.preflight_vram(2.0, what="imatrix", log=said.append) is True
+    assert said and "4.1 GB free" in said[0]
+
+
+def test_preflight_is_quiet_without_nvidia_smi(monkeypatch) -> None:
+    monkeypatch.setattr(llamacpp, "_smi", lambda q: [])
+    said: list[str] = []
+    assert llamacpp.preflight_vram(99.0, what="anything", log=said.append) is True
+    assert said == []
+
+
+def test_log_tail_returns_the_last_words_of_a_crash(tmp_path: Path) -> None:
+    p = tmp_path / "step.log"
+    chunks = "".join(f"[{i}]5.0,\n" for i in range(20))
+    p.write_text("start\n" + chunks + "CUDA error: out of memory")
+    tail = llamacpp.log_tail(p, lines=2)
+    assert tail.endswith("CUDA error: out of memory") and "[19]" in tail
+    assert llamacpp.log_tail(tmp_path / "missing.log") == ""

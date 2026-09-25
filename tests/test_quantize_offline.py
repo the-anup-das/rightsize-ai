@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -85,3 +86,14 @@ def test_dry_run_predictions_are_in_manifest_json(fake_env) -> None:
     )
     data = (tmp / "runs" / m.id / "manifest.json").read_text()
     assert '"formula_id": "llm.gguf.analytic.v0"' in data and '"Q8_0"' in data
+
+
+def test_logits_file_size_matches_a_real_run() -> None:
+    """Golden: a Qwen3-1.7B reference pass (vocab 151936, ctx 512) had written
+    3,719,692,288 bytes after 48 chunks on this machine. The prediction must land on it,
+    because 100 chunks means ~8 GB of disk and people deserve the warning."""
+    facts = SimpleNamespace(extra={"vocab_size": 151936})
+    assert q._logits_gb(facts, 48) == pytest.approx(3.7195, rel=0.001)
+    assert q._logits_gb(facts, 100) == pytest.approx(7.749, rel=0.001)
+    # no vocab in facts: fall back to a small vocab rather than crashing
+    assert q._logits_gb(SimpleNamespace(extra={}), 100) > 0

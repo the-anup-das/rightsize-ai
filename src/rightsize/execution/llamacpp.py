@@ -130,6 +130,88 @@ class _VramSampler:
         return round(self.peak_mib * 1024**2 / 1e9, 2) if self.peak_mib else None
 
 
+# ------------------------------------------------------------------ GPU preflight
+
+#: Names worth reporting when the GPU is busy. Everything with a window is on the GPU too;
+#: these are the ones that hold gigabytes and that you can actually unload.
+_GPU_HOGS = ("llama-server", "ollama", "lms", "lm studio", "koboldcpp", "comfyui", "python")
+
+
+def _smi(query: str) -> list[str]:
+    if not shutil.which("nvidia-smi"):
+        return []
+    try:
+        out = subprocess.run(
+            ["nvidia-smi", f"--query-{query}", "--format=csv,noheader,nounits"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+    return [line.strip() for line in out.stdout.splitlines() if line.strip()]
+
+
+def gpu_memory() -> tuple[float, float] | None:
+    """(free_gb, total_gb) for the first NVIDIA GPU, or None when there is none."""
+    for line in _smi("gpu=memory.free,memory.total"):
+        parts = [p.strip() for p in line.split(",")]
+        if len(parts) == 2 and all(p.isdigit() for p in parts):
+            free, total = (int(p) * 1024**2 / 1e9 for p in parts)
+            return round(free, 2), round(total, 2)
+    return None
+
+
+def gpu_holders() -> list[str]:
+    """Names of inference runtimes currently on the GPU, with sizes when the driver reports
+    them. Windows WDDM returns ``[N/A]`` for per-process memory, so names may come alone."""
+    found: list[str] = []
+    for line in _smi("compute-apps=process_name,used_memory"):
+        name, _, used = line.partition(",")
+        # nvidia-smi reports the OS's own paths, so split on both separators whatever we run on.
+        stem = name.strip().replace("\\", "/").rsplit("/", 1)[-1].removesuffix(".exe")
+        if not any(h in stem.lower() for h in _GPU_HOGS):
+            continue
+        mib = used.strip()
+        found.append(f"{stem} ({int(mib) * 1024**2 / 1e9:.1f} GB)" if mib.isdigit() else stem)
+    return found
+
+
+def preflight_vram(need_gb: float, *, what: str, log: Log) -> bool:
+    """Log free VRAM before a GPU step; warn when another process leaves too little.
+
+    Returns True when the step looks safe. A step that starts with just enough memory can
+    still die later if the other process grows, so this warns rather than blocks.
+    """
+    mem = gpu_memory()
+    if mem is None:
+        return True
+    free, total = mem
+    if free >= need_gb:
+        log(f"gpu: {free:.1f} GB free of {total:.1f} GB, {what} needs about {need_gb:.1f} GB")
+        return True
+    holders = gpu_holders()
+    log(
+        f"gpu: only {free:.1f} GB free of {total:.1f} GB but {what} needs about "
+        f"{need_gb:.1f} GB. llama.cpp will fail mid-run, often without an error message."
+    )
+    if holders:
+        log(f"gpu: memory is held by {', '.join(holders)} - unload it, or pass --gpu-layers 0")
+    return False
+
+
+def log_tail(path: str | os.PathLike, lines: int = 6, width: int = 300) -> str:
+    """Last few lines of a step log, for error messages. llama.cpp prints its last words
+    without a trailing newline, so a crash leaves them at the end of the file."""
+    try:
+        text = Path(path).read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return ""
+    tail = [ln.strip() for ln in text.replace("\r", "\n").splitlines() if ln.strip()][-lines:]
+    return "\n".join(ln[-width:] for ln in tail)
+
+
 def run_step(
     step: RenderedStep,
     *,
