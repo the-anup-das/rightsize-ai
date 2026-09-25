@@ -110,6 +110,8 @@ select = ["E", "F", "I", "UP", "B", "SIM", "T20"]
 # T20: print() is allowed in the CLI and in tests only.
 "src/rightsize/cli.py" = ["T20"]
 "tests/**" = ["T20"]
+# notebook cell sources are embedded strings; wrapping them would wrap the cells
+"scripts/make_notebooks.py" = ["E501", "T20"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
