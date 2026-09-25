@@ -185,6 +185,22 @@ def build_server():
             ],
         }
 
+    @server.tool(
+        description="Quantized copies of a model already published on the Hub (GGUF files, "
+        "MLX, AWQ, FP8, ...), with sizes and effective bits per weight."
+    )
+    def list_variants(
+        model: str, format: str | None = None, limit: int = 20, include_unmatched: bool = False
+    ) -> list[dict[str, Any]]:
+        """model: a Hub id, or any quantized copy of it. format: gguf, mlx, awq, gptq, bnb,
+        fp8, compressed-tensors, ... include_unmatched also returns repos whose name is not
+        the base model's (fine-tunes or drafts that call themselves quantizations)."""
+        from rightsize.catalog import variants
+
+        found = variants(model, formats=[format] if format else None, limit=limit)
+        return [v.model_dump(mode="json") for v in found
+                if include_unmatched or v.name_matches_base]
+
     @server.tool(description="Devices rightsize knows, filtered by a name fragment.")
     def list_hardware(query: str = "", limit: int = 50) -> list[dict[str, Any]]:
         from rightsize.hardware import catalog, presets

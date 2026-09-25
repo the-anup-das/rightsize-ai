@@ -206,6 +206,41 @@
     "title": "list_hardwareArguments",
     "type": "object"
   },
+  "list_variants": {
+    "properties": {
+      "format": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Format"
+      },
+      "include_unmatched": {
+        "default": false,
+        "title": "Include Unmatched",
+        "type": "boolean"
+      },
+      "limit": {
+        "default": 20,
+        "title": "Limit",
+        "type": "integer"
+      },
+      "model": {
+        "title": "Model",
+        "type": "string"
+      }
+    },
+    "required": [
+      "model"
+    ],
+    "title": "list_variantsArguments",
+    "type": "object"
+  },
   "recommend": {
     "properties": {
       "allow_slow": {

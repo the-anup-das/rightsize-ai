@@ -133,6 +133,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="memory bandwidth in GB/s, when we have none for your device",
     )
 
+    va = sub.add_parser(
+        "variants", help="quantized copies of a model already on the Hub: GGUF, MLX, AWQ, FP8, ..."
+    )
+    va.add_argument("model", help="Hub id of the model, or of any quantized copy of it")
+    va.add_argument("--format", action="append", help="only this format (gguf, mlx, awq, ...)")
+    va.add_argument("--limit", type=int, default=20, help="repos to list (default 20)")
+    va.add_argument("--no-files", action="store_true", help="one line per repo, no sizes")
+    va.add_argument("--all", action="store_true",
+                    help="include repos whose name is not the base model's (fine-tunes, drafts)")
+
     sub.add_parser("detect", help="detect this machine as a device")
 
     f = sub.add_parser("frameworks", help="list frameworks and recipes in the registry")
@@ -711,6 +721,34 @@ def cmd_mcp(args: argparse.Namespace) -> int:
     return serve()
 
 
+def cmd_variants(args: argparse.Namespace) -> int:
+    from rightsize.catalog import variants
+
+    found = variants(args.model, formats=args.format, limit=args.limit, files=not args.no_files)
+    hidden = [v for v in found if not v.name_matches_base]
+    shown = found if args.all else [v for v in found if v.name_matches_base]
+    if args.json:
+        print(json.dumps([v.model_dump(mode="json") for v in shown], indent=2))
+        return 0
+    con = _console(args)
+    con.title(f"published quantizations of {args.model}")
+    rows = []
+    for v in shown:
+        who = "official" if v.official else ("known" if v.known_publisher else "")
+        rows.append([
+            v.format, v.ref.repo, v.quant or "",
+            f"{v.size_bytes / 1e9:.2f}" if v.size_bytes else "?",
+            f"{v.bits_per_weight:.2f}" if v.bits_per_weight else "?",
+            f"{v.downloads:,}" if v.downloads is not None else "?", who,
+        ])
+    con.table(["format", "repo", "quant", "GB", "bpw", "downloads", "publisher"], rows)
+    if hidden and not args.all:
+        repos = sorted({v.ref.repo for v in hidden})
+        con.info(f"{len(repos)} more whose names are not the base model's (fine-tunes or "
+                 f"drafts published as quants): {', '.join(repos)}; --all shows them")
+    return 0
+
+
 def cmd_frameworks(args: argparse.Namespace) -> int:
     from rightsize.registry import all_recipes
 
@@ -878,6 +916,7 @@ def main(argv: list[str] | None = None) -> int:
         "recommend": cmd_recommend,
         "detect": cmd_detect,
         "estimate": cmd_estimate,
+        "variants": cmd_variants,
         "frameworks": cmd_frameworks,
         "quantize": cmd_quantize,
         "tools": cmd_tools,

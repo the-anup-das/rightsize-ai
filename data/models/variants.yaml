@@ -1,0 +1,222 @@
+# How quantized copies of a model are published on the Hugging Face Hub (F1).
+#
+# variants() lists the repos whose model card names a model as their quantized base
+# (base_model_relation: quantized) and reads this table to tell each one's format: by Hub
+# tag, then library name, then a pattern in the repo name, in that order, first format in
+# the list wins. Supporting a new format or a publisher's naming habit is an edit here, not
+# a code change.
+#
+# Patterns are Python regular expressions, matched case-insensitively against the repo name
+# (the part after the slash). quant_patterns give the variant's quantization: the first
+# group of the first match, spelled as the repo spells it.
+provenance:
+  source_url: https://huggingface.co/api/models?filter=base_model:quantized:Qwen/Qwen3-8B&sort=downloads
+  fetched_at: "2026-09-25"
+  note: >-
+    tags, library names and repo names observed across the 100 most downloaded quantized
+    variants of Qwen/Qwen3-8B and of meta-llama/Llama-3.1-8B-Instruct
+
+# Removed from a variant's name before it is compared with its base model's, so that
+# Qwen3-4B-MLX-4bit and Qwen_Qwen3-4B-GGUF both read as Qwen3-4B and a fine-tune published
+# as a quant (Qwen3-4B-Roleplay-v2-GGUF) does not.
+strip_patterns:
+  - '(?:ud-)?i?q\d(?:_[a-z0-9]+)*'   # GGUF types: Q4_K_M, UD-Q4_K_XL, IQ4_XS
+  - 'q\d+f\d+_\d+'                   # MLC: q4f16_1
+  - '\d+[-_]?bits?'                  # 4bit, 8-bit
+  - '\d+(?:\.\d+)?bpw'               # EXL2 / EXL3: 4.0bpw
+  - 'w\d+a\d+(?:[-_]fp8)?'           # compressed-tensors schemes: w4a16, w8a8
+  - '(?:bnb|int|fp|nvfp|mxfp)\d+'    # bnb4, int4, fp8, nvfp4, mxfp4
+  - '(?:gguf|mlx|awq|gptq|exl[23]|onnx|openvino|mlc|litert|modelopt|torchao|hqq|bnb)'
+  - '(?:unsloth|dynamic|imat|i1|quantized|quant|ov|bf16|fp16|f16)'
+
+formats:
+  - id: gguf
+    label: GGUF
+    tags: [gguf]
+    libraries: [gguf, llama.cpp, llama_cpp]
+    name_patterns: ['[-_.]gguf$']
+    runtimes: [llama.cpp, ollama, lm studio]
+    source: {source_url: "https://huggingface.co/docs/hub/gguf", fetched_at: "2026-09-25"}
+
+  - id: mlx
+    label: MLX
+    tags: [mlx]
+    libraries: [mlx]
+    name_patterns: ['(^|[-_])mlx([-_]|$)']
+    quant_patterns: ['(\d+[-_]?bit)', '(mxfp4|bf16|fp16)']
+    runtimes: [mlx-lm, lm studio]
+    source: {source_url: "https://huggingface.co/docs/hub/mlx", fetched_at: "2026-09-25"}
+
+  - id: compressed-tensors
+    label: compressed-tensors (llm-compressor)
+    tags: [compressed-tensors, llmcompressor]
+    name_patterns: ['w\d+a\d+']
+    quant_patterns: ['(w\d+a\d+(?:[-_]fp8)?)', '(fp8(?:[-_]dynamic)?)', '(int\d)']
+    runtimes: [vllm, sglang]
+    source: {source_url: "https://huggingface.co/docs/transformers/quantization/compressed_tensors",
+             fetched_at: "2026-09-25"}
+
+  - id: modelopt
+    label: TensorRT Model Optimizer
+    tags: [modelopt]
+    libraries: [Model Optimizer]
+    quant_patterns: ['(nvfp4|fp8|int4[-_]awq|w4a8)']
+    runtimes: [tensorrt-llm, vllm, sglang]
+    source: {source_url: "https://github.com/NVIDIA/TensorRT-Model-Optimizer",
+             fetched_at: "2026-09-25"}
+
+  - id: awq
+    label: AWQ
+    tags: [awq]
+    name_patterns: ['(^|[-_])awq([-_]|$)']
+    runtimes: [vllm, sglang, transformers]
+    source: {source_url: "https://huggingface.co/docs/transformers/quantization/awq",
+             fetched_at: "2026-09-25"}
+
+  - id: gptq
+    label: GPTQ
+    tags: [gptq]
+    name_patterns: ['(^|[-_])gptq']
+    quant_patterns: ['(int\d)', '(\d+[-_]?bit)']
+    runtimes: [vllm, sglang, transformers]
+    source: {source_url: "https://huggingface.co/docs/transformers/quantization/gptq",
+             fetched_at: "2026-09-25"}
+
+  - id: bnb
+    label: bitsandbytes
+    tags: [bitsandbytes]
+    name_patterns: ['bnb[-_]?\d[-_]?bit']
+    quant_patterns: ['bnb[-_]?(\d[-_]?bit)']
+    runtimes: [transformers, unsloth]
+    source: {source_url: "https://huggingface.co/docs/transformers/quantization/bitsandbytes",
+             fetched_at: "2026-09-25"}
+
+  - id: nvfp4
+    label: NVFP4
+    tags: [nvfp4]
+    name_patterns: ['nvfp4']
+    runtimes: [vllm, sglang, tensorrt-llm]
+    source: {source_url: "https://github.com/NVIDIA/TensorRT-Model-Optimizer",
+             fetched_at: "2026-09-25"}
+
+  - id: fp8
+    label: FP8
+    tags: [fp8]
+    name_patterns: ['(^|[-_])fp8([-_]|$)']
+    quant_patterns: ['(fp8(?:[-_]dynamic)?)']
+    runtimes: [vllm, sglang, transformers]
+    source: {source_url: "https://huggingface.co/docs/transformers/quantization/finegrained_fp8",
+             fetched_at: "2026-09-25"}
+
+  - id: torchao
+    label: torchao
+    tags: [torchao]
+    name_patterns: ['torchao']
+    quant_patterns: ['(int4|int8|float8)']
+    runtimes: [transformers, vllm]
+    source: {source_url: "https://huggingface.co/docs/transformers/quantization/torchao",
+             fetched_at: "2026-09-25"}
+
+  - id: exl3
+    label: EXL3
+    tags: [exl3]
+    name_patterns: ['exl3']
+    quant_patterns: ['(\d+(?:\.\d+)?bpw)']
+    runtimes: [exllamav3]
+    source: {source_url: "https://github.com/turboderp-org/exllamav3", fetched_at: "2026-09-25"}
+
+  - id: exl2
+    label: EXL2
+    tags: [exl2]
+    name_patterns: ['exl2']
+    quant_patterns: ['(\d+(?:\.\d+)?bpw)']
+    runtimes: [exllamav2]
+    source: {source_url: "https://github.com/turboderp-org/exllamav2", fetched_at: "2026-09-25"}
+
+  - id: mlc
+    label: MLC
+    libraries: [mlc-llm]
+    name_patterns: ['-mlc$']
+    quant_patterns: ['(q\d+f\d+_\d+)']
+    runtimes: [mlc-llm, webllm]
+    source: {source_url: "https://llm.mlc.ai/docs/", fetched_at: "2026-09-25"}
+
+  - id: litert
+    label: LiteRT
+    libraries: [litert-lm]
+    runtimes: [litert-lm]
+    source: {source_url: "https://ai.google.dev/edge/litert", fetched_at: "2026-09-25"}
+
+  - id: openvino
+    label: OpenVINO
+    tags: [openvino]
+    name_patterns: ['openvino', '(^|[-_])ov([-_]|$)']
+    quant_patterns: ['(int\d|fp16)']
+    runtimes: [openvino]
+    source: {source_url: "https://huggingface.co/docs/optimum/intel/openvino/export",
+             fetched_at: "2026-09-25"}
+
+  - id: onnx
+    label: ONNX
+    tags: [onnx]
+    libraries: [onnx, transformers.js]
+    name_patterns: ['(^|[-_])onnx([-_]|$)']
+    runtimes: [onnxruntime, transformers.js]
+    source: {source_url: "https://huggingface.co/docs/optimum/onnxruntime/overview",
+             fetched_at: "2026-09-25"}
+
+# Organisations that publish quantized copies of other people's models, and what to expect
+# from each. A variant from one of these, or from the base model's own organisation, is
+# listed ahead of an unknown uploader's with the same format.
+publishers:
+  - name: unsloth
+    formats: [gguf, bnb]
+    note: >-
+      GGUF including Unsloth Dynamic quants (UD-Q4_K_XL and the like, which keep chosen
+      layers at higher precision), bnb-4bit copies for fine-tuning, and ungated mirrors of
+      gated base models
+    source: {source_url: "https://huggingface.co/unsloth", fetched_at: "2026-09-25"}
+  - name: bartowski
+    formats: [gguf]
+    note: GGUF with importance-matrix quants; repos are named org_Model-GGUF
+    source: {source_url: "https://huggingface.co/bartowski", fetched_at: "2026-09-25"}
+  - name: lmstudio-community
+    formats: [gguf, mlx]
+    note: the files LM Studio offers by default, GGUF and MLX
+    source: {source_url: "https://huggingface.co/lmstudio-community", fetched_at: "2026-09-25"}
+  - name: ggml-org
+    formats: [gguf]
+    note: llama.cpp's maintainers
+    source: {source_url: "https://huggingface.co/ggml-org", fetched_at: "2026-09-25"}
+  - name: mlx-community
+    formats: [mlx]
+    note: MLX conversions for Apple silicon, named Model-4bit, -8bit, -bf16
+    source: {source_url: "https://huggingface.co/mlx-community", fetched_at: "2026-09-25"}
+  - name: RedHatAI
+    formats: [compressed-tensors, fp8]
+    note: llm-compressor quants (FP8, W4A16, W8A8) validated for vLLM
+    source: {source_url: "https://huggingface.co/RedHatAI", fetched_at: "2026-09-25"}
+  - name: nvidia
+    formats: [modelopt, nvfp4, fp8]
+    note: TensorRT Model Optimizer checkpoints (FP8, NVFP4)
+    source: {source_url: "https://huggingface.co/nvidia", fetched_at: "2026-09-25"}
+  - name: mradermacher
+    formats: [gguf]
+    note: GGUF for a very wide range of models; -i1-GGUF repos hold the imatrix quants
+    source: {source_url: "https://huggingface.co/mradermacher", fetched_at: "2026-09-25"}
+  - name: MaziyarPanahi
+    formats: [gguf]
+    note: GGUF, files named Model.Q4_K_M.gguf
+    source: {source_url: "https://huggingface.co/MaziyarPanahi", fetched_at: "2026-09-25"}
+  - name: QuantFactory
+    formats: [gguf]
+    note: GGUF
+    source: {source_url: "https://huggingface.co/QuantFactory", fetched_at: "2026-09-25"}
+  - name: TheBloke
+    formats: [gguf, awq, gptq]
+    note: 2023-era GGUF, AWQ and GPTQ for older models; no longer updated
+    source: {source_url: "https://huggingface.co/TheBloke", fetched_at: "2026-09-25"}
+  - name: mlc-ai
+    formats: [mlc]
+    note: MLC's own compiled weights
+    source: {source_url: "https://huggingface.co/mlc-ai", fetched_at: "2026-09-25"}

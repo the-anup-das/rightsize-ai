@@ -108,6 +108,32 @@ class ModelRef(BaseModel):
     file: str | None = Field(default=None, description="For GGUF/MLX: the specific file")
 
 
+class Variant(BaseModel):
+    """A quantized copy of a model that someone has already published on the Hub (F1)."""
+
+    ref: ModelRef = Field(description="the repo, and for GGUF the file (the first split part)")
+    format: str = Field(description="gguf, mlx, awq, gptq, bnb, fp8, compressed-tensors, ...; "
+                        "'unknown' when no convention in data/models/variants.yaml matched")
+    quant: str | None = Field(default=None, description="Q4_K_M, UD-Q4_K_XL, 4BIT, W4A16, ...")
+    size_bytes: int | None = None
+    bits_per_weight: float | None = Field(
+        default=None, description="size x 8 / the base model's parameters: effective, not nominal"
+    )
+    publisher: str
+    official: bool = Field(default=False, description="published by the base model's own org")
+    known_publisher: bool = Field(
+        default=False, description="an established quantizer listed in data/models/variants.yaml"
+    )
+    name_matches_base: bool = Field(
+        description="the name is the base model's plus format words; False flags a fine-tune "
+        "published as a quant, a draft model, or an unfamiliar format"
+    )
+    downloads: int | None = Field(default=None, description="as the Hub reports: last 30 days")
+    runtimes: list[str] = Field(default_factory=list, description="what loads this format")
+    gated: bool = False
+    files: list[str] = Field(default_factory=list, description="GGUF parts, in order")
+
+
 class ModelFacts(BaseModel):
     """What the catalog knows about a model without downloading it (F1)."""
 

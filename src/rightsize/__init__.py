@@ -33,6 +33,7 @@ _TYPE_EXPORTS = frozenset(
         "Provenance",
         "QuantSpec",
         "RuntimeSpec",
+        "Variant",
         "Verdict",
     }
 )
