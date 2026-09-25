@@ -141,24 +141,100 @@ list(hdr.items())[:3]
 
 NOTEBOOKS["02-hardware.ipynb"] = [
     md("""
-# F2. Hardware: presets and detection
+# F2. Hardware: catalogue, presets, detection and measurement
 
-Every preset carries provenance (where the bandwidth number came from). Detection uses
-`nvidia-smi`, `sysctl` or `wmic` and fills bandwidth from the matching preset.
+Four ways to name a device, in the order they are trusted: a bandwidth you measured on this
+machine, a curated preset, the ingested catalogue, and whatever you pass by hand.
+"""),
+    md("""
+## The catalogue
+
+259 accelerators, ingested from Hugging Face's SKU table by `scripts/ingest_hf_hardware.py`,
+joined to bandwidth from `scripts/ingest_bandwidth.py`. Every record keeps its source URL.
 """),
     code("""
-from rightsize.hardware import presets, get, detect
+from rightsize.hardware import catalog, presets, get, detect, from_hf
+cat = catalog()
+have = [d for d in cat.values() if d.bandwidth_gbps]
+print(f"{len(cat)} devices, {len(have)} with a memory bandwidth")
+"""),
+    md("""
+Bandwidth is computed from the two facts a vendor publishes, so it carries its derivation
+rather than being copied from anyone's table.
+"""),
+    code("""
+for name in ("RTX 4090 24GB", "Apple M4 Max 64GB", "Arc B580 12GB", "A100 80GB"):
+    d = cat[name]
+    print(f"{name:20s} {d.bandwidth_gbps:>7.1f} GB/s   {d.provenance.note or d.provenance.source_url[:48]}")
+"""),
+    md("""
+Size variants are separate records, because a model name on its own does not identify a
+card: an A100 40GB is 1555 GB/s and an 80GB is 2039.
+"""),
+    code("""
+for name in ("A100 40GB", "A100 80GB", "RTX 3060 8GB", "RTX 3060 12GB"):
+    print(f"{name:16s} {cat[name].bandwidth_gbps:>7.1f} GB/s")
+"""),
+    md("""
+## Presets and lookup
+
+Presets are the curated setups, with the OS and usable fraction someone actually checked.
+`get()` searches those first, then falls through to the catalogue.
+"""),
+    code("""
 for name, d in presets().items():
     print(f"{name:24s} {d.memory_gib:6.0f} GiB {d.bandwidth_gbps:6.0f} GB/s  {d.compute_arch or '':10s} {d.provenance.source_url}")
 """),
     code("""
-get("4090"), get("GeForce RTX 4070 Ti SUPER 16GB").bandwidth_gbps
+get("4090"), get("RTX 5080").name, get("RTX 5080").bandwidth_gbps
+"""),
+    md("""
+## Units
+
+Device memory is GiB, as the vendor and `nvidia-smi` state it. Model sizes are decimal GB,
+as Hugging Face lists them. `memory_gb` converts, and the fit engine only uses that.
+"""),
+    code("""
+d = get("RTX 4070 Ti SUPER")
+print(f"{d.memory_gib} GiB is {d.memory_gb} GB; usable at {d.usable_fraction:.0%} = {d.memory_gb * d.usable_fraction:.2f} GB")
+"""),
+    md("""
+## Detection, and your own hardware
+
+`detect()` reads this machine. `from_hf("username")` reads the hardware someone saved on
+their Hugging Face profile, which resolves against the same catalogue.
 """),
     code("""
 detect()
 """),
+    code("""
+# needs network; any public profile with saved hardware works
+# for d in from_hf("julien-c"):
+#     print(f"{d.name:24s} {d.memory_gib:>6} GiB  {d.bandwidth_gbps or '?'} GB/s")
+"""),
+    md("""
+## When there is no number to look up
+
+NVIDIA publishes a bus width but no bandwidth for laptop GPUs, because the memory speed is
+the laptop maker's choice. `rightsize bench` measures it instead, by running `llama-bench`
+and solving the speed model backwards, then remembers it for this machine:
+
+```
+tok/s = efficiency * bandwidth / (active weights + KV)
+```
+"""),
+    code("""
+from rightsize.execution.bench import bandwidth_from_throughput, measured_bandwidth
+from rightsize.catalog import facts
+# a real run on an RTX 4070 Ti SUPER: 362.7 tok/s on Qwen3-1.7B Q4_K_M at ctx 512
+fx = facts("Qwen/Qwen3-1.7B")
+print(f"{bandwidth_from_throughput(fx, 'Q4_K_M', 362.7, ctx=512):.0f} GB/s derived, published 672")
+print("measured on this machine:", measured_bandwidth(detect().name))
+"""),
     md(
-        "Presets live in `data/hardware/presets.yaml`. Add a card there with its source URL and it becomes usable everywhere."
+        "Presets live in `data/hardware/presets.yaml`, bandwidth in `bandwidth.yaml` "
+        "(hand-checked) and `bandwidth_wikipedia.yaml` (generated). Add a card with its "
+        "source URL and it becomes usable everywhere."
     ),
 ]
 

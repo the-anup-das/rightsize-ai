@@ -46,6 +46,12 @@ def build_parser() -> argparse.ArgumentParser:
     e.add_argument("--runtime", default="llama.cpp")
     e.add_argument("--ctx", type=int, default=8192)
     e.add_argument("--revision", default="main")
+    e.add_argument(
+        "--bandwidth",
+        type=float,
+        default=None,
+        help="memory bandwidth in GB/s, when we have none for your device",
+    )
 
     sub.add_parser("detect", help="detect this machine as a device")
 
@@ -68,6 +74,12 @@ def build_parser() -> argparse.ArgumentParser:
     q.add_argument("--tools", default=None, help="llama.cpp folder (default: .tools/llama.cpp)")
     q.add_argument("--gpu-layers", default="all")
     q.add_argument("--revision", default="main")
+    q.add_argument(
+        "--bandwidth",
+        type=float,
+        default=None,
+        help="memory bandwidth in GB/s, when we have none for your device",
+    )
     q.add_argument("--dry-run", action="store_true", help="render every step, run nothing")
 
     b = sub.add_parser("bench", help="measure this machine's real memory bandwidth")
@@ -153,10 +165,9 @@ def cmd_estimate(args: argparse.Namespace) -> int:
     from rightsize._console import verdict_style
     from rightsize.catalog import facts
     from rightsize.fit import estimate, predicted_file_gb
-    from rightsize.hardware import resolve
 
     fx = facts(args.model, args.revision)
-    dev = resolve(args.device)
+    dev = _device(args)
     quants = [q.upper() for q in (args.quant or ["Q4_K_M"])]
     results = {q: estimate(fx, q, dev, runtime=args.runtime, ctx=args.ctx) for q in quants}
     if args.json:
@@ -198,6 +209,21 @@ def cmd_estimate(args: argparse.Namespace) -> int:
     first = next(iter(results.values()))
     con.debug(f"formula {first.formula_id}; notes: {'; '.join(first.notes)}")
     return 0
+
+
+def _device(args: argparse.Namespace):
+    """The resolved device, with an explicit bandwidth applied if one was given.
+
+    Some hardware has no published bandwidth to find - NVIDIA gives laptop GPUs a bus
+    width but no bandwidth - so someone holding the spec sheet can supply it directly
+    rather than going without a speed estimate.
+    """
+    from rightsize.hardware import resolve
+
+    dev = resolve(args.device)
+    if getattr(args, "bandwidth", None):
+        dev = dev.model_copy(update={"bandwidth_gbps": args.bandwidth})
+    return dev
 
 
 def cmd_frameworks(args: argparse.Namespace) -> int:
@@ -244,7 +270,7 @@ def cmd_quantize(args: argparse.Namespace) -> int:
     manifest = quantize_model(
         args.model,
         args.quant or ["Q4_K_M"],
-        device=args.device,
+        device=_device(args),
         ctx=args.ctx,
         imatrix=args.imatrix,
         evaluate=args.eval,
