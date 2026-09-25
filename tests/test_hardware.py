@@ -96,7 +96,8 @@ def test_catalog_is_ingested_and_joined_to_bandwidth() -> None:
     cat = db.catalog()
     assert len(cat) > 200, "the whole HF table, one entry per memory option"
     assert cat["RTX 4090 24GB"].bandwidth_gbps == 1008.0
-    assert cat["H200 141GB"].bandwidth_gbps is None, "not curated yet, and it says so"
+    # A card nobody has curated and no list covers keeps None rather than a guess
+    assert cat["A800 80GB"].bandwidth_gbps is None, "not covered anywhere, and it says so"
     assert cat["RTX 4090 24GB"].compute_arch == "sm_89"
     for dev in cat.values():
         assert dev.provenance and dev.provenance.source_url.startswith("https://")
@@ -114,7 +115,7 @@ def test_bandwidth_is_computed_from_bus_width_and_speed() -> None:
     assert ti["how"] == "256-bit GDDR6X at 21 Gbps"
     assert ti["formula_id"] == "mem.bandwidth.bus_x_rate.v0"
     # HBM and unified memory do not divide cleanly, so those are the vendor's own figure
-    assert table[db._norm("H100")]["how"] == "stated by the source"
+    assert table[db._norm("H100 80GB")]["how"] == "stated by the source"
     assert table[db._norm("Apple M4 Max")]["gbps"] == 546.0
 
 
@@ -183,5 +184,30 @@ def test_bandwidth_never_crosses_vendors() -> None:
     assert db._bandwidth_for("M4", "amd")[0] != db._bandwidth_for("Apple M4", "apple")[0]
     gbps, hit = db._bandwidth_for("Apple M4", "apple")
     assert gbps == 120.0 and hit["how"] == "stated by the source"
-    # the curated file carries no vendor, so it answers for anyone that names it
-    assert db._bandwidth_for("H100", "nvidia")[0] == 3350.0
+    assert db._bandwidth_for("H100 80GB", "nvidia")[0] == 3350.0
+
+
+def test_a_source_that_is_consistently_wrong_is_overridden_by_hand() -> None:
+    """The cross-check catches a source contradicting itself, not one that is just wrong.
+
+    Wikipedia's GPU list gives the H200 3360 GB/s - the H100's figure - and its bus width
+    and clock agree with that, so the arithmetic reproduces the error faithfully. NVIDIA
+    states 4.8 TB/s. bandwidth.yaml records the vendor's number and flags the disagreement
+    so the ingest does not keep failing on it.
+    """
+    dev = db.catalog()["H200 141GB"]
+    assert dev.bandwidth_gbps == 4800.0
+    assert "nvidia.com" in dev.provenance.source_url
+
+
+def test_size_variants_do_not_borrow_each_others_bandwidth() -> None:
+    """An A100 40GB is 1555 GB/s and an 80GB is 2039; a 3060 is 240 at 8GB and 360 at 12.
+
+    The join asks for "<model> <size>GB" before the bare model name, because a name on its
+    own does not identify the card when the memory differs.
+    """
+    cat = db.catalog()
+    assert cat["A100 40GB"].bandwidth_gbps == 1555.2
+    assert cat["A100 80GB"].bandwidth_gbps == 2039.0
+    assert cat["RTX 3060 8GB"].bandwidth_gbps == 240.0
+    assert cat["RTX 3060 12GB"].bandwidth_gbps == 360.0

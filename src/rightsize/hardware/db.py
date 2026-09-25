@@ -105,14 +105,21 @@ def _bandwidth_entry(rec: dict, formula: str | None) -> dict:
     }
 
 
-def _bandwidth_for(name: str, vendor: str | None = None) -> tuple[float | None, dict | None]:
+def _bandwidth_for(
+    name: str, vendor: str | None = None, mem: float | None = None
+) -> tuple[float | None, dict | None]:
     """Bandwidth for one model, refusing a record that belongs to a different vendor.
 
     ``_norm`` drops the vendor word, so "Apple M4" and an old Mobility Radeon M4 both
     normalise to "m4". Ingested records carry the list they came from; a mismatch means the
     name collided, not that we found the device.
     """
-    hit = bandwidth().get(_norm(name))
+    table = bandwidth()
+    # "A100" alone is ambiguous: the 40GB PCIe card does 1555 GB/s, the 80GB SXM 2039. Ask
+    # for the size we actually have before falling back to the bare model name.
+    hit = table.get(_norm(f"{name} {mem:g}GB")) if mem else None
+    if hit is None:
+        hit = table.get(_norm(name))
     if hit is None:
         return None, None
     if vendor and hit.get("vendor") and hit["vendor"] != vendor:
@@ -132,9 +139,9 @@ def catalog() -> dict[str, Device]:
     out: dict[str, Device] = {}
     for rec in data["devices"]:
         vendor = rec.get("vendor", "other")
-        gbps, hit = _bandwidth_for(rec["name"], vendor)
-        prov = (hit or {}).get("provenance") or rec.get("provenance")
         for mem in rec.get("memory_gib") or []:
+            gbps, hit = _bandwidth_for(rec["name"], vendor, mem)
+            prov = (hit or {}).get("provenance") or rec.get("provenance")
             name = f"{rec['name']} {mem:g}GB"
             out[name] = Device(
                 name=name,

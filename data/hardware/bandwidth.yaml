@@ -71,20 +71,33 @@ devices:
     bus_width_bits: 192
     memory_speed_gbps: 12.5
     provenance: { source_url: https://www.techpowerup.com/gpu-specs/l4.c4091, fetched_at: "2026-09-25", hand: true }
-  - name: A100
+  - name: A100 80GB
     vendor: nvidia
-    aliases: [A100 80GB, A100 SXM4 80 GB]
+    aliases: [A100 SXM4 80 GB, A100 SXM]
     memory_type: HBM2e
     bandwidth_gbps: 2039
     stated: true
     provenance: { source_url: https://www.techpowerup.com/gpu-specs/a100-sxm4-80-gb.c3746, fetched_at: "2026-09-25", hand: true }
-  - name: H100
+  - name: H100 80GB
     vendor: nvidia
-    aliases: [H100 80GB, H100 SXM5 80 GB]
+    aliases: [H100 SXM5 80 GB, H100 SXM]
     memory_type: HBM3
     bandwidth_gbps: 3350
     stated: true
     provenance: { source_url: https://www.techpowerup.com/gpu-specs/h100-sxm5-80-gb.c3900, fetched_at: "2026-09-25", hand: true }
+  - name: H200 141GB
+    vendor: nvidia
+    aliases: [H200, H200 SXM]
+    memory_type: HBM3e
+    bandwidth_gbps: 4800
+    stated: true
+    source_disagrees: true
+    note: >-
+      Wikipedia's GPU list gives 3360 GB/s for the H200, which is the H100's figure; NVIDIA
+      states 4.8 TB/s. Our arithmetic agreed with Wikipedia because it reproduces Wikipedia's
+      own bus width and clock, which is the limit of that cross-check: it catches a source
+      that contradicts itself, not one that is consistently wrong.
+    provenance: { source_url: https://www.nvidia.com/en-us/data-center/h200/, fetched_at: "2026-09-25", hand: true }
   - name: MI300X
     vendor: amd
     aliases: [MI300X 192GB, Instinct MI300X]

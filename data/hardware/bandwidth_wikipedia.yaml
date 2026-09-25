@@ -1926,12 +1926,28 @@ devices:
     stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "A10 GPU accelerator"
+    match: "a10"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 384
+    memory_speed_gbps: 12.504
+    stated_gbps: 600
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "A10 GPU accelerator"
     match: "a10 gpu accelerator"
     memory_type: "GDDR6"
     vendor: "nvidia"
     bus_width_bits: 384
     memory_speed_gbps: 12.504
     stated_gbps: 600
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "A100 GPU accelerator"
+    match: "a100"
+    memory_type: "HBM2"
+    vendor: "nvidia"
+    bus_width_bits: 5120
+    memory_speed_gbps: 2.43
+    stated_gbps: 1555
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "A100 GPU accelerator"
     match: "a100 gpu accelerator"
@@ -1942,12 +1958,28 @@ devices:
     stated_gbps: 1555
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "A16 GPU accelerator"
+    match: "a16"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 4
+    memory_speed_gbps: 7.242
+    stated_gbps: 4
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "A16 GPU accelerator"
     match: "a16 gpu accelerator"
     memory_type: "GDDR6"
     vendor: "nvidia"
     bus_width_bits: 4
     memory_speed_gbps: 7.242
     stated_gbps: 4
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "A2 GPU accelerator"
+    match: "a2"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 128
+    memory_speed_gbps: 12.504
+    stated_gbps: 200
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "A2 GPU accelerator"
     match: "a2 gpu accelerator"
@@ -1958,12 +1990,28 @@ devices:
     stated_gbps: 200
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "A30 GPU accelerator"
+    match: "a30"
+    memory_type: "HBM2"
+    vendor: "nvidia"
+    bus_width_bits: 3072
+    memory_speed_gbps: 2.43
+    stated_gbps: 933.1
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "A30 GPU accelerator"
     match: "a30 gpu accelerator"
     memory_type: "HBM2"
     vendor: "nvidia"
     bus_width_bits: 3072
     memory_speed_gbps: 2.43
     stated_gbps: 933.1
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "A40 GPU accelerator"
+    match: "a40"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 384
+    memory_speed_gbps: 14.496
+    stated_gbps: 695.8
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "A40 GPU accelerator"
     match: "a40 gpu accelerator"
@@ -2190,7 +2238,23 @@ devices:
     stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_AMD_graphics_processing_units&oldid=1375945815", fetched_at: "2026-09-25" }
   - name: "B100 GPU accelerator"
+    match: "b100"
+    memory_type: "HBM3E"
+    vendor: "nvidia"
+    bus_width_bits: 8192
+    memory_speed_gbps: 8
+    stated_gbps: 8000
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "B100 GPU accelerator"
     match: "b100 gpu accelerator"
+    memory_type: "HBM3E"
+    vendor: "nvidia"
+    bus_width_bits: 8192
+    memory_speed_gbps: 8
+    stated_gbps: 8000
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "B200 GPU accelerator"
+    match: "b200"
     memory_type: "HBM3E"
     vendor: "nvidia"
     bus_width_bits: 8192
@@ -2206,12 +2270,28 @@ devices:
     stated_gbps: 8000
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "B300 GPU accelerator"
+    match: "b300"
+    memory_type: "HBM3E"
+    vendor: "nvidia"
+    bus_width_bits: 8192
+    memory_speed_gbps: 8
+    stated_gbps: 8000
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "B300 GPU accelerator"
     match: "b300 gpu accelerator"
     memory_type: "HBM3E"
     vendor: "nvidia"
     bus_width_bits: 8192
     memory_speed_gbps: 8
     stated_gbps: 8000
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "C1060 GPU Computing Module"
+    match: "c1060 gpu computing"
+    memory_type: "GDDR3"
+    vendor: "nvidia"
+    bus_width_bits: 512
+    memory_speed_gbps: 1.6
+    stated_gbps: 102.4
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "C1060 GPU Computing Module"
     match: "c1060 gpu computing module"
@@ -2222,7 +2302,23 @@ devices:
     stated_gbps: 102.4
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "C2050 GPU Computing Module"
+    match: "c2050 gpu computing"
+    memory_type: "GDDR5"
+    vendor: "nvidia"
+    bus_width_bits: 384
+    memory_speed_gbps: 3
+    stated_gbps: 144
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "C2050 GPU Computing Module"
     match: "c2050 gpu computing module"
+    memory_type: "GDDR5"
+    vendor: "nvidia"
+    bus_width_bits: 384
+    memory_speed_gbps: 3
+    stated_gbps: 144
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "C2070 GPU Computing Module"
+    match: "c2070 gpu computing"
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 384
@@ -2238,12 +2334,28 @@ devices:
     stated_gbps: 144
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "C2075 GPU Computing Module"
+    match: "c2075 gpu computing"
+    memory_type: "GDDR5"
+    vendor: "nvidia"
+    bus_width_bits: 384
+    memory_speed_gbps: 3
+    stated_gbps: 144
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "C2075 GPU Computing Module"
     match: "c2075 gpu computing module"
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 384
     memory_speed_gbps: 3
     stated_gbps: 144
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "C870 GPU Computing Module"
+    match: "c870 gpu computing"
+    memory_type: "GDDR3"
+    vendor: "nvidia"
+    bus_width_bits: 384
+    memory_speed_gbps: 1.6
+    stated_gbps: 76.8
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "C870 GPU Computing Module"
     match: "c870 gpu computing module"
@@ -2285,6 +2397,14 @@ devices:
     bandwidth_gbps: 6.4
     stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_AMD_graphics_processing_units&oldid=1375945815", fetched_at: "2026-09-25" }
+  - name: "Drake"
+    match: "drake"
+    memory_type: "LPDDR5X"
+    vendor: "nvidia"
+    bus_width_bits: 128
+    bandwidth_gbps: 68.26
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Radeon E2400"
     match: "e2400"
     vendor: "amd"
@@ -2643,6 +2763,14 @@ devices:
     bandwidth_gbps: 19.8
     stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_AMD_graphics_processing_units&oldid=1375945815", fetched_at: "2026-09-25" }
+  - name: "FireMV 2200 PCIe"
+    match: "firemv 2200"
+    memory_type: "DDR"
+    vendor: "amd"
+    bus_width_bits: 64
+    bandwidth_gbps: 3.2
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_AMD_graphics_processing_units&oldid=1375945815", fetched_at: "2026-09-25" }
   - name: "FireMV 2200 PCI"
     match: "firemv 2200 pci"
     memory_type: "DDR"
@@ -2665,6 +2793,14 @@ devices:
     vendor: "amd"
     bus_width_bits: 256
     bandwidth_gbps: 32
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_AMD_graphics_processing_units&oldid=1375945815", fetched_at: "2026-09-25" }
+  - name: "FireMV 2400 PCIe"
+    match: "firemv 2400"
+    memory_type: "DDR3"
+    vendor: "amd"
+    bus_width_bits: 128
+    bandwidth_gbps: 16
     stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_AMD_graphics_processing_units&oldid=1375945815", fetched_at: "2026-09-25" }
   - name: "FireMV 2400 PCI"
@@ -4002,8 +4138,8 @@ devices:
     match: "gt 415 oem"
     vendor: "nvidia"
     bus_width_bits: 128
-    bandwidth_gbps: 10.66
-    stated: true
+    memory_speed_gbps: 0.666
+    stated_gbps: 10.66
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "GeForce GT 415M"
     match: "gt 415m"
@@ -4017,8 +4153,8 @@ devices:
     match: "gt 420 oem"
     vendor: "nvidia"
     bus_width_bits: 128
-    bandwidth_gbps: 28.8
-    stated: true
+    memory_speed_gbps: 1.8
+    stated_gbps: 28.8
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "GeForce GT 420M"
     match: "gt 420m"
@@ -4461,6 +4597,14 @@ devices:
     bandwidth_gbps: 80.19
     stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "GeForce GT 740M"
+    match: "gt 740m 2gb"
+    memory_type: "DDR3 GDDR5"
+    vendor: "nvidia"
+    bus_width_bits: 128
+    bandwidth_gbps: 28.8
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "GeForce GT 745M"
     match: "gt 745m"
     memory_type: "DDR3 GDDR5"
@@ -4603,15 +4747,24 @@ devices:
     memory_speed_gbps: 7
     stated_gbps: 84.1
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
-  - name: "GeForce GTX 1050 Ti"
-    match: "gtx 1050 ti"
+  - name: "GeForce GTX 1050"
+    match: "gtx 1050 4gb"
+    memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 128
-    memory_speed_gbps: 7
-    stated_gbps: 112.1
+    bandwidth_gbps: 112
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "GeForce GTX 1050 Ti"
+    match: "gtx 1050 ti 4gb"
+    memory_type: "GDDR5"
+    vendor: "nvidia"
+    bus_width_bits: 128
+    bandwidth_gbps: 112
+    stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "GeForce GTX 1060"
-    match: "gtx 1060"
+    match: "gtx 1060 3gb"
     vendor: "nvidia"
     bus_width_bits: 192
     memory_speed_gbps: 8
@@ -4631,6 +4784,14 @@ devices:
     memory_speed_gbps: 8
     stated_gbps: 192.2
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "GeForce GTX 1060 Max-Q"
+    match: "gtx 1060 max q"
+    memory_type: "GDDR5"
+    vendor: "nvidia"
+    bus_width_bits: 192
+    bandwidth_gbps: 192
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "GeForce GTX 1060 OEM"
     match: "gtx 1060 oem"
     vendor: "nvidia"
@@ -4646,11 +4807,12 @@ devices:
     stated_gbps: 216.7
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "GeForce GTX 1070"
-    match: "gtx 1070"
+    match: "gtx 1070 8gb"
+    memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 256
-    memory_speed_gbps: 8
-    stated_gbps: 256.3
+    bandwidth_gbps: 256
+    stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "GeForce GTX 1070 GDDR5X"
     match: "gtx 1070 gddr5x"
@@ -4658,6 +4820,14 @@ devices:
     bus_width_bits: 256
     memory_speed_gbps: 8
     stated_gbps: 256.3
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "GeForce GTX 1070 Max-Q"
+    match: "gtx 1070 max q"
+    memory_type: "GDDR5"
+    vendor: "nvidia"
+    bus_width_bits: 256
+    bandwidth_gbps: 256
+    stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "GeForce GTX 1070 Ti"
     match: "gtx 1070 ti"
@@ -4668,10 +4838,19 @@ devices:
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "GeForce GTX 1080"
     match: "gtx 1080 8gb"
+    memory_type: "GDDR5X"
     vendor: "nvidia"
     bus_width_bits: 256
-    memory_speed_gbps: 11
-    stated_gbps: 352.3
+    bandwidth_gbps: 320
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "GeForce GTX 1080 Max-Q"
+    match: "gtx 1080 max q"
+    memory_type: "GDDR5X"
+    vendor: "nvidia"
+    bus_width_bits: 256
+    bandwidth_gbps: 320
+    stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "GeForce GTX 1080 Ti"
     match: "gtx 1080 ti"
@@ -4680,19 +4859,21 @@ devices:
     memory_speed_gbps: 11
     stated_gbps: 484.4
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
-  - name: "GeForce GTX 1630"
+  - name: "Geforce GTX 1630"
     match: "gtx 1630 4gb"
+    memory_type: "GDDR6"
     vendor: "nvidia"
     bus_width_bits: 64
-    memory_speed_gbps: 12
-    stated_gbps: 96
+    bandwidth_gbps: 96
+    stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "GeForce GTX 1650"
     match: "gtx 1650 4gb"
+    memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 128
-    memory_speed_gbps: 12
-    stated_gbps: 192
+    bandwidth_gbps: 128
+    stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "GeForce GTX 1650 Max-Q"
     match: "gtx 1650 max q"
@@ -4727,10 +4908,11 @@ devices:
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "GeForce GTX 1660"
     match: "gtx 1660 6gb"
+    memory_type: "GDDR6"
     vendor: "nvidia"
     bus_width_bits: 192
-    memory_speed_gbps: 8
-    stated_gbps: 192.1
+    bandwidth_gbps: 384
+    stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "GeForce GTX 1660 Super"
     match: "gtx 1660 super"
@@ -4741,10 +4923,11 @@ devices:
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "GeForce GTX 1660 Ti"
     match: "gtx 1660 ti 6gb"
+    memory_type: "GDDR6"
     vendor: "nvidia"
     bus_width_bits: 192
-    memory_speed_gbps: 12
-    stated_gbps: 288
+    bandwidth_gbps: 288
+    stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "GeForce GTX 1660 Ti Max-Q"
     match: "gtx 1660 ti max q"
@@ -5504,6 +5687,14 @@ devices:
     memory_speed_gbps: 7
     stated_gbps: 224.4
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "GeForce GTX 980"
+    match: "gtx 980 8gb"
+    memory_type: "GDDR5"
+    vendor: "nvidia"
+    bus_width_bits: 256
+    bandwidth_gbps: 224
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "GeForce GTX 980 Ti"
     match: "gtx 980 ti"
     vendor: "nvidia"
@@ -5564,8 +5755,24 @@ devices:
     stated_gbps: 2039
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "H200 GPU accelerator"
+    match: "h200"
+    memory_type: "HBM3E"
+    vendor: "nvidia"
+    bus_width_bits: 5120
+    memory_speed_gbps: 5.252
+    stated_gbps: 3360
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "H200 GPU accelerator"
     match: "h200 gpu accelerator"
     memory_type: "HBM3E"
+    vendor: "nvidia"
+    bus_width_bits: 5120
+    memory_speed_gbps: 5.252
+    stated_gbps: 3360
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "H800 GPU accelerator"
+    match: "h800"
+    memory_type: "HBM3"
     vendor: "nvidia"
     bus_width_bits: 5120
     memory_speed_gbps: 5.252
@@ -6460,12 +6667,28 @@ devices:
     stated_gbps: 512
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_AMD_graphics_processing_units&oldid=1375945815", fetched_at: "2026-09-25" }
   - name: "K10 GPU accelerator"
+    match: "k10"
+    memory_type: "GDDR5"
+    vendor: "nvidia"
+    bus_width_bits: 2
+    memory_speed_gbps: 5
+    stated_gbps: 2
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "K10 GPU accelerator"
     match: "k10 gpu accelerator"
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 2
     memory_speed_gbps: 5
     stated_gbps: 2
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "K20 GPU accelerator"
+    match: "k20"
+    memory_type: "GDDR5"
+    vendor: "nvidia"
+    bus_width_bits: 320
+    memory_speed_gbps: 5.2
+    stated_gbps: 208
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "K20 GPU accelerator"
     match: "k20 gpu accelerator"
@@ -6476,12 +6699,28 @@ devices:
     stated_gbps: 208
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "K40 GPU accelerator"
+    match: "k40"
+    memory_type: "GDDR5"
+    vendor: "nvidia"
+    bus_width_bits: 384
+    memory_speed_gbps: 6
+    stated_gbps: 288
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "K40 GPU accelerator"
     match: "k40 gpu accelerator"
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 384
     memory_speed_gbps: 6
     stated_gbps: 288
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "K80 GPU accelerator"
+    match: "k80"
+    memory_type: "GDDR5"
+    vendor: "nvidia"
+    bus_width_bits: 2
+    memory_speed_gbps: 5
+    stated_gbps: 2
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "K80 GPU accelerator"
     match: "k80 gpu accelerator"
@@ -6492,12 +6731,28 @@ devices:
     stated_gbps: 2
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "L4 GPU accelerator"
+    match: "l4"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 192
+    memory_speed_gbps: 12.504
+    stated_gbps: 300
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "L4 GPU accelerator"
     match: "l4 gpu accelerator"
     memory_type: "GDDR6"
     vendor: "nvidia"
     bus_width_bits: 192
     memory_speed_gbps: 12.504
     stated_gbps: 300
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "L40 GPU accelerator"
+    match: "l40"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 384
+    memory_speed_gbps: 18
+    stated_gbps: 864
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "L40 GPU accelerator"
     match: "l40 gpu accelerator"
@@ -6516,12 +6771,28 @@ devices:
     stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_AMD_graphics_processing_units&oldid=1375945815", fetched_at: "2026-09-25" }
   - name: "M10 GPU accelerator"
+    match: "m10"
+    memory_type: "GDDR5"
+    vendor: "nvidia"
+    bus_width_bits: 4
+    memory_speed_gbps: 5.188
+    stated_gbps: 4
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "M10 GPU accelerator"
     match: "m10 gpu accelerator"
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 4
     memory_speed_gbps: 5.188
     stated_gbps: 4
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "M2050 GPU Computing Module"
+    match: "m2050 gpu computing"
+    memory_type: "GDDR5"
+    vendor: "nvidia"
+    bus_width_bits: 384
+    memory_speed_gbps: 3.092
+    stated_gbps: 148.4
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "M2050 GPU Computing Module"
     match: "m2050 gpu computing module"
@@ -6532,12 +6803,28 @@ devices:
     stated_gbps: 148.4
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "M2070/M2070Q GPU Computing Module"
+    match: "m2070 m2070q gpu computing"
+    memory_type: "GDDR5"
+    vendor: "nvidia"
+    bus_width_bits: 384
+    memory_speed_gbps: 3.132
+    stated_gbps: 150.3
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "M2070/M2070Q GPU Computing Module"
     match: "m2070 m2070q gpu computing module"
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 384
     memory_speed_gbps: 3.132
     stated_gbps: 150.3
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "M2090 GPU Computing Module"
+    match: "m2090 gpu computing"
+    memory_type: "GDDR5"
+    vendor: "nvidia"
+    bus_width_bits: 384
+    memory_speed_gbps: 3.7
+    stated_gbps: 177.6
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "M2090 GPU Computing Module"
     match: "m2090 gpu computing module"
@@ -6548,12 +6835,28 @@ devices:
     stated_gbps: 177.6
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "M4 GPU accelerator"
+    match: "m4"
+    memory_type: "GDDR5"
+    vendor: "nvidia"
+    bus_width_bits: 128
+    memory_speed_gbps: 5.5
+    stated_gbps: 88
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "M4 GPU accelerator"
     match: "m4 gpu accelerator"
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 128
     memory_speed_gbps: 5.5
     stated_gbps: 88
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "M40 GPU accelerator"
+    match: "m40"
+    memory_type: "GDDR5"
+    vendor: "nvidia"
+    bus_width_bits: 384
+    memory_speed_gbps: 6
+    stated_gbps: 288
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "M40 GPU accelerator"
     match: "m40 gpu accelerator"
@@ -6564,12 +6867,28 @@ devices:
     stated_gbps: 288
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "M6 GPU accelerator"
+    match: "m6"
+    memory_type: "GDDR5"
+    vendor: "nvidia"
+    bus_width_bits: 256
+    memory_speed_gbps: 4.6
+    stated_gbps: 147.2
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "M6 GPU accelerator"
     match: "m6 gpu accelerator"
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 256
     memory_speed_gbps: 4.6
     stated_gbps: 147.2
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "M60 GPU accelerator"
+    match: "m60"
+    memory_type: "GDDR5"
+    vendor: "nvidia"
+    bus_width_bits: 2
+    memory_speed_gbps: 5
+    stated_gbps: 2
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "M60 GPU accelerator"
     match: "m60 gpu accelerator"
@@ -7227,6 +7546,14 @@ devices:
     bandwidth_gbps: 2
     stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "NX-SoC"
+    match: "nx soc"
+    memory_type: "LPDDR4"
+    vendor: "nvidia"
+    bus_width_bits: 64
+    bandwidth_gbps: 21.3
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "P100 GPU accelerator"
     match: "p100 gpu accelerator 12gb"
     memory_type: "HBM2"
@@ -7244,6 +7571,14 @@ devices:
     stated_gbps: 732
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "P4 GPU accelerator"
+    match: "p4"
+    memory_type: "GDDR5"
+    vendor: "nvidia"
+    bus_width_bits: 256
+    memory_speed_gbps: 6
+    stated_gbps: 192
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "P4 GPU accelerator"
     match: "p4 gpu accelerator"
     memory_type: "GDDR5"
     vendor: "nvidia"
@@ -7252,12 +7587,28 @@ devices:
     stated_gbps: 192
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "P40 GPU accelerator"
+    match: "p40"
+    memory_type: "GDDR5"
+    vendor: "nvidia"
+    bus_width_bits: 384
+    memory_speed_gbps: 7.2
+    stated_gbps: 345.6
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "P40 GPU accelerator"
     match: "p40 gpu accelerator"
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 384
     memory_speed_gbps: 7.2
     stated_gbps: 345.6
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "P6 GPU accelerator"
+    match: "p6"
+    memory_type: "GDDR5"
+    vendor: "nvidia"
+    bus_width_bits: 256
+    memory_speed_gbps: 6.006
+    stated_gbps: 192.2
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "P6 GPU accelerator"
     match: "p6 gpu accelerator"
@@ -8528,16 +8879,16 @@ devices:
     memory_type: "HBM2"
     vendor: "nvidia"
     bus_width_bits: 4096
-    bandwidth_gbps: 720
-    stated: true
+    memory_speed_gbps: 1.406
+    stated_gbps: 720
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro GV100"
     match: "quadro gv100"
     memory_type: "HBM2"
     vendor: "nvidia"
     bus_width_bits: 4096
-    bandwidth_gbps: 870
-    stated: true
+    memory_speed_gbps: 1.696
+    stated_gbps: 870
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro K1000M"
     match: "quadro k1000m"
@@ -8552,8 +8903,8 @@ devices:
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 128
-    bandwidth_gbps: 44.8
-    stated: true
+    memory_speed_gbps: 2.8
+    stated_gbps: 44.8
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro K1200"
     match: "quadro k1200"
@@ -8568,16 +8919,16 @@ devices:
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 128
-    bandwidth_gbps: 64
-    stated: true
+    memory_speed_gbps: 4
+    stated_gbps: 64
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro K2000D"
     match: "quadro k2000d"
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 128
-    bandwidth_gbps: 64
-    stated: true
+    memory_speed_gbps: 4
+    stated_gbps: 64
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro K2000M"
     match: "quadro k2000m"
@@ -8592,24 +8943,24 @@ devices:
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 128
-    bandwidth_gbps: 48
-    stated: true
+    memory_speed_gbps: 3
+    stated_gbps: 48
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro K2200"
     match: "quadro k2200"
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 128
-    bandwidth_gbps: 80.2
-    stated: true
+    memory_speed_gbps: 5.012
+    stated_gbps: 80.2
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro K2200M"
     match: "quadro k2200m"
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 128
-    bandwidth_gbps: 80.2
-    stated: true
+    memory_speed_gbps: 5.012
+    stated_gbps: 80.2
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro K3000M"
     match: "quadro k3000m"
@@ -8624,16 +8975,16 @@ devices:
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 256
-    bandwidth_gbps: 102.4
-    stated: true
+    memory_speed_gbps: 3.2
+    stated_gbps: 102.4
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro K4000"
     match: "quadro k4000"
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 192
-    bandwidth_gbps: 134.8
-    stated: true
+    memory_speed_gbps: 5.616
+    stated_gbps: 134.8
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro K4000M"
     match: "quadro k4000m"
@@ -8648,8 +8999,8 @@ devices:
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 256
-    bandwidth_gbps: 102.4
-    stated: true
+    memory_speed_gbps: 3.2
+    stated_gbps: 102.4
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro K420"
     match: "quadro k420"
@@ -8664,16 +9015,16 @@ devices:
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 256
-    bandwidth_gbps: 172.8
-    stated: true
+    memory_speed_gbps: 5.4
+    stated_gbps: 172.8
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro K5000"
     match: "quadro k5000"
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 256
-    bandwidth_gbps: 172.8
-    stated: true
+    memory_speed_gbps: 5.4
+    stated_gbps: 172.8
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro K5000M"
     match: "quadro k5000m"
@@ -8696,64 +9047,64 @@ devices:
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 256
-    bandwidth_gbps: 115.2
-    stated: true
+    memory_speed_gbps: 3.6
+    stated_gbps: 115.2
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro K510M"
     match: "quadro k510m"
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 64
-    bandwidth_gbps: 19.2
-    stated: true
+    memory_speed_gbps: 2.4
+    stated_gbps: 19.2
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro K5200"
     match: "quadro k5200"
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 256
-    bandwidth_gbps: 192
-    stated: true
+    memory_speed_gbps: 6
+    stated_gbps: 192
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro K600"
     match: "quadro k600"
     memory_type: "DDR3"
     vendor: "nvidia"
     bus_width_bits: 128
-    bandwidth_gbps: 28.5
-    stated: true
+    memory_speed_gbps: 1.782
+    stated_gbps: 28.5
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro K6000"
     match: "quadro k6000"
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 384
-    bandwidth_gbps: 288
-    stated: true
+    memory_speed_gbps: 6.008
+    stated_gbps: 288
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro K610M"
     match: "quadro k610m"
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 64
-    bandwidth_gbps: 20.8
-    stated: true
+    memory_speed_gbps: 2.6
+    stated_gbps: 20.8
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro K620"
     match: "quadro k620"
     memory_type: "DDR3"
     vendor: "nvidia"
     bus_width_bits: 128
-    bandwidth_gbps: 28.8
-    stated: true
+    memory_speed_gbps: 1.8
+    stated_gbps: 28.8
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro M1000M"
     match: "quadro m1000m"
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 128
-    bandwidth_gbps: 80.2
-    stated: true
+    memory_speed_gbps: 5.012
+    stated_gbps: 80.2
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro M1200 Mobile"
     match: "quadro m1200 mobile"
@@ -8768,16 +9119,16 @@ devices:
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 128
-    bandwidth_gbps: 105.8
-    stated: true
+    memory_speed_gbps: 6.612
+    stated_gbps: 105.8
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro M2000M"
     match: "quadro m2000m"
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 128
-    bandwidth_gbps: 80.2
-    stated: true
+    memory_speed_gbps: 5.012
+    stated_gbps: 80.2
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro M2200 Mobile"
     match: "quadro m2200 mobile"
@@ -8792,48 +9143,48 @@ devices:
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 256
-    bandwidth_gbps: 160.4
-    stated: true
+    memory_speed_gbps: 5.012
+    stated_gbps: 160.4
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro M4000"
     match: "quadro m4000"
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 256
-    bandwidth_gbps: 192.4
-    stated: true
+    memory_speed_gbps: 6.012
+    stated_gbps: 192.4
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro M4000M"
     match: "quadro m4000m"
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 256
-    bandwidth_gbps: 160.4
-    stated: true
+    memory_speed_gbps: 5.012
+    stated_gbps: 160.4
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro M5000"
     match: "quadro m5000"
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 256
-    bandwidth_gbps: 211.6
-    stated: true
+    memory_speed_gbps: 6.612
+    stated_gbps: 211.6
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro M5000M"
     match: "quadro m5000m"
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 256
-    bandwidth_gbps: 160.4
-    stated: true
+    memory_speed_gbps: 5.012
+    stated_gbps: 160.4
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro M500M"
     match: "quadro m500m"
     memory_type: "DDR3"
     vendor: "nvidia"
     bus_width_bits: 64
-    bandwidth_gbps: 14.4
-    stated: true
+    memory_speed_gbps: 1.8
+    stated_gbps: 14.4
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro M520 Mobile"
     match: "quadro m520 mobile"
@@ -8856,16 +9207,16 @@ devices:
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 384
-    bandwidth_gbps: 317
-    stated: true
+    memory_speed_gbps: 6.612
+    stated_gbps: 317
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro M600M"
     match: "quadro m600m"
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 128
-    bandwidth_gbps: 80.2
-    stated: true
+    memory_speed_gbps: 5.012
+    stated_gbps: 80.2
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro M620 Mobile"
     match: "quadro m620 mobile"
@@ -8960,8 +9311,8 @@ devices:
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 128
-    bandwidth_gbps: 82
-    stated: true
+    memory_speed_gbps: 7.008
+    stated_gbps: 82
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro P1000 Mobile"
     match: "quadro p1000 mobile"
@@ -8976,8 +9327,8 @@ devices:
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 160
-    bandwidth_gbps: 140
-    stated: true
+    memory_speed_gbps: 8.008
+    stated_gbps: 140
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro P2000 Mobile"
     match: "quadro p2000 mobile"
@@ -8992,8 +9343,8 @@ devices:
     memory_type: "GDDR5X"
     vendor: "nvidia"
     bus_width_bits: 160
-    bandwidth_gbps: 200
-    stated: true
+    memory_speed_gbps: 10.008
+    stated_gbps: 200
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro P3000 Mobile"
     match: "quadro p3000 mobile"
@@ -9016,16 +9367,16 @@ devices:
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 64
-    bandwidth_gbps: 32
-    stated: true
+    memory_speed_gbps: 4.012
+    stated_gbps: 32
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro P4000"
     match: "quadro p4000"
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 256
-    bandwidth_gbps: 243
-    stated: true
+    memory_speed_gbps: 7.604
+    stated_gbps: 243
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro P4000 Max-Q"
     match: "quadro p4000 max q"
@@ -9072,8 +9423,8 @@ devices:
     memory_type: "GDDR5X"
     vendor: "nvidia"
     bus_width_bits: 256
-    bandwidth_gbps: 288
-    stated: true
+    memory_speed_gbps: 9.008
+    stated_gbps: 288
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro P5000 Mobile"
     match: "quadro p5000 mobile"
@@ -9104,8 +9455,8 @@ devices:
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 128
-    bandwidth_gbps: 64
-    stated: true
+    memory_speed_gbps: 4.012
+    stated_gbps: 64
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro P600 Mobile"
     match: "quadro p600 mobile"
@@ -9120,16 +9471,16 @@ devices:
     memory_type: "GDDR5X"
     vendor: "nvidia"
     bus_width_bits: 384
-    bandwidth_gbps: 432
-    stated: true
+    memory_speed_gbps: 9.008
+    stated_gbps: 432
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro P620"
     match: "quadro p620"
     memory_type: "GDDR5"
     vendor: "nvidia"
     bus_width_bits: 128
-    bandwidth_gbps: 64
-    stated: true
+    memory_speed_gbps: 4.012
+    stated_gbps: 64
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro Plex 2200 D2 Visual Computing System"
     match: "quadro plex 2200 d2 visual computing system"
@@ -9155,16 +9506,64 @@ devices:
     bandwidth_gbps: 2
     stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
-  - name: "Quadro RTX 4000"
-    match: "quadro rtx 4000"
+  - name: "Quadro RTX 3000 Max-Q"
+    match: "quadro rtx 3000 max q"
     memory_type: "GDDR6"
     vendor: "nvidia"
     bus_width_bits: 256
     bandwidth_gbps: 416
     stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "Quadro RTX 3000 Mobile"
+    match: "quadro rtx 3000 mobile"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 256
+    bandwidth_gbps: 448
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "Quadro RTX 4000"
+    match: "quadro rtx 4000"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 256
+    memory_speed_gbps: 13
+    stated_gbps: 416
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "Quadro RTX 4000 Max-Q"
+    match: "quadro rtx 4000 max q"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 256
+    bandwidth_gbps: 416
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "Quadro RTX 4000 Mobile"
+    match: "quadro rtx 4000 mobile"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 256
+    bandwidth_gbps: 448
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro RTX 5000"
     match: "quadro rtx 5000"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 256
+    memory_speed_gbps: 14
+    stated_gbps: 448
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "Quadro RTX 5000 Max-Q"
+    match: "quadro rtx 5000 max q"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 256
+    bandwidth_gbps: 384
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "Quadro RTX 5000 Mobile"
+    match: "quadro rtx 5000 mobile"
     memory_type: "GDDR6"
     vendor: "nvidia"
     bus_width_bits: 256
@@ -9176,6 +9575,14 @@ devices:
     memory_type: "GDDR6"
     vendor: "nvidia"
     bus_width_bits: 384
+    memory_speed_gbps: 14
+    stated_gbps: 672
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "Quadro RTX 6000 Mobile"
+    match: "quadro rtx 6000 mobile"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 384
     bandwidth_gbps: 672
     stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
@@ -9184,7 +9591,63 @@ devices:
     memory_type: "GDDR6"
     vendor: "nvidia"
     bus_width_bits: 384
-    bandwidth_gbps: 672
+    memory_speed_gbps: 14
+    stated_gbps: 672
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "Quadro T1000 Mobile"
+    match: "quadro t1000 mobile"
+    memory_type: "GDDR5"
+    vendor: "nvidia"
+    bus_width_bits: 128
+    bandwidth_gbps: 128
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "Quadro T1200 Mobile"
+    match: "quadro t1200 mobile"
+    memory_type: "GDDR5"
+    vendor: "nvidia"
+    bus_width_bits: 128
+    bandwidth_gbps: 224
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "Quadro T2000 Max-Q"
+    match: "quadro t2000 max q"
+    memory_type: "GDDR5"
+    vendor: "nvidia"
+    bus_width_bits: 128
+    bandwidth_gbps: 128
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "Quadro T2000 Mobile"
+    match: "quadro t2000 mobile"
+    memory_type: "GDDR5"
+    vendor: "nvidia"
+    bus_width_bits: 128
+    bandwidth_gbps: 128
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "Quadro T500 Mobile"
+    match: "quadro t500 mobile"
+    memory_type: "GDDR5"
+    vendor: "nvidia"
+    bus_width_bits: 64
+    bandwidth_gbps: 80
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "Quadro T550 Mobile"
+    match: "quadro t550 mobile"
+    memory_type: "GDDR5"
+    vendor: "nvidia"
+    bus_width_bits: 64
+    bandwidth_gbps: 112
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "Quadro T600 Mobile"
+    match: "quadro t600 mobile"
+    memory_type: "GDDR5"
+    vendor: "nvidia"
+    bus_width_bits: 128
+    bandwidth_gbps: 192
     stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Quadro VX 200"
@@ -9491,12 +9954,68 @@ devices:
     bandwidth_gbps: 1.06
     stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RSX"
+    match: "rsx"
+    memory_type: "XDR GDDR3"
+    vendor: "nvidia"
+    bus_width_bits: 128
+    bandwidth_gbps: 15
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX 1000 Mobile Ada Generation"
+    match: "rtx 1000 mobile ada generation"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 96
+    bandwidth_gbps: 192
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX 2000 Ada Generation"
+    match: "rtx 2000 ada generation"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 128
+    bandwidth_gbps: 224
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX 2000 Mobile Ada Generation"
+    match: "rtx 2000 mobile ada generation"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 128
+    bandwidth_gbps: 256
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "GeForce RTX 2050"
+    match: "rtx 2050"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 64
+    bandwidth_gbps: 112
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "GeForce RTX 2060"
-    match: "rtx 2060"
+    match: "rtx 2060 12gb"
     vendor: "nvidia"
     bus_width_bits: 192
     memory_speed_gbps: 14
     stated_gbps: 336
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "GeForce RTX 2060"
+    match: "rtx 2060 6gb"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 192
+    bandwidth_gbps: 336
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "GeForce RTX 2060 Max-Q"
+    match: "rtx 2060 max q"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 192
+    bandwidth_gbps: 264
+    stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "GeForce RTX 2060 SUPER"
     match: "rtx 2060 super"
@@ -9506,32 +10025,68 @@ devices:
     stated_gbps: 448
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "GeForce RTX 2070"
-    match: "rtx 2070"
+    match: "rtx 2070 8gb"
+    memory_type: "GDDR6"
     vendor: "nvidia"
     bus_width_bits: 256
-    memory_speed_gbps: 14
-    stated_gbps: 448
+    bandwidth_gbps: 448
+    stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
-  - name: "GeForce RTX 2070 SUPER"
-    match: "rtx 2070 super"
+  - name: "GeForce RTX 2070 Max-Q"
+    match: "rtx 2070 max q"
+    memory_type: "GDDR6"
     vendor: "nvidia"
     bus_width_bits: 256
-    memory_speed_gbps: 14
-    stated_gbps: 448
+    bandwidth_gbps: 448
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "GeForce RTX 2070 Super"
+    match: "rtx 2070 super 8gb"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 256
+    bandwidth_gbps: 448
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "GeForce RTX 2070 Super Max-Q"
+    match: "rtx 2070 super max q"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 256
+    bandwidth_gbps: 448
+    stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "GeForce RTX 2080"
-    match: "rtx 2080"
+    match: "rtx 2080 8gb"
+    memory_type: "GDDR6"
     vendor: "nvidia"
     bus_width_bits: 256
-    memory_speed_gbps: 14
-    stated_gbps: 448
+    bandwidth_gbps: 384
+    stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
-  - name: "GeForce RTX 2080 SUPER"
-    match: "rtx 2080 super"
+  - name: "GeForce RTX 2080 Max-Q"
+    match: "rtx 2080 max q"
+    memory_type: "GDDR6"
     vendor: "nvidia"
     bus_width_bits: 256
-    memory_speed_gbps: 15.5
-    stated_gbps: 495.9
+    bandwidth_gbps: 384
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "GeForce RTX 2080 Super"
+    match: "rtx 2080 super 8gb"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 256
+    bandwidth_gbps: 448
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "GeForce RTX 2080 Super Max-Q"
+    match: "rtx 2080 super max q"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 256
+    bandwidth_gbps: 352
+    stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "GeForce RTX 2080 Ti"
     match: "rtx 2080 ti"
@@ -9539,6 +10094,14 @@ devices:
     bus_width_bits: 352
     memory_speed_gbps: 14
     stated_gbps: 616
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX 3000 Mobile Ada Generation"
+    match: "rtx 3000 mobile ada generation"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 128
+    bandwidth_gbps: 256
+    stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "GeForce RTX 3050"
     match: "rtx 3050"
@@ -9556,6 +10119,14 @@ devices:
     memory_speed_gbps: 14
     stated_gbps: 168
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "GeForce RTX 3050 Mobile/ Laptop"
+    match: "rtx 3050 mobile laptop"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 128
+    bandwidth_gbps: 176
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "GeForce RTX 3050 OEM"
     match: "rtx 3050 oem"
     memory_type: "GDDR6"
@@ -9563,6 +10134,14 @@ devices:
     bus_width_bits: 128
     memory_speed_gbps: 14
     stated_gbps: 224
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "GeForce RTX 3050 Ti Mobile/ Laptop"
+    match: "rtx 3050 ti mobile laptop"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 128
+    bandwidth_gbps: 192
+    stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "GeForce RTX 3060"
     match: "rtx 3060"
@@ -9579,6 +10158,14 @@ devices:
     bus_width_bits: 192
     memory_speed_gbps: 15
     stated_gbps: 336
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "GeForce RTX 3060 Mobile/ Laptop"
+    match: "rtx 3060 mobile laptop"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 192
+    bandwidth_gbps: 288
+    stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "GeForce RTX 3060 OEM"
     match: "rtx 3060 oem"
@@ -9612,6 +10199,14 @@ devices:
     memory_speed_gbps: 14
     stated_gbps: 448
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "GeForce RTX 3070 Mobile/ Laptop"
+    match: "rtx 3070 mobile laptop"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 256
+    bandwidth_gbps: 384
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "GeForce RTX 3070 Ti"
     match: "rtx 3070 ti"
     memory_type: "GDDR6X"
@@ -9619,6 +10214,14 @@ devices:
     bus_width_bits: 256
     memory_speed_gbps: 19
     stated_gbps: 608.3
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "GeForce RTX 3070 Ti Mobile/ Laptop"
+    match: "rtx 3070 ti mobile laptop"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 256
+    bandwidth_gbps: 384
+    stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "GeForce RTX 3080"
     match: "rtx 3080"
@@ -9636,6 +10239,14 @@ devices:
     memory_speed_gbps: 19
     stated_gbps: 912.4
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "GeForce RTX 3080 Mobile/ Laptop"
+    match: "rtx 3080 mobile laptop"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 256
+    bandwidth_gbps: 384
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "GeForce RTX 3080 Ti"
     match: "rtx 3080 ti"
     memory_type: "GDDR6X"
@@ -9651,6 +10262,14 @@ devices:
     bus_width_bits: 320
     memory_speed_gbps: 19
     stated_gbps: 760.3
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "GeForce RTX 3080 Ti Mobile/ Laptop"
+    match: "rtx 3080 ti mobile laptop"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 256
+    bandwidth_gbps: 384
+    stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "GeForce RTX 3090"
     match: "rtx 3090"
@@ -9668,6 +10287,46 @@ devices:
     memory_speed_gbps: 21
     stated_gbps: 1008.3
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX 3500 Mobile Ada Generation"
+    match: "rtx 3500 mobile ada generation"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 192
+    bandwidth_gbps: 432
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX 4000 Ada Generation"
+    match: "rtx 4000 ada generation"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 160
+    memory_speed_gbps: 14
+    stated_gbps: 360
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX 4000 Mobile Ada Generation"
+    match: "rtx 4000 mobile ada generation"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 192
+    bandwidth_gbps: 432
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX 4000 SFF Ada Generation"
+    match: "rtx 4000 sff ada generation"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 160
+    memory_speed_gbps: 14
+    stated_gbps: 280
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "GeForce RTX 4050 Mobile/ Laptop"
+    match: "rtx 4050 mobile laptop"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 96
+    bandwidth_gbps: 168
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "GeForce RTX 4060"
     match: "rtx 4060"
     memory_type: "GDDR6"
@@ -9675,6 +10334,14 @@ devices:
     bus_width_bits: 128
     memory_speed_gbps: 17
     stated_gbps: 272
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "GeForce RTX 4060 Mobile/ Laptop"
+    match: "rtx 4060 mobile laptop"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 128
+    bandwidth_gbps: 224
+    stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "GeForce RTX 4060 Ti"
     match: "rtx 4060 ti"
@@ -9708,6 +10375,14 @@ devices:
     memory_speed_gbps: 20
     stated_gbps: 480
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "GeForce RTX 4070 Mobile/ Laptop"
+    match: "rtx 4070 mobile laptop"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 128
+    bandwidth_gbps: 224
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "GeForce RTX 4070 Super"
     match: "rtx 4070 super"
     memory_type: "GDDR6X"
@@ -9740,6 +10415,14 @@ devices:
     memory_speed_gbps: 22.4
     stated_gbps: 716.8
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "GeForce RTX 4080 Mobile/ Laptop"
+    match: "rtx 4080 mobile laptop"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 192
+    bandwidth_gbps: 336
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "GeForce RTX 4080 Super"
     match: "rtx 4080 super"
     memory_type: "GDDR6X"
@@ -9763,6 +10446,46 @@ devices:
     bus_width_bits: 384
     memory_speed_gbps: 21
     stated_gbps: 1008
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "GeForce RTX 4090 Mobile/ Laptop"
+    match: "rtx 4090 mobile laptop"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 256
+    bandwidth_gbps: 448
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX 4500 Ada Generation"
+    match: "rtx 4500 ada generation"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 192
+    memory_speed_gbps: 18
+    stated_gbps: 432
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX 500 Mobile Ada Generation"
+    match: "rtx 500 mobile ada generation"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 64
+    bandwidth_gbps: 128
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX 5000 Ada Generation"
+    match: "rtx 5000 ada generation"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 256
+    memory_speed_gbps: 18
+    stated_gbps: 576
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX 5000 Mobile Ada Generation"
+    match: "rtx 5000 mobile ada generation"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 256
+    bandwidth_gbps: 576
+    stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "GeForce RTX 5050"
     match: "rtx 5050"
@@ -9843,6 +10566,270 @@ devices:
     bus_width_bits: 384
     memory_speed_gbps: 28
     stated_gbps: 1344
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX 5880 Ada Generation"
+    match: "rtx 5880 ada generation"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 384
+    memory_speed_gbps: 20
+    stated_gbps: 960
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX 6000 Ada Generation"
+    match: "rtx 6000 ada generation"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 384
+    memory_speed_gbps: 20
+    stated_gbps: 960
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX A1000"
+    match: "rtx a1000"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 128
+    memory_speed_gbps: 12
+    stated_gbps: 192
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX A1000 Mobile"
+    match: "rtx a1000 mobile"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 128
+    bandwidth_gbps: 224
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX A1000 Mobile 6 GB"
+    match: "rtx a1000 mobile 6gb"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 96
+    bandwidth_gbps: 168
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX A2000"
+    match: "rtx a2000"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 192
+    memory_speed_gbps: 12
+    stated_gbps: 288
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX A2000 Mobile"
+    match: "rtx a2000 mobile"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 128
+    bandwidth_gbps: 192
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX A3000 Mobile"
+    match: "rtx a3000 mobile"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 192
+    bandwidth_gbps: 264
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX A3000 Mobile 12 GB"
+    match: "rtx a3000 mobile 12gb"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 192
+    bandwidth_gbps: 336
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX A400"
+    match: "rtx a400"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 64
+    memory_speed_gbps: 12
+    stated_gbps: 96
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX A4000"
+    match: "rtx a4000"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 256
+    memory_speed_gbps: 14
+    stated_gbps: 448
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX A4000 Mobile"
+    match: "rtx a4000 mobile"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 256
+    bandwidth_gbps: 384
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX A4500"
+    match: "rtx a4500"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 320
+    memory_speed_gbps: 16
+    stated_gbps: 640
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX A4500 Mobile"
+    match: "rtx a4500 mobile"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 256
+    bandwidth_gbps: 512
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX A500 Mobile"
+    match: "rtx a500 mobile"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 64
+    bandwidth_gbps: 112
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX A5000"
+    match: "rtx a5000"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 384
+    memory_speed_gbps: 16
+    stated_gbps: 768
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX A5000 Mobile"
+    match: "rtx a5000 mobile"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 256
+    bandwidth_gbps: 448
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX A5500"
+    match: "rtx a5500"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 384
+    memory_speed_gbps: 16
+    stated_gbps: 768
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX A5500 Mobile"
+    match: "rtx a5500 mobile"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 256
+    bandwidth_gbps: 512
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX A6000"
+    match: "rtx a6000"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 384
+    memory_speed_gbps: 16
+    stated_gbps: 768
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX PRO 1000 Blackwell Mobile"
+    match: "rtx pro 1000 blackwell mobile"
+    memory_type: "GDDR7"
+    vendor: "nvidia"
+    bus_width_bits: 128
+    bandwidth_gbps: 448
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX PRO 2000 Blackwell"
+    match: "rtx pro 2000 blackwell"
+    memory_type: "GDDR7"
+    vendor: "nvidia"
+    bus_width_bits: 128
+    bandwidth_gbps: 288
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX PRO 2000 Blackwell Mobile"
+    match: "rtx pro 2000 blackwell mobile"
+    memory_type: "GDDR7"
+    vendor: "nvidia"
+    bus_width_bits: 128
+    bandwidth_gbps: 448
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX PRO 3000 Blackwell Mobile"
+    match: "rtx pro 3000 blackwell mobile"
+    memory_type: "GDDR7"
+    vendor: "nvidia"
+    bus_width_bits: 192
+    bandwidth_gbps: 672
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX PRO 4000 Blackwell"
+    match: "rtx pro 4000 blackwell"
+    memory_type: "GDDR7"
+    vendor: "nvidia"
+    bus_width_bits: 192
+    bandwidth_gbps: 672
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX PRO 4000 Blackwell Mobile"
+    match: "rtx pro 4000 blackwell mobile"
+    memory_type: "GDDR7"
+    vendor: "nvidia"
+    bus_width_bits: 256
+    bandwidth_gbps: 896
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX PRO 4000 Blackwell SFF Edition"
+    match: "rtx pro 4000 blackwell sff edition"
+    memory_type: "GDDR7"
+    vendor: "nvidia"
+    bus_width_bits: 192
+    bandwidth_gbps: 432
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX PRO 4500 Blackwell"
+    match: "rtx pro 4500 blackwell"
+    memory_type: "GDDR7"
+    vendor: "nvidia"
+    bus_width_bits: 256
+    bandwidth_gbps: 896
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX PRO 500 Blackwell Mobile"
+    match: "rtx pro 500 blackwell mobile"
+    memory_type: "GDDR7"
+    vendor: "nvidia"
+    bus_width_bits: 96
+    bandwidth_gbps: 336
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX PRO 5000 Blackwell"
+    match: "rtx pro 5000 blackwell"
+    memory_type: "GDDR7"
+    vendor: "nvidia"
+    bus_width_bits: 384
+    bandwidth_gbps: 1344
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX PRO 5000 Blackwell Mobile"
+    match: "rtx pro 5000 blackwell mobile"
+    memory_type: "GDDR7"
+    vendor: "nvidia"
+    bus_width_bits: 256
+    bandwidth_gbps: 896
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX PRO 6000 Blackwell Max-Q Workstation Edition"
+    match: "rtx pro 6000 blackwell max q workstation edition"
+    memory_type: "GDDR7"
+    vendor: "nvidia"
+    bus_width_bits: 512
+    bandwidth_gbps: 1792
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "RTX PRO 6000 Blackwell Workstation Edition"
+    match: "rtx pro 6000 blackwell workstation edition"
+    memory_type: "GDDR7"
+    vendor: "nvidia"
+    bus_width_bits: 512
+    bandwidth_gbps: 1792
+    stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Radeon RX 5300"
     match: "rx 5300"
@@ -10589,6 +11576,14 @@ devices:
     stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "T4 GPU accelerator"
+    match: "t4"
+    memory_type: "GDDR6"
+    vendor: "nvidia"
+    bus_width_bits: 256
+    memory_speed_gbps: 10
+    stated_gbps: 320
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
+  - name: "T4 GPU accelerator"
     match: "t4 gpu accelerator"
     memory_type: "GDDR6"
     vendor: "nvidia"
@@ -11215,6 +12210,14 @@ devices:
     bandwidth_gbps: 37.76
     stated: true
     provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_AMD_graphics_processing_units&oldid=1375945815", fetched_at: "2026-09-25" }
+  - name: "XGPU"
+    match: "xgpu"
+    memory_type: "DDR"
+    vendor: "nvidia"
+    bus_width_bits: 128
+    bandwidth_gbps: 6.4
+    stated: true
+    provenance: { source_url: "https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units&oldid=1376118779", fetched_at: "2026-09-25" }
   - name: "Radeon Xpress 1100"
     match: "xpress 1100"
     memory_type: "DDR, DDR2"

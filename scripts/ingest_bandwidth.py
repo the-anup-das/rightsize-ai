@@ -48,8 +48,8 @@ TOLERANCE = 0.02
 
 # Header cells we need, matched case-insensitively against the sub-header row.
 WANT = {
-    "model": ("model", "graphics", "chip", "model (code name)"),
-    "size": ("size (gb)", "size (mb)", "size (mib)", "size"),
+    "model": ("model", "model name", "graphics", "chip", "model (code name)"),
+    "size": ("size (gb)", "size (gib)", "size (mb)", "size (mib)", "size"),
     "bus_type": ("bus type", "memory type"),
     "bus_width": ("bus width (bit)", "bus width (bits)"),
     # AMD's RDNA tables put both in one cell, e.g. "GDDR6 384-bit"
@@ -172,6 +172,10 @@ def _rate_gt_s(cell: str) -> float | None:
     if not m:
         return None
     rate = float(m.group(1))
+    # The professional-card tables parenthesise MT/s ("1500 (12000)") where the GeForce
+    # ones parenthesise Gbps ("1313 (21.0)"). Nothing runs memory at 12000 Gbps.
+    if rate > RATE_RANGE[1]:
+        rate /= 1000
     return rate if RATE_RANGE[0] <= rate <= RATE_RANGE[1] else None
 
 
@@ -304,7 +308,32 @@ def collapse(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
         for r in group:
             if r.get("size"):
                 out[f"{key} {r['size']:g}gb"] = dict(r)
+    _add_short_keys(out)
     return out
+
+
+#: Wikipedia lists datacenter parts as "A10 GPU Accelerator", "H200 GPU Accelerator SXM
+#: card"; the catalogue and everyone else say "A10" and "H200". Only ever stripped from the
+#: end, so an "RTX A400 card" does not become "RTX A400" plus something else.
+_PACKAGING = re.compile(r"(?:\s+\b(?:gpu|accelerator|pcie|sxm|oam|card|module|board)\b)+$")
+
+
+def _add_short_keys(out: dict[str, dict[str, Any]]) -> None:
+    """Register a packaging-free alias for each key, keeping the vendor with it.
+
+    An earlier version stripped these words anywhere in the name and had an old Mobility
+    Radeon M4 answering for the Apple M4. Records now carry the list they came from and the
+    loader refuses a cross-vendor match, so the alias cannot reach another vendor's device.
+    Within one vendor, several variants can still collapse to one short name - a PCIe and an
+    SXM A100 - and the faster wins, with bandwidth.yaml overriding where it matters.
+    """
+    for key in list(out):
+        short = _PACKAGING.sub("", key).strip()
+        if not short or short == key:
+            continue
+        current = out.get(short)
+        if current is None or value_of(out[key]) > value_of(current):
+            out[short] = out[key]
 
 
 def value_of(rec: dict[str, Any]) -> float:
@@ -328,10 +357,17 @@ def check(records: dict[str, dict[str, Any]]) -> list[str]:
             expected = float(rec["bandwidth_gbps"])
         else:
             expected = rec["bus_width_bits"] * rec["memory_speed_gbps"] / 8
-        for name in (rec["name"], *rec.get("aliases", [])):
+        for name in (*rec.get("aliases", []), rec["name"]):
             got = records.get(_norm(name))
-            if not got:
+            # Same rule the loader applies: a record from another vendor's list is a name
+            # collision, not this device.
+            if not got or (rec.get("vendor") and got.get("vendor") != rec["vendor"]):
                 continue
+            if rec.get("source_disagrees"):
+                # A known bad row upstream, documented in bandwidth.yaml. Comparing against
+                # it would block every run for a value we deliberately override.
+                print(f"  --  {rec['name']:20s} curated {expected:>7.1f}  source known wrong")
+                break
             mine = value_of(got)
             delta = abs(mine - expected) / expected
             status = "ok " if delta <= TOLERANCE else "BAD"
