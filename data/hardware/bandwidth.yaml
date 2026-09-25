@@ -98,6 +98,18 @@ devices:
       own bus width and clock, which is the limit of that cross-check: it catches a source
       that contradicts itself, not one that is consistently wrong.
     provenance: { source_url: https://www.nvidia.com/en-us/data-center/h200/, fetched_at: "2026-09-25", hand: true }
+  - name: V100
+    vendor: nvidia
+    aliases: [V100 16GB, V100 32GB, Tesla V100]
+    memory_type: HBM2
+    bandwidth_gbps: 900
+    stated: true
+    source_disagrees: true
+    note: >-
+      NVIDIA states 900 GB/s for both the 16GB and 32GB V100. Wikipedia's row works out to
+      829, and its bus width and clock agree with that, so our arithmetic reproduced the
+      error rather than catching it - the same failure mode as the H200.
+    provenance: { source_url: https://images.nvidia.com/content/technologies/volta/pdf/tesla-volta-v100-datasheet-letter-fnl-web.pdf, fetched_at: "2026-09-25", hand: true }
   - name: MI300X
     vendor: amd
     aliases: [MI300X 192GB, Instinct MI300X]
