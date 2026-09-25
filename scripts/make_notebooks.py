@@ -58,7 +58,7 @@ Setup once from the repo root:
 
 ```bash
 uv sync --group dev --extra llamacpp      # torch CPU + transformers for conversion
-# llama.cpp binaries: download a release into .tools/llama.cpp (see docs/guide/choosing-a-model-format.md)
+rightsize tools install llama.cpp         # pinned llama.cpp binaries + converter into .tools/
 ```
 """),
     code("""
@@ -237,7 +237,7 @@ The end-to-end path on a small model. Steps: predict, download, convert to 16-bi
 importance matrix, quantize, then measure KL divergence and peak VRAM against the 16-bit reference.
 Every predicted number is written next to the measured one in `runs/<run>/manifest.json`.
 
-Needs: `.tools/llama.cpp` and `uv sync --extra llamacpp`. Takes a few minutes for Qwen3-0.6B.
+Needs: `uv sync --extra llamacpp` and `rightsize tools install llama.cpp`. Takes a few minutes for Qwen3-0.6B.
 """),
     code("""
 from rightsize.execution import quantize_model

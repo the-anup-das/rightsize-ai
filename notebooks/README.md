@@ -4,12 +4,12 @@ One walkthrough per feature. Numbers follow the plan files in `docs/plans/`. Not
 
 | Notebook | Feature | Needs |
 |---|---|---|
-| [00-quickstart](00-quickstart.ipynb) | detect, estimate, quantize in one pass | network for Hub metadata; llama.cpp for the last cell |
+| [00-quickstart](00-quickstart.ipynb) | detect, estimate, quantize in one pass | network for Hub metadata; `rightsize tools install llama.cpp` for the last cell |
 | [01-model-catalog](01-model-catalog.ipynb) | F1 facts from Hub headers | network |
 | [02-hardware](02-hardware.ipynb) | F2 presets and detection | nothing |
 | [03-fit-engine](03-fit-engine.ipynb) | F3 memory breakdown, context sweep, golden check | network for facts |
 | [05-recipes](05-recipes.ipynb) | F5 registry and rendering | nothing |
-| [08-quantize-and-evaluate](08-quantize-and-evaluate.ipynb) | F8 end-to-end on Qwen3-0.6B with the KL-divergence gate | `.tools/llama.cpp`, `uv sync --extra llamacpp` |
+| [08-quantize-and-evaluate](08-quantize-and-evaluate.ipynb) | F8 end-to-end on Qwen3-0.6B with the KL-divergence gate | `uv sync --extra llamacpp`, `rightsize tools install llama.cpp` |
 
 Coming with their features: 04 rules and ranking, 06 MCP server, 07 cloud fallback, 09 calibration, 10 cloud connectors.
 

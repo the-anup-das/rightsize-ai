@@ -146,6 +146,7 @@ flowchart TD
 
 ```bash
 rightsize estimate Qwen/Qwen3-4B --quant Q4_K_M --quant Q8_0     # predict only, no download
+rightsize tools install llama.cpp                                  # once: pinned binaries + converter
 rightsize quantize Qwen/Qwen3-4B --quant Q4_K_M --imatrix --eval  # convert, quantize, measure, gate
 ```
 

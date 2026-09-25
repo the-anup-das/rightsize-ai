@@ -70,6 +70,20 @@ def build_parser() -> argparse.ArgumentParser:
     q.add_argument("--revision", default="main")
     q.add_argument("--dry-run", action="store_true", help="render every step, run nothing")
 
+    t = sub.add_parser("tools", help="install pinned toolchains into .tools/")
+    t_sub = t.add_subparsers(dest="tools_command")
+    ti = t_sub.add_parser("install", help="download a toolchain (binaries + converter)")
+    ti.add_argument("name", choices=["llama.cpp"])
+    ti.add_argument(
+        "--backend",
+        default=None,
+        help="cuda-12.4, cuda-13.4, cpu, vulkan, rocm-10.0, sycl (default: auto)",
+    )
+    ti.add_argument(
+        "--version", dest="tool_version", default=None, help="release tag (default: pinned)"
+    )
+    ti.add_argument("--dest", default=".tools/llama.cpp")
+
     pl = sub.add_parser("plan", help="work with saved plans")
     pl_sub = pl.add_subparsers(dest="plan_command")
     pr = pl_sub.add_parser("render")
@@ -194,6 +208,23 @@ def cmd_frameworks(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_tools(args: argparse.Namespace) -> int:
+    from rightsize.execution.install import LLAMA_CPP_VERSION, install_llama_cpp
+
+    con = _console(args)
+    if args.tools_command != "install":
+        print("usage: rightsize tools install llama.cpp [--backend ...]")
+        return 2
+    dest = install_llama_cpp(
+        args.dest,
+        version=args.tool_version or LLAMA_CPP_VERSION,
+        backend=args.backend,
+        log=con.info,
+    )
+    con.ok(f"installed into {dest}")
+    return 0
+
+
 def cmd_quantize(args: argparse.Namespace) -> int:
     from rightsize._console import error_style
     from rightsize.execution import quantize_model
@@ -267,6 +298,7 @@ def main(argv: list[str] | None = None) -> int:
         "estimate": cmd_estimate,
         "frameworks": cmd_frameworks,
         "quantize": cmd_quantize,
+        "tools": cmd_tools,
     }
     if args.command in handlers:
         return handlers[args.command](args)
