@@ -2,7 +2,7 @@
 
 **Quantize and fit any model to your hardware.** Pick a model, pick your hardware, get a ranked plan with the quantization, runtime and framework that fit, plus the commands to make it happen.
 
-> **Status: placeholder release 0.0.1.** The package name is reserved; the engine is being built feature by feature. See [docs/plans](docs/plans/README.md) for the roadmap and each feature's plan. Nothing here estimates anything yet.
+> **Status: early.** `rightsize` 0.0.1 on PyPI is a placeholder that reserves the name. The `main` branch has the first working slice: read a model's facts from the Hub without downloading it, predict memory and speed for GGUF quants on your GPU, then convert, quantize and gate the result with llama.cpp. See [docs/plans](docs/plans/README.md) for the roadmap and each feature's plan.
 
 ## The problem
 
@@ -30,38 +30,54 @@ Surfaces: Python SDK, CLI with `--json`, MCP server so agents can call it.
 
 Read [Choosing a model format](docs/guide/choosing-a-model-format.md): what GGUF is, how to read a quant name like Q4_K_M, what the alternatives are (safetensors, bnb, AWQ, GPTQ, FP8, NVFP4, EXL3, MLX, OpenVINO, ONNX, MLC, Core ML) and their pros and cons, and which hardware each one reaches.
 
-## Install
+## Try it
 
 ```bash
-pip install rightsize        # or: uv add rightsize
-rightsize --version
+git clone https://github.com/the-anup-das/rightsize-ai && cd rightsize-ai
+uv sync --group dev                       # core only: detect, estimate, recipes
+rightsize detect                          # what machine is this?
+rightsize estimate Qwen/Qwen3-4B --quant Q4_K_M --quant Q8_0   # no download, reads Hub headers
+
+# To actually produce files: llama.cpp binaries in .tools/llama.cpp (see the guide) and
+uv sync --group dev --extra llamacpp     # torch CPU + transformers for the conversion step
+rightsize quantize Qwen/Qwen3-1.7B --quant Q4_K_M --imatrix --eval
 ```
+
+`pip install rightsize` works too, but until the next release it installs the 0.0.1 placeholder.
 
 ## Roadmap
 
 | Feature | Plan | Status |
 |---|---|---|
 | Competitor landscape | [00-competitors](docs/plans/00-competitors.md) | research done |
-| F1 Model catalog | [F01](docs/plans/F01-model-catalog.md) | planned |
-| F2 Hardware DB + detection | [F02](docs/plans/F02-hardware.md) | planned |
-| F3 Fit engine | [F03](docs/plans/F03-fit-engine.md) | planned |
+| F1 Model catalog | [F01](docs/plans/F01-model-catalog.md) | first slice: facts from Hub headers |
+| F2 Hardware DB + detection | [F02](docs/plans/F02-hardware.md) | first slice: 16 presets, NVIDIA / Apple / CPU detection |
+| F3 Fit engine | [F03](docs/plans/F03-fit-engine.md) | first slice: GGUF inference memory and speed |
 | F4 Rules + ranking | [F04](docs/plans/F04-rules-engine.md) | planned |
-| F5 Framework registry + recipes | [F05](docs/plans/F05-framework-registry.md) | planned |
-| F6 SDK / CLI / MCP | [F06](docs/plans/F06-surfaces.md) | placeholder CLI |
+| F5 Framework registry + recipes | [F05](docs/plans/F05-framework-registry.md) | first slice: five llama.cpp recipes |
+| F6 SDK / CLI / MCP | [F06](docs/plans/F06-surfaces.md) | CLI: detect, estimate, frameworks, quantize |
 | F7 Cloud fallback | [F07](docs/plans/F07-cloud-fallback.md) | planned |
-| F8 Execution + eval gate | [F08](docs/plans/F08-execution-eval.md) | phase 2 |
+| F8 Execution + eval gate | [F08](docs/plans/F08-execution-eval.md) | first slice: llama.cpp adapter with KL-divergence gate |
 | F9 Calibration loop | [F09](docs/plans/F09-calibration.md) | phase 2 |
 | F10 Cloud provider connectors | [F10](docs/plans/F10-cloud-connectors.md) | phase 3 |
 
-## A note on scope and hardware
+## Where this project is honestly at
 
-Rightsize is built by one developer in spare time, on one machine: a Windows 11 desktop with an RTX 4070 Ti SUPER (16 GB), 64 GB of RAM, and no cloud budget. That shapes what is tested and what is not:
+I'm one developer building this in my spare time, and I want to be upfront about what that means before you rely on a number it gives you.
 
-- **Tested for real:** GGUF quantization and evaluation of models up to about 8B parameters on NVIDIA under Windows, and the CPU-only paths. CI covers Linux and Windows on Python 3.11 to 3.13 for the parts that need no GPU.
-- **Written from documentation, not yet run here:** Apple Silicon, AMD ROCm, Intel, multi-GPU, data-center GPUs, and every fine-tuning path. The presets for those devices carry their source URLs so you can check them, and the estimates for them carry a lower confidence on purpose.
-- **Not started:** the fine-tuning estimators, the rules engine, the MCP server, the cloud fallback and the calibration loop. Each has a plan file with a TODO list in `docs/plans/`.
+**The hardware I have.** Day to day I work on a Windows 11 desktop with an RTX 4070 Ti SUPER (16 GB) and 64 GB of RAM. I also have a Linux machine, an OpenMediaVault 8 server that is CPU-only, and a Mac. There is no cloud budget. So the paths that get exercised most are GGUF quantization and evaluation of models up to roughly 8B on a single NVIDIA card, plus whatever I can run on CPU. The Linux, NAS and Apple Silicon paths get real runs as I get to them, not on every change.
 
-If a number is wrong on your hardware, that is exactly the feedback the project needs. Open an issue with the output of `rightsize detect` and `rightsize estimate`, or a `runs/*/manifest.json` from a real run. Presets, recipes and rules are data files, so corrections are small PRs. When better hardware or cloud access becomes affordable, the untested paths move into the tested column; until then, treat every estimate for a device I do not own as a starting point, not a promise.
+**What that means for you.**
+
+- Estimates for NVIDIA consumer cards and CPU-only boxes are checked against real runs on my machines. The `runs/*/manifest.json` files record predicted versus measured, and I keep the constants honest from those.
+- Estimates for AMD, Intel, Apple, multi-GPU and data-center GPUs are built from documentation and vendor spec sheets. Every preset carries the URL it came from so you can check it, and the estimate carries a lower confidence on purpose. Treat them as a starting point until someone with that hardware confirms them.
+- Fine-tuning estimates, the rules engine, the MCP server, the cloud fallback and the calibration loop are not built yet. Each has a plan with a TODO list in `docs/plans/`, and the roadmap table above says which is which.
+
+**How you can help, in five minutes.** If a number is off on your hardware, that is the single most useful thing you can send me.
+
+> **[Open an issue](https://github.com/the-anup-das/rightsize-ai/issues/new)** with the output of `rightsize detect` and `rightsize estimate <model>`, or attach a `runs/<run>/manifest.json` from a real run. If you know the right bandwidth or memory figure for a device, the presets are a YAML file; a one-line PR with the source URL is perfect.
+
+When better hardware or cloud access becomes affordable, the "from documentation" list shrinks and the "checked" list grows. Until then I'd rather tell you exactly what has been tested than let a clean-looking table imply more than it should.
 
 ## Contributing
 
