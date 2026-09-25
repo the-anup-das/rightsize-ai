@@ -1,6 +1,13 @@
-# sentence-transformers
+# Sentence Transformers
 
 Generated from `data/recipes/` - do not edit by hand.
+
+Exports embedding models to ONNX and quantizes them to int8 for fast CPU inference
+
+- Runs on: cpu
+- Writes: onnx
+- Install: `pip install "sentence-transformers[onnx]"`
+- Home: <https://sbert.net>
 
 | recipe | stage | families | checked | version |
 |---|---|---|---|---|

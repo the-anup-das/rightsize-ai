@@ -1,6 +1,14 @@
-# mlx-lm
+# MLX LM
 
 Generated from `data/recipes/` - do not edit by hand.
+
+Quantizes, fine-tunes (LoRA, and QLoRA on a model it quantized first) and serves LLMs on Apple silicon with Apple's MLX; the default trainer on a Mac
+
+- Runs on: apple; on macos
+- Writes: mlx
+- Install: `pip install mlx-lm`
+- Fine-tunes: lora, qlora; the default trainer on apple
+- Home: <https://github.com/ml-explore/mlx-lm>
 
 | recipe | stage | families | checked | version |
 |---|---|---|---|---|

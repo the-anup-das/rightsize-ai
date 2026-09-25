@@ -1,0 +1,31 @@
+# What this toolkit is for, where it runs, how it installs and how its steps join a plan.
+name: unsloth
+title: Unsloth
+summary: >-
+  LoRA and QLoRA fine-tuning on a single GPU, writing a merged 16-bit model (or a GGUF) at
+  the end; the default trainer on NVIDIA and Intel GPUs
+stages: [finetune]
+families: [llm]
+formats: [safetensors]
+hardware:
+  vendors: [nvidia, amd, intel]
+  os: [linux, windows]
+  min_compute_capability: 7.0
+  note: NVIDIA compute capability 7.0 or newer
+install:
+  kind: pip
+  packages: [unsloth]
+  needs_torch: true
+  check: unsloth
+  line: uv pip install unsloth --torch-backend=auto
+  note: "in its own environment: unsloth pins trl<=0.24.0, transformers<=5.5.0 and datasets<4.4"
+finetune:
+  modes: [lora, qlora]
+  recipe: unsloth/sft
+  qlora_quant: {method: bnb, variant: nf4}
+  writes: merged
+  default_for: [nvidia, intel, "*"]
+  priority: 10
+homepage: https://unsloth.ai
+source_doc_url: https://unsloth.ai/docs/get-started/fine-tuning-for-beginners/unsloth-requirements
+version_tested: 2026.9.11

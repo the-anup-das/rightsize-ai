@@ -254,15 +254,26 @@ def build_server():
 
         return rightsize.detect().model_dump(mode="json")
 
-    @server.tool(description="Frameworks and their recipes, with how far each was verified.")
+    @server.tool(
+        description="Frameworks (fine-tuning, quantization, export and serving toolkits): what "
+        "each is for, where it runs, how to install it, and its recipes with how far each was "
+        "verified."
+    )
     def list_frameworks(framework: str = "") -> list[dict[str, Any]]:
-        from rightsize.registry import all_recipes
+        from rightsize.registry import all_recipes, framework_infos
 
+        recipes = all_recipes().values()
         return [
-            {"id": r.id, "framework": r.framework, "stage": r.stage, "families": r.families,
-             "verified": r.verified, "version": r.version_tested, "source": r.source_doc_url}
-            for r in all_recipes().values()
-            if not framework or r.framework == framework
+            {"name": info.name, "summary": info.summary, "stages": info.stages,
+             "hardware": info.hardware, "install": info.install.line,
+             "default_trainer_on": info.finetune.default_for if info.finetune else [],
+             "recipes": [
+                 {"id": r.id, "stage": r.stage, "families": r.families, "verified": r.verified,
+                  "version": r.version_tested, "source": r.source_doc_url}
+                 for r in recipes if r.framework == info.name
+             ]}
+            for info in framework_infos().values()
+            if not framework or info.name == framework
         ]
 
     @server.tool(description="Render one recipe into a command with the given inputs.")

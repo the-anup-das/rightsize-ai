@@ -1,0 +1,36 @@
+# What this toolkit is for, where it runs, how it installs and how its steps join a plan.
+name: llama.cpp
+title: llama.cpp
+summary: >-
+  Converts Hugging Face models to GGUF, computes importance matrices, quantizes to every GGUF
+  type, measures what quantization cost (perplexity and KL divergence), and serves an
+  OpenAI-compatible API, on CPUs and GPUs from every vendor
+stages: [convert, calibrate, quantize, evaluate, serve]
+families: [llm]
+formats: [gguf]
+hardware: {vendors: [any], os: [linux, windows, macos]}
+install:
+  kind: binary
+  check: llama-quantize
+  line: rightsize tools install llama.cpp
+  note: >-
+    pinned release binaries plus the converter from the same tag; the conversion step also
+    needs torch and transformers: pip install "rightsize[llamacpp]"
+defaults:
+  convert_script: convert_hf_to_gguf.py
+  quantize_bin: llama-quantize
+  imatrix_bin: llama-imatrix
+  perplexity_bin: llama-perplexity
+  server_bin: llama-server
+  python: python
+  model_dir: "{slug}"
+  outfile: "{slug}-f16.gguf"
+  outtype: auto
+  model_gguf: "{slug}-f16.gguf"
+  input_gguf: "{slug}-f16.gguf"
+  output_gguf: "{slug}-{quant}.gguf"
+  calibration_file: calibration_datav3.txt
+  output_file: "{slug}-imatrix.gguf"
+homepage: https://github.com/ggml-org/llama.cpp
+source_doc_url: https://github.com/ggml-org/llama.cpp/tree/b11177/tools
+version_tested: b11177

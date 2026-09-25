@@ -1,6 +1,13 @@
-# llm-compressor
+# LLM Compressor
 
 Generated from `data/recipes/` - do not edit by hand.
+
+Quantizes models to the compressed-tensors checkpoints vLLM and SGLang load: FP8 without calibration data, and GPTQ W4A16 with a small calibration set
+
+- Runs on: nvidia
+- Writes: compressed-tensors
+- Install: `pip install llmcompressor`
+- Home: <https://github.com/vllm-project/llm-compressor>
 
 | recipe | stage | families | checked | version |
 |---|---|---|---|---|

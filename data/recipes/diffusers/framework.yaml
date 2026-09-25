@@ -1,0 +1,19 @@
+# What this toolkit is for, where it runs, how it installs and how its steps join a plan.
+name: diffusers
+title: Diffusers
+summary: >-
+  Loads diffusion pipelines with chosen components quantized (bitsandbytes, torchao, GGUF)
+  through PipelineQuantizationConfig
+stages: [quantize]
+families: [diffusion]
+formats: [bnb]
+hardware: {vendors: [nvidia, amd, intel]}
+install:
+  kind: pip
+  packages: [diffusers, transformers, accelerate, bitsandbytes]
+  needs_torch: true
+  check: diffusers
+  line: pip install -U diffusers transformers accelerate bitsandbytes
+homepage: https://github.com/huggingface/diffusers
+source_doc_url: https://huggingface.co/docs/diffusers/en/quantization/overview
+version_tested: 0.40.0

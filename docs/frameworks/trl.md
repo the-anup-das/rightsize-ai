@@ -1,6 +1,14 @@
-# trl
+# TRL
 
 Generated from `data/recipes/` - do not edit by hand.
+
+Hugging Face's training library: supervised fine-tuning with LoRA or QLoRA through PEFT and bitsandbytes, from a command line
+
+- Runs on: nvidia, amd, intel
+- Writes: safetensors
+- Install: `pip install "trl[peft]" bitsandbytes`
+- Fine-tunes: lora, qlora; not a default trainer; choose it by name
+- Home: <https://github.com/huggingface/trl>
 
 | recipe | stage | families | checked | version |
 |---|---|---|---|---|

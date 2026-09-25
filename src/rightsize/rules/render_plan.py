@@ -2,44 +2,36 @@
 
 Each step names a recipe; the plan knows the model, the quantization and whether an
 importance matrix comes first, which is enough to fill in every input with a sensible file
-name. Anything passed by the caller wins, so the defaults never have to be right for
-everyone - only runnable for someone who accepts them.
+name. The names each toolkit expects (its binaries, its output files) come from its
+framework.yaml ``defaults``, so a new toolkit brings its own. Anything passed by the caller
+wins, so the defaults never have to be right for everyone - only runnable for someone who
+accepts them.
 """
 
 from __future__ import annotations
 
 from typing import Any
 
+from rightsize.registry import framework_infos, render
 from rightsize.registry import get as get_recipe
-from rightsize.registry import render
 from rightsize.registry.schema import RenderedStep
 
 
 def _defaults(plan: Any) -> dict[str, Any]:
+    """The plan's quantization, and each framework's own defaults for the values its
+    recipes read (file names, binaries), the first framework in the plan first."""
     slug = plan.model.ref.repo.replace("/", "__")
     # the GGUF type from the quantize step: a fine-tune step's quant (QLoRA's nf4) comes
     # first in a two-stage plan and is not a llama.cpp type
     quant = next((s.quant.variant for s in plan.steps
                   if s.quant and s.quant.method == "gguf" and s.quant.variant), "Q4_K_M")
-    return {
-        # llama.cpp binaries, found on PATH or under .tools/llama.cpp
-        "convert_script": "convert_hf_to_gguf.py",
-        "quantize_bin": "llama-quantize",
-        "imatrix_bin": "llama-imatrix",
-        "perplexity_bin": "llama-perplexity",
-        "server_bin": "llama-server",
-        "python": "python",
-        # files: a local snapshot of the Hub repo, then GGUFs beside it
-        "model_dir": slug,
-        "outfile": f"{slug}-f16.gguf",
-        "outtype": "auto",
-        "model_gguf": f"{slug}-f16.gguf",
-        "input_gguf": f"{slug}-f16.gguf",
-        "output_gguf": f"{slug}-{quant}.gguf",
-        "calibration_file": "calibration_datav3.txt",
-        "output_file": f"{slug}-imatrix.gguf",
-        "quant": quant,
-    }
+    values: dict[str, Any] = {"quant": quant}
+    infos = framework_infos()
+    for step in plan.steps:
+        info = infos.get(step.framework)
+        for key, template in (info.defaults if info else {}).items():
+            values.setdefault(key, template.replace("{slug}", slug).replace("{quant}", quant))
+    return values
 
 
 def _finetune_values(plan: Any, values: dict[str, Any]) -> None:
@@ -60,8 +52,6 @@ def _finetune_values(plan: Any, values: dict[str, Any]) -> None:
         "output_dir": f"{slug}-finetune",
         "merged_dir": f"{slug}-merged",
         "adapter_dir": f"{slug}-adapters",
-        "mlx_path": f"{slug}-mlx-4bit",
-        "bits": "4",
     })
     values["model_dir"] = values["merged_dir"]
 
@@ -86,6 +76,7 @@ def render_plan(plan: Any, **inputs: Any) -> list[RenderedStep]:
     if has_imatrix:
         values["imatrix"] = values["output_file"]
     values.update(inputs)
+    trains_on = _trains_on(plan, recipe_ids)
     out: list[RenderedStep] = []
     for step in plan.steps:
         if not step.recipe_id:
@@ -94,7 +85,16 @@ def render_plan(plan: Any, **inputs: Any) -> list[RenderedStep]:
         wanted = {k: _typed(recipe, k, v) for k, v in values.items() if k in recipe.inputs}
         if step.stage == "serve" and "model_gguf" in recipe.inputs:
             wanted["model_gguf"] = values.get("model_gguf_served", wanted.get("model_gguf"))
-        if step.recipe_id == "mlx-lm/lora" and "mlx-lm/convert" in recipe_ids:
-            wanted["model"] = values["mlx_path"]  # train on the model MLX just quantized
+        if step.stage == "finetune" and trains_on and trains_on in values:
+            wanted["model"] = values[trains_on]  # the model the step before produced
         out.append(render(recipe, **wanted))
     return out
+
+
+def _trains_on(plan: Any, recipe_ids: set[str | None]) -> str | None:
+    """The value a fine-tune step reads as its model when its trainer ran a step first:
+    MLX trains QLoRA on the model it just quantized (framework.yaml, finetune.before)."""
+    ft = next((s for s in plan.steps if s.stage == "finetune" and s.recipe_id), None)
+    info = framework_infos().get(ft.framework) if ft else None
+    before = info.finetune.before.get(plan.mode.value) if info and info.finetune else None
+    return before.model_from if before and before.recipe in recipe_ids else None

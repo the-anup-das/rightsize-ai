@@ -1,0 +1,348 @@
+{
+  "$defs": {
+    "BeforeStep": {
+      "additionalProperties": false,
+      "description": "A step a trainer needs first, such as MLX quantizing the model it will train QLoRA on.",
+      "properties": {
+        "model_from": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "the plan value the training step reads as its model after this",
+          "title": "Model From"
+        },
+        "quant": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QuantShape"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "recipe": {
+          "title": "Recipe",
+          "type": "string"
+        },
+        "stage": {
+          "enum": [
+            "convert",
+            "finetune",
+            "quantize",
+            "export",
+            "serve",
+            "calibrate",
+            "evaluate"
+          ],
+          "title": "Stage",
+          "type": "string"
+        }
+      },
+      "required": [
+        "recipe",
+        "stage"
+      ],
+      "title": "BeforeStep",
+      "type": "object"
+    },
+    "FinetuneRole": {
+      "additionalProperties": false,
+      "description": "What a framework does as a trainer, and on which hardware it is the default one.",
+      "properties": {
+        "before": {
+          "additionalProperties": {
+            "$ref": "#/$defs/BeforeStep"
+          },
+          "propertyNames": {
+            "enum": [
+              "lora",
+              "qlora",
+              "full"
+            ]
+          },
+          "title": "Before",
+          "type": "object"
+        },
+        "default_for": {
+          "description": "device vendors it is the default trainer on; '*' for a vendor no framework names",
+          "items": {
+            "type": "string"
+          },
+          "title": "Default For",
+          "type": "array"
+        },
+        "modes": {
+          "description": "modes it has a recipe for",
+          "items": {
+            "enum": [
+              "lora",
+              "qlora",
+              "full"
+            ],
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Modes",
+          "type": "array"
+        },
+        "priority": {
+          "default": 0,
+          "description": "breaks a tie between two defaults",
+          "title": "Priority",
+          "type": "integer"
+        },
+        "qlora_quant": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QuantShape"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "how QLoRA stores the frozen base weights"
+        },
+        "recipe": {
+          "title": "Recipe",
+          "type": "string"
+        },
+        "writes": {
+          "description": "a merged 16-bit model, or an adapter the recipe merges into merged_dir",
+          "enum": [
+            "merged",
+            "adapter"
+          ],
+          "title": "Writes",
+          "type": "string"
+        }
+      },
+      "required": [
+        "modes",
+        "recipe",
+        "writes"
+      ],
+      "title": "FinetuneRole",
+      "type": "object"
+    },
+    "InstallSpec": {
+      "additionalProperties": false,
+      "description": "How a framework is installed, and how to tell that it is.",
+      "properties": {
+        "check": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "a Python module to import, or a program to find on PATH",
+          "title": "Check"
+        },
+        "kind": {
+          "enum": [
+            "pip",
+            "binary",
+            "app"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "line": {
+          "description": "the install line a person would type",
+          "title": "Line",
+          "type": "string"
+        },
+        "needs_torch": {
+          "default": false,
+          "description": "needs a PyTorch build for the GPU",
+          "title": "Needs Torch",
+          "type": "boolean"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        },
+        "packages": {
+          "description": "pip requirements, pinned at version_tested",
+          "items": {
+            "type": "string"
+          },
+          "title": "Packages",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "line"
+      ],
+      "title": "InstallSpec",
+      "type": "object"
+    },
+    "QuantShape": {
+      "additionalProperties": false,
+      "description": "The QuantSpec a step records: bnb nf4 for QLoRA, MLX 4-bit, ...",
+      "properties": {
+        "bits_per_weight": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bits Per Weight"
+        },
+        "method": {
+          "title": "Method",
+          "type": "string"
+        },
+        "variant": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Variant"
+        }
+      },
+      "required": [
+        "method"
+      ],
+      "title": "QuantShape",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "One toolkit: what it is for, where it runs, how it installs, how its steps join a plan.\n\nLives beside the toolkit's recipes as data/recipes/<name>/framework.yaml, or in a plugin\npackage's recipe folder, so a new SDK needs no change to rightsize itself.",
+  "properties": {
+    "defaults": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "values this framework's recipes read when a plan does not set them; {slug} is the model's repo id with / as __, {quant} the plan's quantization",
+      "title": "Defaults",
+      "type": "object"
+    },
+    "families": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Families",
+      "type": "array"
+    },
+    "finetune": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/FinetuneRole"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "formats": {
+      "description": "formats it writes: gguf, mlx, fp8, openvino, ...",
+      "items": {
+        "type": "string"
+      },
+      "title": "Formats",
+      "type": "array"
+    },
+    "hardware": {
+      "additionalProperties": true,
+      "description": "vendors, os, min_compute_capability, note",
+      "title": "Hardware",
+      "type": "object"
+    },
+    "homepage": {
+      "title": "Homepage",
+      "type": "string"
+    },
+    "install": {
+      "$ref": "#/$defs/InstallSpec"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "source_doc_url": {
+      "title": "Source Doc Url",
+      "type": "string"
+    },
+    "stages": {
+      "items": {
+        "enum": [
+          "convert",
+          "finetune",
+          "quantize",
+          "export",
+          "serve",
+          "calibrate",
+          "evaluate"
+        ],
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Stages",
+      "type": "array"
+    },
+    "summary": {
+      "title": "Summary",
+      "type": "string"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "version_tested": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Version Tested"
+    }
+  },
+  "required": [
+    "name",
+    "title",
+    "summary",
+    "stages",
+    "install",
+    "homepage",
+    "source_doc_url"
+  ],
+  "title": "FrameworkInfo",
+  "type": "object"
+}

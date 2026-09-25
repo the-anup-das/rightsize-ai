@@ -2,6 +2,13 @@
 
 Generated from `data/recipes/` - do not edit by hand.
 
+Converts Hugging Face models to GGUF, computes importance matrices, quantizes to every GGUF type, measures what quantization cost (perplexity and KL divergence), and serves an OpenAI-compatible API, on CPUs and GPUs from every vendor
+
+- Runs on: any hardware; on linux, windows, macos
+- Writes: gguf
+- Install: `rightsize tools install llama.cpp` (pinned release binaries plus the converter from the same tag; the conversion step also needs torch and transformers: pip install "rightsize[llamacpp]")
+- Home: <https://github.com/ggml-org/llama.cpp>
+
 | recipe | stage | families | checked | version |
 |---|---|---|---|---|
 | `llama.cpp/convert` | convert | llm | run | b11177 |

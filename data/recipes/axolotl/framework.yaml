@@ -1,0 +1,26 @@
+# What this toolkit is for, where it runs, how it installs and how its steps join a plan.
+name: axolotl
+title: Axolotl
+summary: >-
+  Config-driven LoRA, QLoRA and full fine-tuning on NVIDIA and AMD GPUs, one or many; the
+  default trainer on AMD, where it runs on ROCm
+stages: [finetune]
+families: [llm]
+formats: [safetensors]
+hardware: {vendors: [nvidia, amd], os: [linux]}
+install:
+  kind: pip
+  needs_torch: true
+  check: axolotl
+  line: uv pip install --no-build-isolation "axolotl[deepspeed]"
+  note: after installing PyTorch for your CUDA or ROCm version
+finetune:
+  modes: [lora, qlora]
+  recipe: axolotl/qlora
+  qlora_quant: {method: bnb, variant: nf4}
+  writes: adapter
+  default_for: [amd]
+  priority: 10
+homepage: https://github.com/axolotl-ai-cloud/axolotl
+source_doc_url: https://docs.axolotl.ai/docs/config-reference.html
+version_tested: 0.19.0

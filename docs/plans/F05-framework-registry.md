@@ -117,8 +117,14 @@ The 14 MVP recipes above plus 4 serve recipes; docs generation; entry point disc
 
 ## TODO
 
-- [ ] `data/schema/recipe.schema.json`; `FrameworkInfo`, `RenderedStep` types
-      (partial: recipe schema exported and every recipe validated in CI; no `FrameworkInfo` yet)
+- [x] `data/schema/recipe.schema.json`; `FrameworkInfo`, `RenderedStep` types. Each framework's
+      `framework.yaml` beside its recipes (`data/schema/framework.schema.json`): summary,
+      stages, formats, hardware, install, a `finetune` role (modes, recipe, what it writes,
+      QLoRA's storage, a step it needs first, the vendors it is the default trainer on) and
+      the defaults its recipes read. Trainer choice and every framework-specific default left
+      `recommend.py` and `render_plan.py`; a plugin shipping a descriptor and a recipe becomes
+      a default trainer with no code change (`tests/test_frameworks.py`). MLX QLoRA plans now
+      record MLX's own 4-bit rather than bitsandbytes NF4
 - [x] Minimal template renderer with tests (token-by-token, so Windows paths survive)
 - [x] Loader for bundled recipes + entry-point discovery (`rightsize.recipes`; a plugin may
       add recipes but not replace a bundled one)

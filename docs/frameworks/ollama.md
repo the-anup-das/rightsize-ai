@@ -1,6 +1,12 @@
-# ollama
+# Ollama
 
 Generated from `data/recipes/` - do not edit by hand.
+
+Serves a GGUF locally from a Modelfile, with the model's chat template and parameters
+
+- Runs on: any hardware; on linux, windows, macos
+- Install: `curl -fsSL https://ollama.com/install.sh | sh` (on Windows: irm https://ollama.com/install.ps1 | iex)
+- Home: <https://ollama.com>
 
 | recipe | stage | families | checked | version |
 |---|---|---|---|---|

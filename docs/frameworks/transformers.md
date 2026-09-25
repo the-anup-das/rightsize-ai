@@ -1,6 +1,13 @@
-# transformers
+# Transformers
 
 Generated from `data/recipes/` - do not edit by hand.
+
+Loads a model quantized on the fly to 4-bit NF4 (or 8-bit) with bitsandbytes, and can save the quantized checkpoint
+
+- Runs on: nvidia, amd, intel
+- Writes: bnb
+- Install: `pip install --upgrade transformers accelerate bitsandbytes`
+- Home: <https://github.com/huggingface/transformers>
 
 | recipe | stage | families | checked | version |
 |---|---|---|---|---|

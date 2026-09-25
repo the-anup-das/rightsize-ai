@@ -648,6 +648,16 @@ def _recipe_model() -> type[BaseModel]:
     return Recipe
 
 
+def _framework_model() -> type[BaseModel]:
+    from rightsize.registry.schema import FrameworkInfo
+
+    return FrameworkInfo
+
+
+#: Models that live in rightsize.registry, resolved on first use.
+_LAZY = (_recipe_model, _framework_model)
+
+
 #: data/ path pattern -> (schema file name, model). Every YAML file under data/ must match
 #: one of these; tests fail on a file nothing covers.
 DATA_FILES: dict[str, tuple[str, Any]] = {
@@ -669,6 +679,8 @@ DATA_FILES: dict[str, tuple[str, Any]] = {
     "models/families.yaml": ("families", FamiliesFile),
     "rules/*.yaml": ("rules", RulesFile),
     "runtimes/*/kv_cache.yaml": ("kv_cache", KvCacheFile),
+    # first match wins: a framework's descriptor sits beside its recipes
+    "recipes/*/framework.yaml": ("framework", _framework_model),
     "recipes/*/*.yaml": ("recipe", _recipe_model),
 }
 
@@ -676,7 +688,7 @@ DATA_FILES: dict[str, tuple[str, Any]] = {
 def model_for(relative: str) -> tuple[str, type[BaseModel]] | None:
     for pattern, (name, model) in DATA_FILES.items():
         if fnmatch.fnmatch(relative, pattern):
-            return name, (model() if model is _recipe_model else model)
+            return name, (model() if model in _LAZY else model)
     return None
 
 
@@ -708,6 +720,6 @@ def json_schemas() -> dict[str, dict[str, Any]]:
     """Schema name -> JSON Schema, as written to data/schema/ by scripts/export_schemas.py."""
     out: dict[str, dict[str, Any]] = {}
     for name, model in DATA_FILES.values():
-        m = model() if model is _recipe_model else model
+        m = model() if model in _LAZY else model
         out[name] = m.model_json_schema()
     return out

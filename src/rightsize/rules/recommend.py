@@ -196,14 +196,24 @@ def _serves(c: Candidate, task: str) -> bool:
     return "chat" in c.tasks
 
 
-def _trainer(dev: Device) -> str:
-    """Who fine-tunes on this hardware."""
-    return {"apple": "mlx-lm", "amd": "axolotl"}.get(dev.vendor, "unsloth")
+def _trainer(dev: Device):
+    """Who fine-tunes on this hardware: the framework whose descriptor claims the vendor
+    (data/recipes/<name>/framework.yaml, finetune.default_for), so a new trainer is data."""
+    from rightsize.registry import trainer_for
+
+    found = trainer_for(dev.vendor)
+    if found is None:
+        raise ValueError(f"no framework fine-tunes on {dev.vendor} hardware")
+    return found
 
 
-#: The recipe each trainer's fine-tune step renders. Full fine-tunes have none yet: the
-#: recipes train adapters (LoRA, QLoRA).
-_TRAINER_RECIPE = {"unsloth": "unsloth/sft", "mlx-lm": "mlx-lm/lora", "axolotl": "axolotl/qlora"}
+def _trainer_quant(trainer, mode: Mode) -> QuantSpec | None:
+    """How the trainer holds the frozen base weights: QLoRA's 4-bit, as the trainer does it
+    (bitsandbytes NF4 for Unsloth, Axolotl and TRL; MLX's own 4-bit on a Mac)."""
+    shape = trainer.finetune.qlora_quant
+    if mode is not Mode.qlora or shape is None:
+        return None
+    return QuantSpec(**shape.model_dump())
 
 
 def _years_since_epoch(created_at: str) -> float:
@@ -258,21 +268,25 @@ def _plan(
     steps: list[PlanStep] = []
     if ft is not None and ft_device is not None:
         trainer = _trainer(ft_device)
-        if trainer == "mlx-lm" and mode is Mode.qlora:
-            # MLX trains QLoRA on a model it has already quantized
+        role = trainer.finetune
+        before = role.before.get(mode.value)
+        if before is not None:
+            # a step the trainer needs first: MLX trains QLoRA on a model it quantized itself
             steps.append(
-                PlanStep(stage="quantize", framework="mlx-lm", device=ft_device,
-                         quant=QuantSpec(method="mlx", variant="4bit", bits_per_weight=4.5),
-                         fit=ft, recipe_id="mlx-lm/convert")
+                PlanStep(stage=before.stage, framework=trainer.name, device=ft_device,
+                         quant=QuantSpec(**before.quant.model_dump()) if before.quant else None,
+                         fit=ft, recipe_id=before.recipe)
             )
         steps.append(
             PlanStep(
                 stage="finetune",
-                framework=trainer,
+                framework=trainer.name,
                 device=ft_device,
-                quant=QuantSpec(method="bnb", variant="nf4") if mode is Mode.qlora else None,
+                quant=_trainer_quant(trainer, mode),
                 fit=ft,
-                recipe_id=None if mode is Mode.full else _TRAINER_RECIPE.get(trainer),
+                # the recipes train adapters; a mode the trainer has no recipe for (full
+                # fine-tuning, for now) is planned but not rendered
+                recipe_id=role.recipe if mode.value in role.modes else None,
             )
         )
     steps.append(
@@ -461,8 +475,9 @@ def rank(
                 {
                     "device": _device_ctx(ft_device),
                     "model": _model_ctx(c),
-                    "quant": {"method": "bnb"} if mode is Mode.qlora else {"method": "none"},
-                    "runtime": {"name": _trainer(ft_device)},
+                    "quant": {"method": (_trainer_quant(_trainer(ft_device), mode)
+                                         or QuantSpec(method="none")).method},
+                    "runtime": {"name": _trainer(ft_device).name},
                     "task": task,
                     "stage": "finetune",
                     "mode": mode.value,

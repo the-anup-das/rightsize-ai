@@ -1,0 +1,17 @@
+# What this toolkit is for, where it runs, how it installs and how its steps join a plan.
+name: sentence-transformers
+title: Sentence Transformers
+summary: >-
+  Exports embedding models to ONNX and quantizes them to int8 for fast CPU inference
+stages: [quantize]
+families: [embedding]
+formats: [onnx]
+hardware: {vendors: [cpu]}
+install:
+  kind: pip
+  packages: ["sentence-transformers[onnx]"]
+  check: sentence_transformers
+  line: pip install "sentence-transformers[onnx]"
+homepage: https://sbert.net
+source_doc_url: https://sbert.net/docs/sentence_transformer/usage/efficiency.html
+version_tested: 6.1.0

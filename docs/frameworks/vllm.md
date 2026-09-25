@@ -1,6 +1,12 @@
-# vllm
+# vLLM
 
 Generated from `data/recipes/` - do not edit by hand.
+
+Serves Hugging Face models with high throughput on NVIDIA and AMD GPUs, including the FP8, AWQ, GPTQ and compressed-tensors checkpoints
+
+- Runs on: nvidia, amd; on linux
+- Install: `uv pip install vllm --torch-backend=auto`
+- Home: <https://github.com/vllm-project/vllm>
 
 | recipe | stage | families | checked | version |
 |---|---|---|---|---|

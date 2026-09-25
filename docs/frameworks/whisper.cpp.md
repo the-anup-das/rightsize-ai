@@ -2,6 +2,13 @@
 
 Generated from `data/recipes/` - do not edit by hand.
 
+Quantizes Whisper models to ggml types and transcribes with them, on CPUs and GPUs
+
+- Runs on: any hardware
+- Writes: ggml
+- Install: `git clone https://github.com/ggml-org/whisper.cpp && cd whisper.cpp && cmake -B build && cmake --build build -j --config Release` (or brew install whisper-cpp on a Mac)
+- Home: <https://github.com/ggml-org/whisper.cpp>
+
 | recipe | stage | families | checked | version |
 |---|---|---|---|---|
 | `whisper.cpp/quantize` | quantize | audio | docs | v1.9.4 |

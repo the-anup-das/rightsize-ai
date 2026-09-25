@@ -1,6 +1,13 @@
-# diffusers
+# Diffusers
 
 Generated from `data/recipes/` - do not edit by hand.
+
+Loads diffusion pipelines with chosen components quantized (bitsandbytes, torchao, GGUF) through PipelineQuantizationConfig
+
+- Runs on: nvidia, amd, intel
+- Writes: bnb
+- Install: `pip install -U diffusers transformers accelerate bitsandbytes`
+- Home: <https://github.com/huggingface/diffusers>
 
 | recipe | stage | families | checked | version |
 |---|---|---|---|---|

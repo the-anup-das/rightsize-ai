@@ -1,6 +1,14 @@
-# axolotl
+# Axolotl
 
 Generated from `data/recipes/` - do not edit by hand.
+
+Config-driven LoRA, QLoRA and full fine-tuning on NVIDIA and AMD GPUs, one or many; the default trainer on AMD, where it runs on ROCm
+
+- Runs on: nvidia, amd; on linux
+- Writes: safetensors
+- Install: `uv pip install --no-build-isolation "axolotl[deepspeed]"` (after installing PyTorch for your CUDA or ROCm version)
+- Fine-tunes: lora, qlora; the default trainer on amd
+- Home: <https://github.com/axolotl-ai-cloud/axolotl>
 
 | recipe | stage | families | checked | version |
 |---|---|---|---|---|

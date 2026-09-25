@@ -1,6 +1,13 @@
-# optimum-intel
+# Optimum Intel
 
 Generated from `data/recipes/` - do not edit by hand.
+
+Exports models to OpenVINO IR with int8 or int4 weights, for Intel CPUs, GPUs and NPUs
+
+- Runs on: intel, cpu
+- Writes: openvino
+- Install: `pip install -U optimum-intel`
+- Home: <https://github.com/huggingface/optimum-intel>
 
 | recipe | stage | families | checked | version |
 |---|---|---|---|---|

@@ -1,0 +1,19 @@
+# What this toolkit is for, where it runs, how it installs and how its steps join a plan.
+name: llm-compressor
+title: LLM Compressor
+summary: >-
+  Quantizes models to the compressed-tensors checkpoints vLLM and SGLang load: FP8 without
+  calibration data, and GPTQ W4A16 with a small calibration set
+stages: [quantize]
+families: [llm]
+formats: [compressed-tensors]
+hardware: {vendors: [nvidia]}
+install:
+  kind: pip
+  packages: [llmcompressor]
+  needs_torch: true
+  check: llmcompressor
+  line: pip install llmcompressor
+homepage: https://github.com/vllm-project/llm-compressor
+source_doc_url: https://docs.vllm.ai/projects/llm-compressor/en/latest/guides/entrypoints/oneshot/
+version_tested: 0.14.0

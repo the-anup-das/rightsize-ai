@@ -1,6 +1,13 @@
-# ctranslate2
+# CTranslate2
 
 Generated from `data/recipes/` - do not edit by hand.
+
+Converts Whisper and other transformer models to CTranslate2, int8 or float16, the format faster-whisper runs
+
+- Runs on: nvidia, cpu
+- Writes: ctranslate2
+- Install: `pip install ctranslate2 "transformers[torch]"`
+- Home: <https://github.com/OpenNMT/CTranslate2>
 
 | recipe | stage | families | checked | version |
 |---|---|---|---|---|

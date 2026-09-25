@@ -22,9 +22,46 @@ uv run ruff format --check .
 
 ## Adding a framework or toolkit
 
-You do not write Python. Add a recipe under `data/recipes/<framework>/<stage>.yaml` following `data/schema/recipe.schema.json` (schema lands with F5), with typed inputs, the command or config template, the install extra, hardware constraints and the doc URL you took the flags from. CI renders every recipe; a nightly job dry-runs them against the installed toolkit.
+You do not write Python. A framework is one folder, `data/recipes/<name>/`:
 
-Third-party packages can ship recipes too, via the `rightsize.recipes` entry point. See `docs/plans/F05-framework-registry.md`.
+- `framework.yaml` says what the toolkit is for, where it runs, how it installs and how its
+  steps join a plan (`data/schema/framework.schema.json`). A trainer declares a `finetune`
+  role: the modes it has a recipe for, the recipe, what it writes (a merged model or an
+  adapter), how QLoRA holds the base weights, and `default_for`, the device vendors it is the
+  default trainer on (`"*"` for any vendor no other framework names; `priority` breaks a
+  tie). `defaults` gives the file and binary names its recipes read when a plan does not set
+  them, with `{slug}` for the model and `{quant}` for the quantization.
+- one YAML file per recipe (`data/schema/recipe.schema.json`): typed inputs, the command or
+  config template, hardware constraints and the doc URL you took the flags from.
+
+For example, a trainer that should become the default on NVIDIA needs this and one recipe:
+
+```yaml
+name: zoomtune
+title: ZoomTune
+summary: what it is for, in a sentence
+stages: [finetune]
+hardware: {vendors: [nvidia]}
+install: {kind: pip, check: zoomtune, line: pip install zoomtune}
+finetune:
+  modes: [lora, qlora]
+  recipe: zoomtune/train
+  qlora_quant: {method: bnb, variant: nf4}
+  writes: merged
+  default_for: [nvidia]
+  priority: 20
+homepage: https://example.org/zoomtune
+source_doc_url: https://example.org/zoomtune/docs
+```
+
+CI validates both files, renders every recipe, checks that each `defaults` key is an input
+one of the framework's recipes reads, and regenerates `docs/frameworks/`
+(`python -m rightsize.registry.docs`). `tests/test_frameworks.py` shows a trainer added this
+way taking over plans without any change to rightsize.
+
+Third-party packages ship the same folder layout through the `rightsize.recipes` entry point
+(a directory, or a callable returning dicts: recipes have a `template`, descriptors do not).
+A plugin may add frameworks and recipes but never replace a bundled one.
 
 ## Adding a rule
 

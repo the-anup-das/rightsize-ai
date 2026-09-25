@@ -1,0 +1,16 @@
+# What this toolkit is for, where it runs, how it installs and how its steps join a plan.
+name: ollama
+title: Ollama
+summary: >-
+  Serves a GGUF locally from a Modelfile, with the model's chat template and parameters
+stages: [serve]
+families: [llm]
+hardware: {vendors: [any], os: [linux, windows, macos]}
+install:
+  kind: app
+  check: ollama
+  line: curl -fsSL https://ollama.com/install.sh | sh
+  note: "on Windows: irm https://ollama.com/install.ps1 | iex"
+homepage: https://ollama.com
+source_doc_url: https://docs.ollama.com/import
+version_tested: v0.34.4

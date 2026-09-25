@@ -1,6 +1,14 @@
-# unsloth
+# Unsloth
 
 Generated from `data/recipes/` - do not edit by hand.
+
+LoRA and QLoRA fine-tuning on a single GPU, writing a merged 16-bit model (or a GGUF) at the end; the default trainer on NVIDIA and Intel GPUs
+
+- Runs on: nvidia, amd, intel; on linux, windows; NVIDIA compute capability 7.0+
+- Writes: safetensors
+- Install: `uv pip install unsloth --torch-backend=auto` (in its own environment: unsloth pins trl<=0.24.0, transformers<=5.5.0 and datasets<4.4)
+- Fine-tunes: lora, qlora; the default trainer on nvidia, intel and wherever no other framework is
+- Home: <https://unsloth.ai>
 
 | recipe | stage | families | checked | version |
 |---|---|---|---|---|

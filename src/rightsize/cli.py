@@ -794,20 +794,39 @@ def cmd_variants(args: argparse.Namespace) -> int:
 
 
 def cmd_frameworks(args: argparse.Namespace) -> int:
-    from rightsize.registry import all_recipes
+    from rightsize.registry import all_recipes, framework, framework_infos
+    from rightsize.registry.docs import _runs_on
 
-    recipes = all_recipes()
+    infos = framework_infos()
     if args.name:
-        recipes = {k: v for k, v in recipes.items() if v.framework == args.name}
+        infos = {args.name: framework(args.name)}
+    recipes = all_recipes()
     if args.json:
-        print(json.dumps({k: v.model_dump(mode="json") for k, v in recipes.items()}, indent=2))
+        print(json.dumps({
+            name: {**info.model_dump(mode="json"),
+                   "recipes": {k: r.model_dump(mode="json") for k, r in recipes.items()
+                               if r.framework == name}}
+            for name, info in infos.items()
+        }, indent=2))
         return 0
     con = _console(args)
-    rows = [
-        [r.framework, r.stage, r.id, r.version_tested or "", ", ".join(r.families)]
-        for r in recipes.values()
-    ]
-    con.table(["framework", "stage", "recipe", "tested", "families"], rows)
+    if args.name:
+        info = infos[args.name]
+        con.title(info.title)
+        con.info(info.summary)
+        con.info(f"runs on {_runs_on(info)}; install: {info.install.line}")
+        rows = [[r.stage, r.id, r.verified, r.version_tested or "", ", ".join(r.families)]
+                for r in recipes.values() if r.framework == args.name]
+        con.table(["stage", "recipe", "checked", "tested", "families"], rows)
+        return 0
+    rows = []
+    for name, info in sorted(infos.items()):
+        trains = ""
+        if info.finetune and info.finetune.default_for:
+            trains = ", ".join(v if v != "*" else "others" for v in info.finetune.default_for)
+        rows.append([name, ", ".join(info.stages), _runs_on(info), trains,
+                     str(sum(r.framework == name for r in recipes.values()))])
+    con.table(["framework", "stages", "runs on", "default trainer on", "recipes"], rows)
     return 0
 
 

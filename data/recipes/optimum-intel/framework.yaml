@@ -1,0 +1,16 @@
+# What this toolkit is for, where it runs, how it installs and how its steps join a plan.
+name: optimum-intel
+title: Optimum Intel
+summary: >-
+  Exports models to OpenVINO IR with int8 or int4 weights, for Intel CPUs, GPUs and NPUs
+stages: [export]
+families: [llm]
+formats: [openvino]
+hardware: {vendors: [intel, cpu]}
+install:
+  kind: pip
+  check: optimum.intel
+  line: pip install -U optimum-intel
+homepage: https://github.com/huggingface/optimum-intel
+source_doc_url: https://huggingface.co/docs/optimum-intel/en/openvino/export
+version_tested: 2.2.0
