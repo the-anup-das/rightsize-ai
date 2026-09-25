@@ -1,0 +1,22 @@
+id: llama.cpp/imatrix
+framework: llama.cpp
+stage: calibrate
+families: [llm]
+hardware: { vendors: [any] }
+install_line: 'download a release from https://github.com/ggml-org/llama.cpp/releases (llama-imatrix)'
+kind: command
+inputs:
+  imatrix_bin: { type: path, required: true }
+  model_gguf: { type: path, required: true, help: 16-bit GGUF }
+  calibration_file: { type: path, required: true, help: plain text; ~100-300 KB of mixed-domain text }
+  output_file: { type: path, required: true }
+  gpu_layers: { type: str, default: all }
+  ctx: { type: int, default: 512 }
+  chunks: { type: int, required: false, help: limit processed chunks for speed }
+template: >-
+  {{ imatrix_bin }} -m {{ model_gguf }} -f {{ calibration_file }} -o {{ output_file }} -ngl {{ gpu_layers }} -c {{ ctx }} {% if chunks %}--chunks {{ chunks }}{% endif %}
+notes:
+  - "calibration.method: activation importance over the calibration text; calibration.samples: all chunks unless limited"
+  - "required for IQ types; improves K-quants slightly"
+source_doc_url: https://github.com/ggml-org/llama.cpp/blob/master/tools/imatrix/README.md
+version_tested: b11177

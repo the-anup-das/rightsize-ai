@@ -44,10 +44,10 @@ def test_cli_recommend_points_at_plan(capsys) -> None:
 
 
 def test_cli_json_flag(capsys) -> None:
-    assert main(["--json", "estimate", "Qwen/Qwen3-14B"]) == 0
+    assert main(["--json", "recommend"]) == 0
     payload = json.loads(capsys.readouterr().out)
     assert payload["status"] == "not_implemented"
-    assert payload["plan"].endswith("F03-fit-engine.md")
+    assert payload["plan"].endswith("F04-rules-engine.md")
 
 
 def test_public_functions_raise_not_implemented_yet() -> None:

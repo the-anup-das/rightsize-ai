@@ -1,0 +1,15 @@
+
+# Degradation gate for quantized LLMs (F8). Mean KL divergence of the quantized model's token
+# distribution vs the 16-bit reference over the evaluation text, plus top-1 agreement.
+# Scale after the community KLD conventions (llama.cpp perplexity tool, LocalBench, smcleod 2026):
+#   < 0.01 near-lossless, 0.01-0.05 good, 0.05-0.15 noticeable, > 0.15 damaged.
+provenance:
+  source_url: https://github.com/ggml-org/llama.cpp/blob/master/tools/perplexity/README.md
+  fetched_at: "2026-09-25"
+  note: thresholds are a starting point; refit from measurements (F9)
+kld:
+  pass_below: 0.05
+  warn_below: 0.15
+top1_agreement:
+  pass_above: 0.90
+  warn_above: 0.80

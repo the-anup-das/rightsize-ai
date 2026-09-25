@@ -1,0 +1,21 @@
+id: llama.cpp/convert
+framework: llama.cpp
+stage: convert
+families: [llm]
+hardware: { vendors: [any] }
+install_extra: llamacpp
+install_line: 'pip install "rightsize[llamacpp]"   # torch + transformers for convert_hf_to_gguf.py'
+kind: command
+inputs:
+  python: { type: path, required: true, help: interpreter with torch, transformers, gguf }
+  convert_script: { type: path, required: true, help: path to convert_hf_to_gguf.py }
+  model_dir: { type: path, required: true, help: local snapshot of the Hub repo }
+  outfile: { type: path, required: true }
+  outtype: { type: enum, values: [auto, f16, bf16, f32, q8_0], default: auto }
+template: >-
+  {{ python }} {{ convert_script }} {{ model_dir }} --outfile {{ outfile }} --outtype {{ outtype }}
+notes:
+  - "auto keeps the source dtype (bf16 stays bf16); f16 is safest for older backends"
+  - "runs on CPU; needs roughly 2x the model size in RAM"
+source_doc_url: https://github.com/ggml-org/llama.cpp/blob/master/convert_hf_to_gguf.py
+version_tested: b11177

@@ -161,3 +161,44 @@ class Plan(BaseModel):
     @classmethod
     def schema_json(cls) -> str:
         return json.dumps(cls.model_json_schema(), indent=2)
+
+
+class Measurement(BaseModel):
+    """One predicted-vs-measured pair recorded by an execution step (F8, F9)."""
+
+    kind: Literal[
+        "file_size_gb", "peak_vram_gb", "tok_per_s", "kld_mean", "top1_agreement", "ppl", "wall_s"
+    ]
+    value: float
+    predicted: float | None = None
+    note: str | None = None
+
+
+class RunStep(BaseModel):
+    recipe_id: str
+    argv: list[str]
+    started: str
+    finished: str | None = None
+    returncode: int | None = None
+    log_path: str | None = None
+    skipped: bool = False
+    measurements: list[Measurement] = Field(default_factory=list)
+
+
+class RunManifest(BaseModel):
+    """Everything about one execution: what was predicted, what ran, what was measured (F8)."""
+
+    id: str
+    created: str
+    rightsize_version: str
+    model: ModelRef
+    facts: ModelFacts | None = None
+    device: Device | None = None
+    toolchain: dict[str, str] = Field(default_factory=dict)
+    predicted: dict[str, FitResult] = Field(default_factory=dict, description="per quant")
+    steps: list[RunStep] = Field(default_factory=list)
+    artifacts: dict[str, str] = Field(default_factory=dict, description="name -> path")
+    gate: dict[str, Any] = Field(
+        default_factory=dict, description="per quant: pass|warn|fail + numbers"
+    )
+    status: Literal["running", "succeeded", "failed"] = "running"

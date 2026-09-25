@@ -1,0 +1,21 @@
+id: llama.cpp/kld-base
+framework: llama.cpp
+stage: evaluate
+families: [llm]
+hardware: { vendors: [any] }
+install_line: 'download a release from https://github.com/ggml-org/llama.cpp/releases (llama-perplexity)'
+kind: command
+inputs:
+  perplexity_bin: { type: path, required: true }
+  model_gguf: { type: path, required: true, help: the 16-bit reference }
+  eval_file: { type: path, required: true, help: plain text, e.g. wikitext-2 test }
+  logits_file: { type: path, required: true, help: where the reference logits are saved }
+  gpu_layers: { type: str, default: all }
+  ctx: { type: int, default: 512 }
+  chunks: { type: int, required: false }
+template: >-
+  {{ perplexity_bin }} -m {{ model_gguf }} -f {{ eval_file }} --kl-divergence-base {{ logits_file }} -ngl {{ gpu_layers }} -c {{ ctx }} {% if chunks %}--chunks {{ chunks }}{% endif %}
+notes:
+  - "saves the reference logits once; every quant is then compared against this file"
+source_doc_url: https://github.com/ggml-org/llama.cpp/blob/master/tools/perplexity/README.md
+version_tested: b11177

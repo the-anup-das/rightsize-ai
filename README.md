@@ -26,6 +26,10 @@ Surfaces: Python SDK, CLI with `--json`, MCP server so agents can call it.
 - Frameworks are declarative recipes that render commands. Running them is an opt-in extra (`rightsize[unsloth]`, `rightsize[llamacpp]`, ...), loaded lazily.
 - Model metadata is fetched on demand from safetensors and GGUF headers (a few KB) and cached.
 
+## New to model formats?
+
+Read [Choosing a model format](docs/guide/choosing-a-model-format.md): what GGUF is, how to read a quant name like Q4_K_M, what the alternatives are (safetensors, bnb, AWQ, GPTQ, FP8, NVFP4, EXL3, MLX, OpenVINO, ONNX, MLC, Core ML) and their pros and cons, and which hardware each one reaches.
+
 ## Install
 
 ```bash

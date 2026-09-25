@@ -1,0 +1,82 @@
+# Real bits-per-weight for GGUF tensor types, including scales and mins.
+# Computed from the block formulas in llama.cpp gguf-py/gguf/constants.py as mirrored by
+# huggingface.js packages/gguf/src/quant-descriptions.ts: bpw = type_size_bytes * 8 / block_size.
+# File types (Q4_K_M etc.) are mixes of tensor types; their effective bpw is in file_types below.
+provenance:
+  source_url: https://github.com/huggingface/huggingface.js/blob/main/packages/gguf/src/quant-descriptions.ts
+  fetched_at: "2026-09-25"
+  note: tensor_types derived from GGML_QUANT_SIZES; file_types measured, see their own provenance
+
+tensor_types:
+  F32: 32.0
+  F16: 16.0
+  BF16: 16.0
+  Q8_0: 8.5
+  Q8_1: 9.0
+  Q8_K: 9.125
+  Q6_K: 6.5625
+  Q5_0: 5.5
+  Q5_1: 6.0
+  Q5_K: 5.5
+  Q4_0: 4.5
+  Q4_1: 5.0
+  Q4_K: 4.5
+  Q3_K: 3.4375
+  Q2_K: 2.625
+  IQ4_XS: 4.25
+  IQ4_NL: 4.5
+  IQ3_S: 3.4375
+  IQ3_XXS: 3.0625
+  IQ2_S: 2.5625
+  IQ2_XS: 2.3125
+  IQ2_XXS: 2.0625
+  IQ1_M: 1.75
+  IQ1_S: 1.5625
+  TQ2_0: 2.0625
+  TQ1_0: 1.6875
+  MXFP4: 4.25
+  NVFP4: 4.5
+  Q2_0: 2.25
+  Q1_0: 1.125
+
+# Effective bits-per-weight of llama-quantize file types (mixes: e.g. Q4_K_M keeps some
+# attention/ffn tensors at Q6_K and the output at Q6_K). Filled from llama-quantize --help,
+# which prints the file size of each type for Llama-3-8B (8.03B params):
+# bpw = size_bytes * 8 / params. See file_types_provenance.
+file_types_provenance:
+  source_url: https://github.com/ggml-org/llama.cpp/blob/master/tools/quantize/quantize.cpp
+  fetched_at: "2026-09-25"
+  note: sizes printed by `llama-quantize --help` (b11177) for Llama-3-8B; effective bpw = GiB*2^30*8/8.03e9
+file_types:
+  Q4_0: 4.643   # 4.34 GiB @ Llama-3-8B
+  Q4_1: 5.113   # 4.78 GiB @ Llama-3-8B
+  Q5_0: 5.573   # 5.21 GiB @ Llama-3-8B
+  Q5_1: 6.044   # 5.65 GiB @ Llama-3-8B
+  Q2_K: 3.166   # 2.96 GiB @ Llama-3-8B
+  Q2_K_S: 3.166   # 2.96 GiB @ Llama-3-8B
+  Q3_K_S: 3.648   # 3.41 GiB @ Llama-3-8B
+  Q3_K_M: 4.001   # 3.74 GiB @ Llama-3-8B
+  Q3_K_L: 4.311   # 4.03 GiB @ Llama-3-8B
+  Q4_K_S: 4.675   # 4.37 GiB @ Llama-3-8B
+  Q4_K_M: 4.899   # 4.58 GiB @ Llama-3-8B
+  Q5_K_S: 5.573   # 5.21 GiB @ Llama-3-8B
+  Q5_K_M: 5.702   # 5.33 GiB @ Llama-3-8B
+  Q6_K: 6.568   # 6.14 GiB @ Llama-3-8B
+  Q8_0: 8.515   # 7.96 GiB @ Llama-3-8B
+  IQ1_S: 1.560   # nominal bpw printed by llama-quantize; mixes add ~0.1-0.3
+  IQ1_M: 1.750   # nominal bpw printed by llama-quantize; mixes add ~0.1-0.3
+  IQ2_XXS: 2.060   # nominal bpw printed by llama-quantize; mixes add ~0.1-0.3
+  IQ2_XS: 2.310   # nominal bpw printed by llama-quantize; mixes add ~0.1-0.3
+  IQ2_S: 2.500   # nominal bpw printed by llama-quantize; mixes add ~0.1-0.3
+  IQ2_M: 2.700   # nominal bpw printed by llama-quantize; mixes add ~0.1-0.3
+  IQ3_XXS: 3.060   # nominal bpw printed by llama-quantize; mixes add ~0.1-0.3
+  IQ3_XS: 3.300   # nominal bpw printed by llama-quantize; mixes add ~0.1-0.3
+  IQ3_S: 3.440   # nominal bpw printed by llama-quantize; mixes add ~0.1-0.3
+  IQ3_M: 3.660   # nominal bpw printed by llama-quantize; mixes add ~0.1-0.3
+  IQ4_NL: 4.500   # nominal bpw printed by llama-quantize; mixes add ~0.1-0.3
+  IQ4_XS: 4.250   # nominal bpw printed by llama-quantize; mixes add ~0.1-0.3
+  TQ1_0: 1.690   # nominal bpw printed by llama-quantize; mixes add ~0.1-0.3
+  TQ2_0: 2.060   # nominal bpw printed by llama-quantize; mixes add ~0.1-0.3
+  F16: 16.000   # nominal bpw printed by llama-quantize; mixes add ~0.1-0.3
+  BF16: 16.000   # nominal bpw printed by llama-quantize; mixes add ~0.1-0.3
+  F32: 32.000   # nominal bpw printed by llama-quantize; mixes add ~0.1-0.3

@@ -39,9 +39,20 @@ dependencies = [
 mcp = ["mcp>=1.2"]
 # Hardware detection uses subprocess + httpx only today; extra reserved for optional probes.
 detect = []
-# Execution adapters (F8). Populated when each adapter lands; imported lazily, never at startup.
+# Execution adapters (F8). Imported lazily, never at startup.
+# llamacpp: converting safetensors -> GGUF runs llama.cpp's convert_hf_to_gguf.py, which needs
+# torch + transformers. Quantizing an existing GGUF needs only the llama.cpp binaries.
+llamacpp = [
+  "gguf>=0.17",
+  "numpy>=1.26",
+  "torch>=2.4",
+  "transformers>=4.45",
+  "sentencepiece>=0.2",
+  "protobuf>=4",
+  "safetensors>=0.4",
+  "huggingface_hub>=0.30",
+]
 unsloth = []
-llamacpp = []
 diffusers = []
 
 [dependency-groups]
@@ -68,6 +79,20 @@ Roadmap = "https://github.com/the-anup-das/rightsize-ai/tree/main/docs/plans"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/rightsize"]
+
+# The data seed ships inside the wheel until rightsize-data is split out (lightweight rule 2).
+# In editable installs the loader falls back to the repo's data/ folder.
+[tool.hatch.build.targets.wheel.force-include]
+"data" = "rightsize/_data"
+
+# torch CPU wheels for the [llamacpp] extra on Windows/Linux; macOS uses the default index.
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform != 'darwin'" }]
 
 [tool.hatch.build.targets.sdist]
 include = ["src/rightsize", "README.md", "LICENSE", "pyproject.toml"]

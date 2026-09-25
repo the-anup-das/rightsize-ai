@@ -24,3 +24,8 @@ htmlcov/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Local toolchain (llama.cpp binaries, downloaded models, run outputs)
+.tools/
+models/
+runs/

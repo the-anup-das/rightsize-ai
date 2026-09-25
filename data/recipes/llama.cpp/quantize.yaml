@@ -1,0 +1,22 @@
+id: llama.cpp/quantize
+framework: llama.cpp
+stage: quantize
+families: [llm]
+hardware: { vendors: [any] }
+install_line: 'download a release from https://github.com/ggml-org/llama.cpp/releases (llama-quantize)'
+kind: command
+inputs:
+  quantize_bin: { type: path, required: true }
+  input_gguf: { type: path, required: true, help: 16-bit GGUF from the convert step }
+  output_gguf: { type: path, required: true }
+  quant: { type: enum, required: true, values: [Q2_K, Q2_K_S, Q3_K_S, Q3_K_M, Q3_K_L, Q4_0, Q4_1, Q4_K_S, Q4_K_M, Q5_0, Q5_1, Q5_K_S, Q5_K_M, Q6_K, Q8_0, IQ1_S, IQ1_M, IQ2_XXS, IQ2_XS, IQ2_S, IQ2_M, IQ3_XXS, IQ3_XS, IQ3_S, IQ3_M, IQ4_NL, IQ4_XS, TQ1_0, TQ2_0, F16, BF16] }
+  imatrix: { type: path, required: false, help: importance matrix; required for IQ types }
+  pure: { type: bool, default: false, help: disable k-quant mixes, quantize every tensor to quant }
+  threads: { type: int, required: false }
+template: >-
+  {{ quantize_bin }} {% if imatrix %}--imatrix {{ imatrix }} {% endif %}{% if pure %}--pure {% endif %}{{ input_gguf }} {{ output_gguf }} {{ quant }} {% if threads %}{{ threads }}{% endif %}
+notes:
+  - "quantize from 16-bit or 32-bit only; requantizing a quantized file loses quality"
+  - "K-quant file types are mixes: Q4_K_M keeps some attention/ffn tensors and output at Q6_K"
+source_doc_url: https://github.com/ggml-org/llama.cpp/blob/master/tools/quantize/README.md
+version_tested: b11177
