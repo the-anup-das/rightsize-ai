@@ -45,6 +45,24 @@ jobs:
           print(f"{wheel}: {size/1024:.1f} KB")
           sys.exit(0 if size < 300 * 1024 else 1)
           PY
+      - name: wheel carries the data seed
+        run: |
+          python3 - <<'PY'
+          import glob, sys, zipfile
+          # uv builds the wheel from the sdist, so an sdist that leaves data/ out ships a
+          # package whose hardware table and recipes are simply absent.
+          names = set(zipfile.ZipFile(glob.glob("dist/*.whl")[0]).namelist())
+          need = [
+              "rightsize/_data/hardware/presets.yaml",
+              "rightsize/_data/hardware/gpus.yaml",
+              "rightsize/_data/quants/gguf_bpw.yaml",
+              "rightsize/_data/recipes/llama.cpp/quantize.yaml",
+          ]
+          missing = [n for n in need if n not in names]
+          print(f"{len(names)} entries, {sum(n.endswith('.yaml') for n in names)} yaml")
+          if missing:
+              sys.exit("missing from the wheel: " + ", ".join(missing))
+          PY
       - name: clean install pulls no ML frameworks
         run: |
           uv venv /tmp/clean --python 3.12

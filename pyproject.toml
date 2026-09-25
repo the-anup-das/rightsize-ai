@@ -88,6 +88,23 @@ packages = ["src/rightsize"]
 [tool.hatch.build.targets.wheel.force-include]
 "data" = "rightsize/_data"
 
+# The sdist has to carry data/ too: `uv build` makes the wheel from the sdist, so anything
+# missing here is missing from the wheel, and an install from PyPI has no hardware table at
+# all. tests/budgets/test_imports.py checks the built wheel actually contains it.
+[tool.hatch.build.targets.sdist]
+include = [
+  "src/rightsize",
+  "data",
+  "tests",
+  "scripts",
+  "docs",
+  "notebooks",
+  "README.md",
+  "CONTRIBUTING.md",
+  "LICENSE",
+  "pyproject.toml",
+]
+
 # torch CPU wheels for the [llamacpp] extra on Windows/Linux; macOS uses the default index.
 [[tool.uv.index]]
 name = "pytorch-cpu"
@@ -96,9 +113,6 @@ explicit = true
 
 [tool.uv.sources]
 torch = [{ index = "pytorch-cpu", marker = "sys_platform != 'darwin'" }]
-
-[tool.hatch.build.targets.sdist]
-include = ["src/rightsize", "README.md", "LICENSE", "pyproject.toml"]
 
 [tool.ruff]
 line-length = 100
@@ -118,6 +132,7 @@ select = ["E", "F", "I", "UP", "B", "SIM", "T20"]
 "scripts/make_notebooks.py" = ["E501", "T20"]
 # ingest scripts are run by hand and report what they fetched
 "scripts/ingest_hf_hardware.py" = ["T20"]
+"scripts/ingest_bandwidth.py" = ["T20", "E501"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

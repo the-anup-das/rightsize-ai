@@ -114,7 +114,7 @@ def test_bandwidth_is_computed_from_bus_width_and_speed() -> None:
     assert ti["how"] == "256-bit GDDR6X at 21 Gbps"
     assert ti["formula_id"] == "mem.bandwidth.bus_x_rate.v0"
     # HBM and unified memory do not divide cleanly, so those are the vendor's own figure
-    assert table[db._norm("H100")]["how"] == "stated by the vendor"
+    assert table[db._norm("H100")]["how"] == "stated by the source"
     assert table[db._norm("Apple M4 Max")]["gbps"] == 546.0
 
 
@@ -163,3 +163,25 @@ def test_from_hf_is_loud_when_there_is_nothing_to_read() -> None:
         impl("ghost", transport=_stub({}, status=404))
     with pytest.raises(HubHardwareError, match="no hardware saved"):
         impl("empty", transport=_stub({"hardwareItems": []}))
+
+
+def test_ingested_bandwidth_covers_cards_nobody_curated() -> None:
+    """Wikipedia's GPU lists fill in what Hugging Face's table and our hand list do not."""
+    cat = db.catalog()
+    assert cat["RTX 3090 24GB"].bandwidth_gbps == 936.0  # 384-bit GDDR6X at 19.5 Gbps
+    assert cat["RTX 5080 16GB"].bandwidth_gbps == 960.0  # 256-bit GDDR7 at 30
+    assert cat["RX 7900 XTX 24GB"].bandwidth_gbps == 960.0  # 384-bit GDDR6 at 20
+    assert "GDDR6X at 19.5 Gbps" in cat["RTX 3090 24GB"].provenance.note
+
+
+def test_bandwidth_never_crosses_vendors() -> None:
+    """_norm drops the vendor word, so "Apple M4" and a Mobility Radeon M4 collide.
+
+    Whichever page a record came from is recorded, and a device only takes a number from
+    its own vendor's list. Without this an Apple chip silently reported a Radeon's memory.
+    """
+    assert db._bandwidth_for("M4", "amd")[0] != db._bandwidth_for("Apple M4", "apple")[0]
+    gbps, hit = db._bandwidth_for("Apple M4", "apple")
+    assert gbps == 120.0 and hit["how"] == "stated by the source"
+    # the curated file carries no vendor, so it answers for anyone that names it
+    assert db._bandwidth_for("H100", "nvidia")[0] == 3350.0

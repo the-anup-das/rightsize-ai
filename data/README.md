@@ -4,7 +4,7 @@ Everything Rightsize knows that is a *number* or a *table* lives here, not in Py
 
 | Folder | Contents | Source (to ingest) | Owner |
 |---|---|---|---|
-| `hardware/` | GPUs, CPUs, Apple chips: memory, bandwidth, arch, tflops, msrp, usable fraction; presets | HF `hardware.ts`, TechPowerUp API (licence to verify), `dbgpu`, Apple newsroom | F2 |
+| `hardware/` | `gpus.yaml` (ingested SKU catalogue), `bandwidth.yaml` (hand-typed) + `bandwidth_wikipedia.yaml` (ingested), `presets.yaml` (curated setups) | huggingface.js SKU tables (MIT); Wikipedia GPU lists (CC BY-SA); vendor pages | F2 |
 | `quants/` | Real bits-per-weight per GGUF type; per-architecture KV overrides (MLA, sliding window, hybrid); MLX/bnb/AWQ/GPTQ/FP8 descriptors | `@huggingface/gguf` `quant-descriptions.ts`, model configs | F1, F3 |
 | `rules/` | Hard gates and penalties with `source_url` and a test each | HF/vLLM/SGLang quantization matrices, toolkit docs | F4 |
 | `recipes/` | Renderable command/config templates per framework and stage | Each toolkit's docs, pinned by version | F5 |
@@ -26,3 +26,26 @@ Two units, each matching the source a reader would check the number against:
 - **Model and file sizes are decimal GB** (1e9 bytes), which is how Hugging Face lists file sizes and how the published numbers behind our golden tests are quoted.
 
 `Device.memory_gb` converts the first into the second, and the fit engine only ever uses that. 16 GiB is 17.18 GB; comparing model sizes against a bare `16` made every verdict on this card 7% pessimistic. Bandwidth (`bandwidth_gbps`) is decimal GB/s, as vendors state it.
+
+## Where the hardware numbers come from
+
+`scripts/ingest_hf_hardware.py` pulls huggingface.js's MIT-licensed SKU tables (memory
+options, TFLOPS, compute capability, MSRP, power, year) pinned to a commit.
+
+That table has no memory bandwidth, and it is the number the speed model runs on.
+TechPowerUp serves a captcha and marks its pages `noindex,nofollow`, so it is off limits;
+Wikidata has no bandwidth property. `scripts/ingest_bandwidth.py` therefore reads Wikipedia's
+"List of ... graphics processing units" tables, which give bus width, bus type and memory
+clock per SKU, and computes
+
+    bandwidth_gbps = bus_width_bits * memory_speed_gbps / 8
+
+rather than copying anyone's derived column. That matters: Wikipedia's own bandwidth column
+says 336 GB/s for the RTX 3060 12 GB where its bus width and clock give 360, which is what
+NVIDIA publishes. The stated figure is kept beside ours as `stated_gbps` so the two can be
+compared, and the ingest refuses to write if it disagrees by more than 2% with anything
+hand-typed in `bandwidth.yaml`.
+
+Records carry the vendor they came from. `_norm` drops the vendor word when matching, so
+"Apple M4" and an old Mobility Radeon M4 both reduce to `m4`; without the vendor check an
+Apple chip would quietly report a Radeon's bandwidth.

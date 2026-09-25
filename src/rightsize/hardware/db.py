@@ -56,38 +56,68 @@ def presets() -> dict[str, Device]:
     return {rec["name"]: _to_device(rec) for rec in data["presets"]}
 
 
+#: Ingested from Wikipedia's GPU lists first, then the hand-typed file on top: those were
+#: taken from vendor pages and win any disagreement.
+_BANDWIDTH_FILES = ("hardware/bandwidth_wikipedia.yaml", "hardware/bandwidth.yaml")
+
+
 @lru_cache(maxsize=1)
 def bandwidth() -> dict[str, dict]:
     """Bandwidth per device name and alias, each entry carrying how it was arrived at."""
-    data = load_yaml("hardware/bandwidth.yaml")
-    formula = data.get("formula_id")
     out: dict[str, dict] = {}
-    for rec in data["devices"]:
-        if rec.get("bandwidth_gbps") is not None:
-            entry = {"gbps": float(rec["bandwidth_gbps"]), "how": "stated by the vendor"}
-        else:
-            # bus width x data rate / 8, the arithmetic the vendor's own spec sheet implies
-            gbps = rec["bus_width_bits"] * rec["memory_speed_gbps"] / 8
-            entry = {
-                "gbps": round(gbps, 1),
-                "how": (
-                    f"{rec['bus_width_bits']}-bit {rec.get('memory_type', '')} at "
-                    f"{rec['memory_speed_gbps']} Gbps"
-                ).strip(),
-                "formula_id": formula,
-            }
-        entry["provenance"] = rec.get("provenance")
-        for key in (rec["name"], *rec.get("aliases", [])):
-            out[_norm(key)] = entry
+    for path in _BANDWIDTH_FILES:
+        try:
+            data = load_yaml(path)
+        except FileNotFoundError:  # the generated file is optional
+            continue
+        formula = data.get("formula_id")
+        for rec in data["devices"]:
+            entry = _bandwidth_entry(rec, formula)
+            keys = [rec["match"]] if rec.get("match") else []
+            keys += [_norm(k) for k in (rec["name"], *rec.get("aliases", []))]
+            for key in keys:
+                out[key] = entry
     return out
 
 
-def _bandwidth_for(*names: str) -> tuple[float | None, dict | None]:
-    table = bandwidth()
-    for n in names:
-        if (hit := table.get(_norm(n))) is not None:
-            return hit["gbps"], hit
-    return None, None
+def _bandwidth_entry(rec: dict, formula: str | None) -> dict:
+    if rec.get("memory_speed_gbps"):
+        # bus width x data rate / 8, the arithmetic the vendor's own spec sheet implies.
+        # Preferred over any stated figure: Wikipedia's bandwidth column and its own bus
+        # width disagree on some rows, and the arithmetic is the one that checks out.
+        gbps = rec["bus_width_bits"] * rec["memory_speed_gbps"] / 8
+        return {
+            "gbps": round(gbps, 1),
+            "vendor": rec.get("vendor"),
+            "how": (
+                f"{rec['bus_width_bits']:g}-bit {rec.get('memory_type', '')} at "
+                f"{rec['memory_speed_gbps']:g} Gbps"
+            ).replace("  ", " ").strip(),
+            "formula_id": formula,
+            "stated_gbps": rec.get("stated_gbps"),
+            "provenance": rec.get("provenance"),
+        }
+    return {
+        "gbps": float(rec["bandwidth_gbps"]),
+        "how": "stated by the source",
+        "vendor": rec.get("vendor"),
+        "provenance": rec.get("provenance"),
+    }
+
+
+def _bandwidth_for(name: str, vendor: str | None = None) -> tuple[float | None, dict | None]:
+    """Bandwidth for one model, refusing a record that belongs to a different vendor.
+
+    ``_norm`` drops the vendor word, so "Apple M4" and an old Mobility Radeon M4 both
+    normalise to "m4". Ingested records carry the list they came from; a mismatch means the
+    name collided, not that we found the device.
+    """
+    hit = bandwidth().get(_norm(name))
+    if hit is None:
+        return None, None
+    if vendor and hit.get("vendor") and hit["vendor"] != vendor:
+        return None, None
+    return hit["gbps"], hit
 
 
 @lru_cache(maxsize=1)
@@ -102,7 +132,7 @@ def catalog() -> dict[str, Device]:
     out: dict[str, Device] = {}
     for rec in data["devices"]:
         vendor = rec.get("vendor", "other")
-        gbps, hit = _bandwidth_for(rec["name"])
+        gbps, hit = _bandwidth_for(rec["name"], vendor)
         prov = (hit or {}).get("provenance") or rec.get("provenance")
         for mem in rec.get("memory_gib") or []:
             name = f"{rec['name']} {mem:g}GB"
