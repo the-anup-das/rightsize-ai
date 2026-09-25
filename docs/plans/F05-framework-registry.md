@@ -42,7 +42,7 @@ source_doc_url: https://github.com/ggml-org/llama.cpp/tree/master/tools/quantize
 version_tested: b6000
 ```
 
-Registry rows (status: **MVP** = recipe in phase 1, P2 = phase 2):
+The full inventory, including what vLLM and Hugging Face offer and the libraries verified on 2026-09-25, is in [01-libraries.md](01-libraries.md). The tables below are the registry rows (status: **MVP** = recipe in phase 1, P2 = phase 2):
 
 **Fine-tuning**
 
@@ -63,13 +63,21 @@ Registry rows (status: **MVP** = recipe in phase 1, P2 = phase 2):
 | Toolkit | Output | Families | Targets | Status |
 |---|---|---|---|---|
 | llama.cpp `llama-quantize` (+ imatrix) | GGUF | LLM, VLM (mmproj), embeddings | CPU, any GPU, Apple | MVP |
-| transformers quantization configs (bnb, GPTQModel, AWQ, HQQ, torchao, quanto, FP8) | safetensors | LLM, VLM | NVIDIA, Intel, AMD partial | MVP |
-| llm-compressor | compressed-tensors (FP8, INT8, W4A16, NVFP4) | LLM | vLLM, SGLang | MVP |
+| Unsloth `save_pretrained_gguf` (25 GGUF types via llama.cpp), `save_pretrained_merged` (16-bit, 8-bit, bnb `merged_4bit`); Studio exports NVFP4 / FP8 / imatrix GGUF | GGUF, safetensors | LLM, VLM | as GGUF / vLLM / SGLang | MVP |
+| GGUF-my-repo, MLX-my-repo, bnb-my-repo Hub Spaces (no local GPU needed) | GGUF, MLX, bnb | LLM | any | MVP |
+| transformers quantization configs (22 methods: bnb, GPTQModel, AWQ, HQQ, torchao, quanto, FP8 variants, NVFP4, AutoRound, SINQ, ...) | safetensors | LLM, VLM | NVIDIA, Intel, AMD partial, Apple (Metal kernels) | MVP core, P2 rest |
+| llm-compressor (vLLM project) | compressed-tensors (FP8, INT8, W4A16, W4A8, NVFP4, SmoothQuant, 2:4) | LLM | vLLM, SGLang, TGI | MVP |
+| vLLM on-load quantization (`--quantization fp8`, bitsandbytes, torchao, FP8 KV cache) | in-memory | LLM | Ada / Hopper / Blackwell, AMD MI | MVP (serve recipe flags) |
+| `optimum-cli export onnx` + ONNX Runtime quantization | ONNX int8 | vision, embeddings, small LLM | CPU, DirectML, mobile | MVP |
+| ExLlamaV3 (EXL3 trellis quant, 1–8 bpw) + TabbyAPI | EXL3 | LLM | NVIDIA Ampere+ only | P2 |
+| mistral.rs ISQ (`--isq`, MoQE for MoE); LMDeploy `lite auto_awq` **(verify)**; ik_llama.cpp and KTransformers (MoE on CPU + GPU) | in-memory; AWQ; GGUF variants | LLM | CUDA, Metal, CPU | P2 |
+| MLC LLM (`convert_weight`, `compile`: q4f16_1, q3f16_1, q4f16_awq) | MLC | LLM | CUDA, ROCm, Metal, Vulkan, WebGPU, iOS, Android | later (mobile phase) |
 | `optimum-cli export openvino` (NNCF) | OpenVINO IR | LLM, vision, embeddings | Intel CPU / iGPU / NPU | MVP |
 | MLX `mlx_lm.convert -q`; mflux | MLX | LLM, diffusion | Apple | MVP |
 | diffusers `PipelineQuantizationConfig` (bnb, torchao, quanto, GGUF, layerwise fp8, group offload) | safetensors / GGUF | diffusion | NVIDIA | MVP |
-| whisper.cpp quantize; faster-whisper / CTranslate2 | GGML; CT2 int8 | audio | CPU, NVIDIA, Apple | MVP |
-| sentence-transformers `export_*_quantized_*`, `quantize_embeddings`, model2vec | ONNX / OpenVINO int8; static vectors | embeddings | CPU | MVP |
+| whisper.cpp quantize; faster-whisper / CTranslate2; WhisperKit (Apple); NeMo Parakeet export | GGML; CT2 int8; Core ML; ONNX | audio (STT) | CPU, NVIDIA, Apple | MVP (whisper.cpp, CT2), P2 (WhisperKit, Parakeet) |
+| Kokoro, Piper, F5-TTS export paths | ONNX / GGML | audio (TTS) | CPU, Apple, NVIDIA | P2 |
+| sentence-transformers `export_*_quantized_*`, `quantize_embeddings`, model2vec; fastembed; Text Embeddings Inference | ONNX / OpenVINO int8; static vectors | embeddings | CPU, GPU | MVP (sentence-transformers), P2 (fastembed, TEI) |
 | NVIDIA TensorRT Model Optimizer | FP8 / NVFP4, TRT-LLM engines | LLM, diffusion | NVIDIA | P2 |
 | Intel AutoRound; AMD Quark | gptq / awq / GGUF; ONNX | LLM | Intel; AMD | P2 |
 | Nunchaku (SVDQuant); stable-diffusion.cpp; ComfyUI-GGUF | INT4 / NVFP4; GGUF | diffusion | NVIDIA Turing+ / Blackwell; any | P2 |
@@ -83,6 +91,7 @@ Registry rows (status: **MVP** = recipe in phase 1, P2 = phase 2):
 - Bundled recipes load from `data/recipes/`; third-party recipe packs register via entry point `rightsize.recipes` pointing at a folder.
 - Template renderer: a minimal `{{ var }}` / `{% if %}` subset implemented in-house (no jinja2 in core); jinja2 optional under `[dev]` for validating parity.
 - `render()` validates inputs against the recipe's `inputs`, fills defaults from the `PlanStep` (quant, paths, device), and returns `RenderedStep{kind: command|config, text, install_line, notes, source_doc_url}`.
+- Every calibration-based recipe (AWQ, GPTQ, SmoothQuant, FP8 static, NVFP4, imatrix, OpenVINO static) declares `calibration.method`, `calibration.samples` (default 128–512 for LLMs, ~200 for classic int8) and `calibration.dataset`; see [02-quantization-concepts.md](02-quantization-concepts.md).
 - `docs.py` writes `docs/frameworks/<framework>.md` from the registry: what it is, when to pick it, hardware, install, recipes with example renders. Run in CI; diff must be clean.
 
 ## MVP scope
@@ -92,7 +101,7 @@ The 14 MVP recipes above plus 4 serve recipes; docs generation; entry point disc
 ## Follow-up research
 
 - Pin and verify exact CLI flags per toolkit version; record `version_tested`.
-- Unsloth NVFP4 / FP8 export **(verify)**; `mlx_lm` mixed-precision / AWQ recipes **(verify)**.
+- Unsloth NVFP4 / FP8 export: confirmed for Unsloth Studio after training (2026-09-25); the library-level API for NVFP4 export is still **(verify)**. `mlx_lm` mixed-precision / AWQ recipes **(verify)**.
 - Which recipes need a preceding `require` step (imatrix, calibration data for AWQ / GPTQ).
 
 ## Tests

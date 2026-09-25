@@ -50,6 +50,7 @@ Seed rules (from the research, each with its URL):
 - Unsloth: Python 3.11–3.13, CUDA capability 7.0+, CUDA 12.4+ (12.8+ for Blackwell).
 - GPUStack-style backend compatibility: which runtime runs on which OS x vendor (vLLM Linux-only; MLX macOS-only; llama.cpp everywhere; SGLang Linux NVIDIA / AMD).
 - Speed floor: block plans under 5 tok/s for chat tasks unless the user opts in.
+- Small models: under ~3B parameters, penalize 4-bit variants when an 8- or 16-bit variant fits (nf4 raises energy 25–56% at that scale; Optimum guide / EcoCompute). Weight-only for single-user local inference; W8A8 for multi-user serving. NVFP4 Blackwell-only; Marlin MXFP4 not on Turing. See [02-quantization-concepts.md](02-quantization-concepts.md) section 4 for the full list.
 
 Quality data (`data/quality/`): base-model quality from Artificial Analysis / Arena / llm-stats (**not** the archived Open LLM Leaderboard); quant penalty curves from Unsloth Dynamic 3.0 KL / Divergence-300 tables; non-LLM families sizing-only in MVP.
 

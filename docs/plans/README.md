@@ -7,6 +7,8 @@ One file per major feature. Each has the same sections: Goal, Why it beats what 
 | # | Plan | Phase | Status |
 |---|---|---|---|
 | 00 | [Competitor landscape](00-competitors.md) | research | revised 2026-09-24 (two passes) |
+| 01 | [Library and toolkit inventory](01-libraries.md) | research | done 2026-09-25 |
+| 02 | [Quantization concepts and method selection](02-quantization-concepts.md) | reference | done 2026-09-25 |
 | F1 | [Model catalog](F01-model-catalog.md) | 1 | planned |
 | F2 | [Hardware database and detection](F02-hardware.md) | 1 | planned |
 | F3 | [Fit engine](F03-fit-engine.md) | 1 | planned |
