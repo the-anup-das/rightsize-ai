@@ -123,4 +123,5 @@ def render(recipe: Recipe, **given: Any) -> RenderedStep:
         install_line=recipe.install_line,
         notes=list(recipe.notes),
         source_doc_url=recipe.source_doc_url,
+        verified=recipe.verified,
     )

@@ -24,6 +24,7 @@ def _defaults(plan: Any) -> dict[str, Any]:
         "quantize_bin": "llama-quantize",
         "imatrix_bin": "llama-imatrix",
         "perplexity_bin": "llama-perplexity",
+        "server_bin": "llama-server",
         "python": "python",
         # files: a local snapshot of the Hub repo, then GGUFs beside it
         "model_dir": slug,
@@ -40,6 +41,10 @@ def _defaults(plan: Any) -> dict[str, Any]:
 
 def render_plan(plan: Any, **inputs: Any) -> list[RenderedStep]:
     values = _defaults(plan)
+    serve = next((s for s in plan.steps if s.stage == "serve"), None)
+    if serve is not None and serve.runtime and serve.runtime.ctx:
+        values["ctx"] = serve.runtime.ctx
+    values["model_gguf_served"] = values["output_gguf"]
     has_imatrix = any(s.recipe_id == "llama.cpp/imatrix" for s in plan.steps)
     if has_imatrix:
         values["imatrix"] = values["output_file"]
@@ -50,5 +55,7 @@ def render_plan(plan: Any, **inputs: Any) -> list[RenderedStep]:
             continue
         recipe = get_recipe(step.recipe_id)
         wanted = {k: v for k, v in values.items() if k in recipe.inputs}
+        if step.stage == "serve" and "model_gguf" in recipe.inputs:
+            wanted["model_gguf"] = values.get("model_gguf_served", wanted.get("model_gguf"))
         out.append(render(recipe, **wanted))
     return out

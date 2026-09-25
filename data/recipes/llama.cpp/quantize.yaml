@@ -18,5 +18,6 @@ template: >-
 notes:
   - "quantize from 16-bit or 32-bit only; requantizing a quantized file loses quality"
   - "K-quant file types are mixes: Q4_K_M keeps some attention/ffn tensors and output at Q6_K"
-source_doc_url: https://github.com/ggml-org/llama.cpp/blob/master/tools/quantize/README.md
+source_doc_url: https://github.com/ggml-org/llama.cpp/blob/b11177/tools/quantize/README.md
 version_tested: b11177
+verified: run

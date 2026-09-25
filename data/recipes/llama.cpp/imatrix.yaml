@@ -18,5 +18,6 @@ template: >-
 notes:
   - "calibration.method: activation importance over the calibration text; calibration.samples: all chunks unless limited"
   - "required for IQ types; improves K-quants slightly"
-source_doc_url: https://github.com/ggml-org/llama.cpp/blob/master/tools/imatrix/README.md
+source_doc_url: https://github.com/ggml-org/llama.cpp/blob/b11177/tools/imatrix/README.md
 version_tested: b11177
+verified: run

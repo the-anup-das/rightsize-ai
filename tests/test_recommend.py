@@ -90,10 +90,15 @@ def test_model_first_lists_quantizations_and_renders_commands() -> None:
     quants = [_serve(p).quant.variant for p in result.plans]
     assert "Q8_0" in quants and len(set(quants)) == len(quants)
     iq = next(p for p in result.plans if _serve(p).quant.variant == "IQ4_XS")
-    steps = [s.text for s in iq.render()]
+    rendered = iq.render()
+    steps = [s.text for s in rendered]
     assert steps[0].startswith("python convert_hf_to_gguf.py")
     assert any("llama-imatrix" in s for s in steps), "i-quants get an importance matrix"
-    assert "--imatrix" in steps[-1]
+    quantize = next(s for s in steps if s.startswith("llama-quantize"))
+    assert "--imatrix" in quantize
+    serve = rendered[-1]
+    assert serve.text.startswith("llama-server -m Qwen__Qwen3-4B-IQ4_XS.gguf -c 8192")
+    assert serve.verified == "help", "every rendered step says how far it was checked"
 
 
 def test_when_nothing_fits_the_reasons_come_back() -> None:

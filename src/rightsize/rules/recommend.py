@@ -276,9 +276,11 @@ def _plan(
         PlanStep(stage="quantize", framework="llama.cpp", device=target, quant=quant, fit=fit,
                  recipe_id="llama.cpp/quantize")
     )
+    ctx = next((int(n.split()[1].rstrip(",")) for n in fit.notes if n.startswith("ctx ")), None)
     steps.append(
         PlanStep(stage="serve", framework="llama.cpp", device=target, quant=quant,
-                 runtime=RuntimeSpec(name=_SERVING_RUNTIME, version=LLAMA_CPP_VERSION), fit=fit)
+                 runtime=RuntimeSpec(name=_SERVING_RUNTIME, version=LLAMA_CPP_VERSION, ctx=ctx),
+                 fit=fit, recipe_id="llama.cpp/server")
     )
     _, moe_note = effective_params_b(c.facts)
     speed = f"{fit.speed:.0f} tok/s" if fit.speed else "speed unknown: no bandwidth for this device"

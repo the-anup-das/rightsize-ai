@@ -17,5 +17,6 @@ template: >-
 notes:
   - "auto keeps the source dtype (bf16 stays bf16); f16 is safest for older backends"
   - "runs on CPU; needs roughly 2x the model size in RAM"
-source_doc_url: https://github.com/ggml-org/llama.cpp/blob/master/convert_hf_to_gguf.py
+source_doc_url: https://github.com/ggml-org/llama.cpp/blob/b11177/convert_hf_to_gguf.py
 version_tested: b11177
+verified: run

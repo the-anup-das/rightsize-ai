@@ -145,6 +145,17 @@
       "title": "Template",
       "type": "string"
     },
+    "verified": {
+      "default": "docs",
+      "description": "How far this recipe has been checked against version_tested: 'run' means it was run end to end, 'help' that every flag was checked against the tool's own --help, 'docs' that it was transcribed from the documentation only",
+      "enum": [
+        "run",
+        "help",
+        "docs"
+      ],
+      "title": "Verified",
+      "type": "string"
+    },
     "version_tested": {
       "anyOf": [
         {

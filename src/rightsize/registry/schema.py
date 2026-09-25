@@ -29,6 +29,14 @@ class Recipe(BaseModel):
     notes: list[str] = Field(default_factory=list)
     source_doc_url: str
     version_tested: str | None = None
+    verified: Literal["run", "help", "docs"] = Field(
+        default="docs",
+        description=(
+            "How far this recipe has been checked against version_tested: 'run' means it was "
+            "run end to end, 'help' that every flag was checked against the tool's own --help, "
+            "'docs' that it was transcribed from the documentation only"
+        ),
+    )
 
 
 class RenderedStep(BaseModel):
@@ -41,3 +49,4 @@ class RenderedStep(BaseModel):
     install_line: str | None = None
     notes: list[str] = Field(default_factory=list)
     source_doc_url: str
+    verified: Literal["run", "help", "docs"] = "docs"

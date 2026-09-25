@@ -17,5 +17,6 @@ template: >-
   {{ perplexity_bin }} -m {{ model_gguf }} -f {{ eval_file }} --kl-divergence-base {{ logits_file }} --kl-divergence -ngl {{ gpu_layers }} -c {{ ctx }} {% if chunks %}--chunks {{ chunks }}{% endif %}
 notes:
   - "reports mean KLD, KLD percentiles, top-1 agreement and PPL delta vs the reference"
-source_doc_url: https://github.com/ggml-org/llama.cpp/blob/master/tools/perplexity/README.md
+source_doc_url: https://github.com/ggml-org/llama.cpp/blob/b11177/tools/perplexity/README.md
 version_tested: b11177
+verified: run

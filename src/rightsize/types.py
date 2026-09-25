@@ -137,6 +137,7 @@ class QuantSpec(BaseModel):
 class RuntimeSpec(BaseModel):
     name: str = Field(description="llama.cpp, ollama, vllm, mlx_lm, diffusers, whisper.cpp, ...")
     version: str | None = None
+    ctx: int | None = Field(default=None, description="context length the plan was sized for")
 
 
 class FitResult(BaseModel):
