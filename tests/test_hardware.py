@@ -226,3 +226,18 @@ def test_apple_silicon_is_covered_and_derived() -> None:
     # the M4 Max ships in two widths and they must not share a number
     assert cat["Apple M4 Max 36GB"].bandwidth_gbps == 409.6  # 384-bit x 8.533
     assert cat["Apple M4 Max 64GB"].bandwidth_gbps == pytest.approx(546, abs=0.2)  # 512-bit
+
+
+def test_intel_arc_comes_from_intels_own_spec_pages() -> None:
+    """Intel publishes bus width, memory speed and bandwidth per SKU on ark.intel.com.
+
+    Found by search, read from the vendor, and each one reconciles with our formula, so
+    these are curated rather than scraped: 192-bit GDDR6 at 19 Gbps is the B580's 456 GB/s.
+    """
+    cat = db.catalog()
+    assert cat["Arc B580 12GB"].bandwidth_gbps == 456.0
+    assert cat["Arc A380 6GB"].bandwidth_gbps == 186.0  # 96-bit at 15.5
+    assert "intel.com" in cat["Arc B580 12GB"].provenance.source_url
+    # the A770 runs its 16GB variant faster than its 8GB one, 17.5 Gbps against 16
+    assert cat["Arc A770 8GB"].bandwidth_gbps == 512.0
+    assert cat["Arc A770 16GB"].bandwidth_gbps == 560.0

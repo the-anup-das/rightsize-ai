@@ -134,6 +134,70 @@ devices:
     bandwidth_gbps: 273
     stated: true
     provenance: { source_url: https://www.nvidia.com/en-us/products/workstations/dgx-spark/, fetched_at: "2026-09-25", hand: true }
+  - name: Arc A380
+    vendor: intel
+    aliases: [Arc A380 6GB]
+    memory_type: GDDR6
+    bus_width_bits: 96
+    memory_speed_gbps: 15.5
+    provenance: { source_url: https://www.intel.com/content/www/us/en/products/sku/227959/intel-arc-a380-graphics/specifications.html, fetched_at: "2026-09-25", hand: true }
+  - name: Arc A750
+    vendor: intel
+    aliases: [Arc A750 8GB]
+    memory_type: GDDR6
+    bus_width_bits: 256
+    memory_speed_gbps: 16
+    provenance: { source_url: https://www.intel.com/content/www/us/en/products/sku/227954/intel-arc-a750-graphics/specifications.html, fetched_at: "2026-09-25", hand: true }
+  - name: Arc A770 8GB
+    vendor: intel
+    aliases: [Arc A770]
+    memory_type: GDDR6
+    bus_width_bits: 256
+    memory_speed_gbps: 16
+    provenance: { source_url: https://www.intel.com/content/www/us/en/products/sku/227955/intel-arc-a770-graphics-8gb/specifications.html, fetched_at: "2026-09-25", hand: true }
+  - name: Arc A770 16GB
+    vendor: intel
+    memory_type: GDDR6
+    bus_width_bits: 256
+    memory_speed_gbps: 17.5
+    provenance: { source_url: https://www.intel.com/content/www/us/en/products/sku/229151/intel-arc-a770-graphics-16gb/specifications.html, fetched_at: "2026-09-25", hand: true }
+  - name: Arc B570
+    vendor: intel
+    aliases: [Arc B570 10GB]
+    memory_type: GDDR6
+    bus_width_bits: 160
+    memory_speed_gbps: 19
+    provenance: { source_url: https://www.intel.com/content/www/us/en/products/sku/241676/intel-arc-b570-graphics/specifications.html, fetched_at: "2026-09-25", hand: true }
+  - name: Arc B580
+    vendor: intel
+    aliases: [Arc B580 12GB]
+    memory_type: GDDR6
+    bus_width_bits: 192
+    memory_speed_gbps: 19
+    provenance: { source_url: https://www.intel.com/content/www/us/en/products/sku/241598/intel-arc-b580-graphics/specifications.html, fetched_at: "2026-09-25", hand: true }
+  - name: Arc B50
+    vendor: intel
+    aliases: [Arc Pro B50]
+    memory_type: GDDR6
+    bus_width_bits: 128
+    memory_speed_gbps: 14
+    provenance: { source_url: https://www.intel.com/content/www/us/en/products/sku/242615/intel-arc-pro-b50-graphics/specifications.html, fetched_at: "2026-09-25", hand: true }
+  - name: Arc B60
+    vendor: intel
+    aliases: [Arc Pro B60]
+    memory_type: GDDR6
+    bus_width_bits: 192
+    memory_speed_gbps: 19
+    provenance: { source_url: https://www.intel.com/content/www/us/en/products/sku/243916/intel-arc-pro-b60-graphics/specifications.html, fetched_at: "2026-09-25", hand: true }
+  - name: Arc Pro B70
+    vendor: intel
+    aliases: [Arc B70]
+    memory_type: GDDR6
+    bus_width_bits: 256
+    bandwidth_gbps: 608
+    stated: true
+    note: Intel states the bandwidth but not the memory speed for this card
+    provenance: { source_url: https://www.intel.com/content/www/us/en/products/sku/245797/intel-arc-pro-b70-graphics/specifications.html, fetched_at: "2026-09-25", hand: true }
   - name: CPU only
     vendor: cpu
     aliases: [CPU only 32GB, cpu]
