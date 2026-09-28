@@ -155,6 +155,10 @@ every verdict on that card 7% pessimistic.
 | F9 Calibration loop | [F09](docs/plans/F09-calibration.md) | `rightsize calibrate` compares predictions with what Ollama or LM Studio models hold; opt-in local records; refit script for the overhead constants |
 | F10 Cloud provider connectors | [F10](docs/plans/F10-cloud-connectors.md) | phase 3 |
 
+Each plan records what its measurements showed. What generalises across them - the
+estimates that matched by luck, where llama.cpp really puts the bytes, why toolkits get an
+environment each - is in [What building this taught us](docs/lessons.md).
+
 ## Where this project is at, and where it is going
 
 I'm one developer building this in my spare time, and I'd rather tell you exactly what has been exercised than let a clean table imply more than it should.
