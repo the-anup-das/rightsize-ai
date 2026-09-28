@@ -13,10 +13,12 @@ inputs:
   gpu_layers: { type: str, default: all }
   ctx: { type: int, default: 512 }
   chunks: { type: int, required: false, help: limit processed chunks for speed }
+writes: [output_file]
 template: >-
   {{ imatrix_bin }} -m {{ model_gguf }} -f {{ calibration_file }} -o {{ output_file }} -ngl {{ gpu_layers }} -c {{ ctx }} {% if chunks %}--chunks {{ chunks }}{% endif %}
 notes:
   - "calibration.method: activation importance over the calibration text; calibration.samples: all chunks unless limited"
   - "required for IQ types; improves K-quants slightly"
-source_doc_url: https://github.com/ggml-org/llama.cpp/blob/master/tools/imatrix/README.md
+source_doc_url: https://github.com/ggml-org/llama.cpp/blob/b11177/tools/imatrix/README.md
 version_tested: b11177
+verified: run

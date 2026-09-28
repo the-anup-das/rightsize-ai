@@ -10,12 +10,14 @@ class RightsizeError(Exception):
 class NotImplementedYet(RightsizeError):
     """Raised by public functions whose feature has not landed yet."""
 
-    def __init__(self, feature: str, plan: str) -> None:
+    def __init__(self, feature: str, plan: str, hint: str | None = None) -> None:
         self.feature = feature
         self.plan = plan
+        self.hint = hint
         super().__init__(
-            f"rightsize.{feature} is not implemented yet in this placeholder release. "
-            f"Plan and TODO: {plan}"
+            f"{feature} is not implemented yet. "
+            + (f"{hint} " if hint else "")
+            + f"Plan and TODO: {plan}"
         )
 
 

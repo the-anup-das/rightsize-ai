@@ -109,7 +109,9 @@ NOTEBOOKS["01-model-catalog.ipynb"] = [
 # F1. Model catalog: facts without downloading
 
 `facts()` reads `config.json` and the safetensors **headers** of a Hub repo over HTTP Range requests
-(a few KB), never the weights. Results are cached for 7 days under `~/.cache/rightsize/models/`.
+(a few KB), never the weights. Results are cached under `~/.cache/rightsize/models/`; after 7 days
+one ~100-byte request checks whether the repo's commit changed before anything is read again.
+Where each number comes from: [docs/guide/model-facts.md](../docs/guide/model-facts.md).
 """),
     code("""
 from rightsize.catalog import facts
@@ -137,28 +139,136 @@ with httpx.Client(follow_redirects=True) as c:
     hdr = safetensors_header(c, "https://huggingface.co/Qwen/Qwen3-0.6B/resolve/main/model.safetensors")
 list(hdr.items())[:3]
 """),
+    md("""
+## GGUF repos
+
+A repo of GGUFs has no `config.json`. Its facts come from the header of one file (its Q4_K_M
+unless you name one with `file=`): every tensor's type and shape, and the architecture numbers
+llama.cpp will use. The tokenizer lists stored in the header are walked, not kept.
+"""),
+    code("""
+gg = facts("unsloth/Qwen3-4B-GGUF")
+gg.ref.file, gg.dtype, gg.params_total, gg.num_layers, gg.extra["tie_word_embeddings"]
+"""),
+    md("Every quantization the repo holds, with its size; estimates use these files directly:"),
+    code("""
+{q: round(f["bytes"] / 1e9, 2) for q, f in gg.extra["gguf_files"].items()}
+"""),
+    md("""
+## Quantized copies already on the Hub
+
+Model cards name their base model, and the Hub lists everything that says it is a quantization
+of one. The format of each is told by `data/models/variants.yaml`.
+"""),
+    code("""
+from rightsize.catalog import variants
+found = variants("Qwen/Qwen3-4B", limit=8)
+[(v.format, v.ref.repo, v.quant, v.size_bytes and round(v.size_bytes / 1e9, 2))
+ for v in found if v.name_matches_base][:12]
+"""),
+    md("## Curated lists, searched offline"),
+    code("""
+from rightsize.catalog import search
+[(e.repo, round(e.params_total / 1e9, 1)) for e in search("diffusion", "text-to-image", max_params=13e9)]
+"""),
 ]
 
 NOTEBOOKS["02-hardware.ipynb"] = [
     md("""
-# F2. Hardware: presets and detection
+# F2. Hardware: catalogue, presets, detection and measurement
 
-Every preset carries provenance (where the bandwidth number came from). Detection uses
-`nvidia-smi`, `sysctl` or `wmic` and fills bandwidth from the matching preset.
+Four ways to name a device, in the order they are trusted: a bandwidth you measured on this
+machine, a curated preset, the ingested catalogue, and whatever you pass by hand.
+"""),
+    md("""
+## The catalogue
+
+259 accelerators, ingested from Hugging Face's SKU table by `scripts/ingest_hf_hardware.py`,
+joined to bandwidth from `scripts/ingest_bandwidth.py`. Every record keeps its source URL.
 """),
     code("""
-from rightsize.hardware import presets, get, detect
+from rightsize.hardware import catalog, presets, get, detect, from_hf
+cat = catalog()
+have = [d for d in cat.values() if d.bandwidth_gbps]
+print(f"{len(cat)} devices, {len(have)} with a memory bandwidth")
+"""),
+    md("""
+Bandwidth is computed from the two facts a vendor publishes, so it carries its derivation
+rather than being copied from anyone's table.
+"""),
+    code("""
+for name in ("RTX 4090 24GB", "Apple M4 Max 64GB", "Arc B580 12GB", "A100 80GB"):
+    d = cat[name]
+    print(f"{name:20s} {d.bandwidth_gbps:>7.1f} GB/s   {d.provenance.note or d.provenance.source_url[:48]}")
+"""),
+    md("""
+Size variants are separate records, because a model name on its own does not identify a
+card: an A100 40GB is 1555 GB/s and an 80GB is 2039.
+"""),
+    code("""
+for name in ("A100 40GB", "A100 80GB", "RTX 3060 8GB", "RTX 3060 12GB"):
+    print(f"{name:16s} {cat[name].bandwidth_gbps:>7.1f} GB/s")
+"""),
+    md("""
+## Presets and lookup
+
+Presets are the curated setups, with the OS and usable fraction someone actually checked.
+`get()` searches those first, then falls through to the catalogue.
+"""),
+    code("""
 for name, d in presets().items():
     print(f"{name:24s} {d.memory_gib:6.0f} GiB {d.bandwidth_gbps:6.0f} GB/s  {d.compute_arch or '':10s} {d.provenance.source_url}")
 """),
     code("""
-get("4090"), get("GeForce RTX 4070 Ti SUPER 16GB").bandwidth_gbps
+get("4090"), get("RTX 5080").name, get("RTX 5080").bandwidth_gbps
+"""),
+    md("""
+## Units
+
+Device memory is GiB, as the vendor and `nvidia-smi` state it. Model sizes are decimal GB,
+as Hugging Face lists them. `memory_gb` converts, and the fit engine only uses that.
+"""),
+    code("""
+d = get("RTX 4070 Ti SUPER")
+print(f"{d.memory_gib} GiB is {d.memory_gb} GB; usable at {d.usable_fraction:.0%} = {d.memory_gb * d.usable_fraction:.2f} GB")
+"""),
+    md("""
+## Detection, and your own hardware
+
+`detect()` reads this machine. `from_hf("username")` reads the hardware someone saved on
+their Hugging Face profile, which resolves against the same catalogue.
 """),
     code("""
 detect()
 """),
+    code("""
+# needs network; any public profile with saved hardware works
+# for d in from_hf("julien-c"):
+#     print(f"{d.name:24s} {d.memory_gib:>6} GiB  {d.bandwidth_gbps or '?'} GB/s")
+"""),
+    md("""
+## When there is no number to look up
+
+NVIDIA publishes a bus width but no bandwidth for laptop GPUs, because the memory speed is
+the laptop maker's choice. `rightsize bench` measures it instead, by running `llama-bench`
+and solving the speed model backwards, then remembers it for this machine:
+
+```
+tok/s = efficiency * bandwidth / (active weights + KV)
+```
+"""),
+    code("""
+from rightsize.execution.bench import bandwidth_from_throughput, measured_bandwidth
+from rightsize.catalog import facts
+# a real run on an RTX 4070 Ti SUPER: 362.7 tok/s on Qwen3-1.7B Q4_K_M at ctx 512
+fx = facts("Qwen/Qwen3-1.7B")
+print(f"{bandwidth_from_throughput(fx, 'Q4_K_M', 362.7, ctx=512):.0f} GB/s derived, published 672")
+print("measured on this machine:", measured_bandwidth(detect().name))
+"""),
     md(
-        "Presets live in `data/hardware/presets.yaml`. Add a card there with its source URL and it becomes usable everywhere."
+        "Presets live in `data/hardware/presets.yaml`, bandwidth in `bandwidth.yaml` "
+        "(hand-checked) and `bandwidth_wikipedia.yaml` (generated). Add a card with its "
+        "source URL and it becomes usable everywhere."
     ),
 ]
 
@@ -196,6 +306,33 @@ from rightsize.types import ModelFacts, ModelRef, Family
 llama70 = ModelFacts(ref=ModelRef(repo="meta-llama/Llama-3.1-70B"), family=Family.llm,
                      params_total=70_553_706_496, num_layers=80, num_kv_heads=8, head_dim=128)
 kv_cache_gb(llama70, 131072)
+"""),
+    md("""
+## Diffusion: which weights are on the GPU, and when
+
+A pipeline loads, encodes the prompt, denoises and decodes, and its peak is the worst of
+those phases. Offloading changes which weights are resident in each; bitsandbytes adds a
+load phase because it quantizes on the GPU before any offloading starts.
+"""),
+    code("""
+import rightsize
+for offload in ["none", "model", "sequential"]:
+    r = rightsize.estimate("black-forest-labs/FLUX.1-dev", "nf4", "RTX 4070 12GB",
+                           text_encoder_quant="nf4", offload=offload)
+    print(f"{offload:10s} {r.vram_gb:5.1f} GB on the GPU, {r.ram_gb:5.1f} GB of RAM  {r.verdict.value}")
+"""),
+    code("""
+{k: v for k, v in r.breakdown.items() if k.startswith(("phase.", "weights."))}
+"""),
+    md("## Speech recognition: the runtime sets the overhead"),
+    code("""
+for runtime, quant in [("faster-whisper", "fp16"), ("faster-whisper", "int8"), ("whisper.cpp", "q5_0")]:
+    r = rightsize.estimate("openai/whisper-large-v3-turbo", quant, "RTX 3060 12GB", runtime=runtime)
+    print(f"{runtime:15s} {quant:5s} {r.vram_gb:.2f} GB (weights {r.breakdown['weights']:.2f})")
+"""),
+    md("## Embeddings and vision: the weights plus one batch"),
+    code("""
+rightsize.estimate("BAAI/bge-m3", "fp16", "CPU only 32GB", batch=64, seq_len=1024)
 """),
 ]
 

@@ -26,6 +26,8 @@ htmlcov/
 Thumbs.db
 
 # Local toolchain (llama.cpp binaries, downloaded models, run outputs)
-.tools/
-models/
-runs/
+# local toolchains, downloads and run outputs - anchored to the root, because a bare
+# models/ also ignored data/models/, and the candidate pool with it
+/.tools/
+/models/
+/runs/

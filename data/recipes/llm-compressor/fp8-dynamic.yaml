@@ -1,0 +1,31 @@
+id: llm-compressor/fp8-dynamic
+framework: llm-compressor
+stage: quantize
+families: [llm]
+hardware: { vendors: [nvidia] }
+install_line: pip install llmcompressor
+kind: config
+language: python
+inputs:
+  model: { type: str, required: true }
+  output_dir: { type: path, default: model-FP8-Dynamic }
+file: llmcompressor_fp8.py
+writes: [output_dir]
+targets:
+  - {name: fp8, size_from: fp8, embedding_bits: 16, head_bits: 16}
+template: |
+  from llmcompressor import oneshot
+  from llmcompressor.modifiers.quantization import QuantizationModifier
+
+  oneshot(
+      model="{{ model }}",
+      recipe=QuantizationModifier(targets="Linear", scheme="FP8_DYNAMIC", ignore=["lm_head"]),
+      output_dir="{{ output_dir }}",
+  )
+notes:
+  - "no calibration data: FP8 weights with dynamic per-token activation scales; serve the directory with vllm serve"
+  - "from llmcompressor.transformers import oneshot is gone in 0.14"
+  - "run on Windows with an RTX 4070 Ti SUPER (rightsize quantize --to fp8): Qwen3-0.6B in 12 s once downloaded (392 s with the 1.5 GB download), at most 1.06 GB of VRAM; 752.4 MB of weights, the embedding still BF16; Transformers loads it back through compressed-tensors and it answers"
+source_doc_url: https://docs.vllm.ai/projects/llm-compressor/en/latest/guides/entrypoints/oneshot/
+version_tested: 0.14.0
+verified: run

@@ -1,0 +1,17 @@
+id: mlx-lm/server
+framework: mlx-lm
+stage: serve
+families: [llm]
+hardware: { vendors: [apple] }
+install_line: pip install mlx-lm
+kind: command
+inputs:
+  model: { type: str, required: true, help: "Hub id or the converted directory" }
+  port: { type: int, default: 8080 }
+template: >-
+  mlx_lm.server --model {{ model }} --port {{ port }}
+notes:
+  - "binds 127.0.0.1 by default (--host); --adapter-path serves a trained adapter on top of the model"
+source_doc_url: https://github.com/ml-explore/mlx-lm/blob/main/mlx_lm/SERVER.md
+version_tested: 0.31.3
+verified: docs

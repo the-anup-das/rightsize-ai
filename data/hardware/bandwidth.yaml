@@ -1,0 +1,230 @@
+# Memory bandwidth, the number the speed model runs on (tok/s ~ bandwidth / bytes per token).
+#
+# No public table carries this under a licence we can redistribute: Hugging Face's SKU table
+# has TFLOPS but no bandwidth, Wikidata has no such property, and the databases that do have
+# it are scraped from TechPowerUp. So rather than copy a derived figure, we record the two
+# primary facts the vendor publishes and do the arithmetic ourselves:
+#
+#     bandwidth_gbps = bus_width_bits * memory_speed_gbps / 8      (mem.bandwidth.bus_x_rate.v0)
+#
+# For GDDR parts that is exact. HBM parts and Apple silicon do not divide cleanly, because the
+# clock is not a round number, and their vendors state bandwidth outright - those records carry
+# `bandwidth_gbps` directly and say so with `stated: true`.
+#
+# `name` matches data/hardware/gpus.yaml, so the two files join. `aliases` catch the names
+# people actually type. Every record is hand-entered from the cited page: hand: true.
+formula_id: mem.bandwidth.bus_x_rate.v0
+devices:
+  - name: RTX 3060 12GB
+    vendor: nvidia
+    aliases: [RTX 3060 12 GB]
+    memory_type: GDDR6
+    bus_width_bits: 192
+    memory_speed_gbps: 15
+    provenance: { source_url: https://www.techpowerup.com/gpu-specs/geforce-rtx-3060-12-gb.c3682, fetched_at: "2026-09-25", hand: true }
+  - name: RTX 4070
+    vendor: nvidia
+    aliases: [RTX 4070 12GB]
+    memory_type: GDDR6X
+    bus_width_bits: 192
+    memory_speed_gbps: 21
+    provenance: { source_url: https://www.techpowerup.com/gpu-specs/geforce-rtx-4070.c3924, fetched_at: "2026-09-25", hand: true }
+  - name: RTX 4070 Ti Super
+    vendor: nvidia
+    aliases: [RTX 4070 Ti SUPER 16GB, GeForce RTX 4070 Ti SUPER]
+    memory_type: GDDR6X
+    bus_width_bits: 256
+    memory_speed_gbps: 21
+    provenance: { source_url: https://www.techpowerup.com/gpu-specs/geforce-rtx-4070-ti-super.c4187, fetched_at: "2026-09-25", hand: true }
+  - name: RTX 4090
+    vendor: nvidia
+    aliases: [RTX 4090 24GB]
+    memory_type: GDDR6X
+    bus_width_bits: 384
+    memory_speed_gbps: 21
+    provenance: { source_url: https://www.techpowerup.com/gpu-specs/geforce-rtx-4090.c3889, fetched_at: "2026-09-25", hand: true }
+  - name: RTX 5060 Ti
+    vendor: nvidia
+    aliases: [RTX 5060 Ti 16GB]
+    memory_type: GDDR7
+    bus_width_bits: 128
+    memory_speed_gbps: 28
+    provenance: { source_url: https://www.techpowerup.com/gpu-specs/geforce-rtx-5060-ti-16-gb.c4292, fetched_at: "2026-09-25", hand: true }
+  - name: RTX 5090
+    vendor: nvidia
+    aliases: [RTX 5090 32GB]
+    memory_type: GDDR7
+    bus_width_bits: 512
+    memory_speed_gbps: 28
+    provenance: { source_url: https://www.techpowerup.com/gpu-specs/geforce-rtx-5090.c4216, fetched_at: "2026-09-25", hand: true }
+  - name: T4
+    vendor: nvidia
+    aliases: [T4 16GB, Tesla T4]
+    memory_type: GDDR6
+    bus_width_bits: 256
+    memory_speed_gbps: 10
+    provenance: { source_url: https://www.techpowerup.com/gpu-specs/tesla-t4.c3316, fetched_at: "2026-09-25", hand: true }
+  - name: L4
+    vendor: nvidia
+    aliases: [L4 24GB]
+    memory_type: GDDR6
+    bus_width_bits: 192
+    memory_speed_gbps: 12.5
+    provenance: { source_url: https://www.techpowerup.com/gpu-specs/l4.c4091, fetched_at: "2026-09-25", hand: true }
+  - name: A100 80GB
+    vendor: nvidia
+    aliases: [A100 SXM4 80 GB, A100 SXM]
+    memory_type: HBM2e
+    bandwidth_gbps: 2039
+    stated: true
+    provenance: { source_url: https://www.techpowerup.com/gpu-specs/a100-sxm4-80-gb.c3746, fetched_at: "2026-09-25", hand: true }
+  - name: H100 80GB
+    vendor: nvidia
+    aliases: [H100 SXM5 80 GB, H100 SXM]
+    memory_type: HBM3
+    bandwidth_gbps: 3350
+    stated: true
+    provenance: { source_url: https://www.techpowerup.com/gpu-specs/h100-sxm5-80-gb.c3900, fetched_at: "2026-09-25", hand: true }
+  - name: H200 141GB
+    vendor: nvidia
+    aliases: [H200, H200 SXM]
+    memory_type: HBM3e
+    bandwidth_gbps: 4800
+    stated: true
+    source_disagrees: true
+    note: >-
+      Wikipedia's GPU list gives 3360 GB/s for the H200, which is the H100's figure; NVIDIA
+      states 4.8 TB/s. Our arithmetic agreed with Wikipedia because it reproduces Wikipedia's
+      own bus width and clock, which is the limit of that cross-check: it catches a source
+      that contradicts itself, not one that is consistently wrong.
+    provenance: { source_url: https://www.nvidia.com/en-us/data-center/h200/, fetched_at: "2026-09-25", hand: true }
+  - name: V100
+    vendor: nvidia
+    aliases: [V100 16GB, V100 32GB, Tesla V100]
+    memory_type: HBM2
+    bandwidth_gbps: 900
+    stated: true
+    source_disagrees: true
+    note: >-
+      NVIDIA states 900 GB/s for both the 16GB and 32GB V100. Wikipedia's row works out to
+      829, and its bus width and clock agree with that, so our arithmetic reproduced the
+      error rather than catching it - the same failure mode as the H200.
+    provenance: { source_url: https://images.nvidia.com/content/technologies/volta/pdf/tesla-volta-v100-datasheet-letter-fnl-web.pdf, fetched_at: "2026-09-25", hand: true }
+  - name: MI300X
+    vendor: amd
+    aliases: [MI300X 192GB, Instinct MI300X]
+    memory_type: HBM3
+    bandwidth_gbps: 5300
+    stated: true
+    note: not in the Hugging Face table, which carries no Instinct parts
+    provenance: { source_url: https://www.amd.com/en/products/accelerators/instinct/mi300/mi300x.html, fetched_at: "2026-09-25", hand: true }
+  - name: Apple M2
+    vendor: apple
+    aliases: [M2]
+    memory_type: LPDDR5-6400 unified
+    bandwidth_gbps: 100
+    stated: true
+    note: >-
+      Apple states 100GB/s. The base M2 is the one chip missing from Wikipedia's Apple
+      silicon table, which carries M1, M3, M4 and M5 but not this row.
+    provenance: { source_url: https://www.apple.com/newsroom/2022/06/apple-unveils-m2-with-breakthrough-performance-and-capabilities/, fetched_at: "2026-09-25", hand: true }
+  - name: Apple M4 Max
+    vendor: apple
+    aliases: [M4 Max 64GB, M4 Max]
+    memory_type: LPDDR5X unified
+    bandwidth_gbps: 546
+    stated: true
+    provenance: { source_url: https://www.apple.com/newsroom/2024/10/apple-introduces-m4-pro-and-m4-max/, fetched_at: "2026-09-25", hand: true }
+  - name: Apple M4 Pro
+    vendor: apple
+    aliases: [M4 Pro 24GB, M4 Pro]
+    memory_type: LPDDR5X unified
+    bandwidth_gbps: 273
+    stated: true
+    provenance: { source_url: https://www.apple.com/newsroom/2024/10/apple-introduces-m4-pro-and-m4-max/, fetched_at: "2026-09-25", hand: true }
+  - name: Apple M4
+    vendor: apple
+    aliases: [M4 16GB, M4]
+    memory_type: LPDDR5X unified
+    bandwidth_gbps: 120
+    stated: true
+    provenance: { source_url: https://www.apple.com/newsroom/2024/05/apple-introduces-m4-chip/, fetched_at: "2026-09-25", hand: true }
+  - name: GB10
+    vendor: nvidia
+    aliases: [DGX Spark 128GB, DGX Spark]
+    memory_type: LPDDR5X unified
+    bandwidth_gbps: 273
+    stated: true
+    provenance: { source_url: https://www.nvidia.com/en-us/products/workstations/dgx-spark/, fetched_at: "2026-09-25", hand: true }
+  - name: Arc A380
+    vendor: intel
+    aliases: [Arc A380 6GB]
+    memory_type: GDDR6
+    bus_width_bits: 96
+    memory_speed_gbps: 15.5
+    provenance: { source_url: https://www.intel.com/content/www/us/en/products/sku/227959/intel-arc-a380-graphics/specifications.html, fetched_at: "2026-09-25", hand: true }
+  - name: Arc A750
+    vendor: intel
+    aliases: [Arc A750 8GB]
+    memory_type: GDDR6
+    bus_width_bits: 256
+    memory_speed_gbps: 16
+    provenance: { source_url: https://www.intel.com/content/www/us/en/products/sku/227954/intel-arc-a750-graphics/specifications.html, fetched_at: "2026-09-25", hand: true }
+  - name: Arc A770 8GB
+    vendor: intel
+    aliases: [Arc A770]
+    memory_type: GDDR6
+    bus_width_bits: 256
+    memory_speed_gbps: 16
+    provenance: { source_url: https://www.intel.com/content/www/us/en/products/sku/227955/intel-arc-a770-graphics-8gb/specifications.html, fetched_at: "2026-09-25", hand: true }
+  - name: Arc A770 16GB
+    vendor: intel
+    memory_type: GDDR6
+    bus_width_bits: 256
+    memory_speed_gbps: 17.5
+    provenance: { source_url: https://www.intel.com/content/www/us/en/products/sku/229151/intel-arc-a770-graphics-16gb/specifications.html, fetched_at: "2026-09-25", hand: true }
+  - name: Arc B570
+    vendor: intel
+    aliases: [Arc B570 10GB]
+    memory_type: GDDR6
+    bus_width_bits: 160
+    memory_speed_gbps: 19
+    provenance: { source_url: https://www.intel.com/content/www/us/en/products/sku/241676/intel-arc-b570-graphics/specifications.html, fetched_at: "2026-09-25", hand: true }
+  - name: Arc B580
+    vendor: intel
+    aliases: [Arc B580 12GB]
+    memory_type: GDDR6
+    bus_width_bits: 192
+    memory_speed_gbps: 19
+    provenance: { source_url: https://www.intel.com/content/www/us/en/products/sku/241598/intel-arc-b580-graphics/specifications.html, fetched_at: "2026-09-25", hand: true }
+  - name: Arc B50
+    vendor: intel
+    aliases: [Arc Pro B50]
+    memory_type: GDDR6
+    bus_width_bits: 128
+    memory_speed_gbps: 14
+    provenance: { source_url: https://www.intel.com/content/www/us/en/products/sku/242615/intel-arc-pro-b50-graphics/specifications.html, fetched_at: "2026-09-25", hand: true }
+  - name: Arc B60
+    vendor: intel
+    aliases: [Arc Pro B60]
+    memory_type: GDDR6
+    bus_width_bits: 192
+    memory_speed_gbps: 19
+    provenance: { source_url: https://www.intel.com/content/www/us/en/products/sku/243916/intel-arc-pro-b60-graphics/specifications.html, fetched_at: "2026-09-25", hand: true }
+  - name: Arc Pro B70
+    vendor: intel
+    aliases: [Arc B70]
+    memory_type: GDDR6
+    bus_width_bits: 256
+    bandwidth_gbps: 608
+    stated: true
+    note: Intel states the bandwidth but not the memory speed for this card
+    provenance: { source_url: https://www.intel.com/content/www/us/en/products/sku/245797/intel-arc-pro-b70-graphics/specifications.html, fetched_at: "2026-09-25", hand: true }
+  - name: CPU only
+    vendor: cpu
+    aliases: [CPU only 32GB, cpu]
+    memory_type: DDR5 dual channel
+    bandwidth_gbps: 60
+    stated: true
+    note: a typical desktop pair of DDR5-5600 sticks; real machines vary widely
+    provenance: { source_url: https://en.wikipedia.org/wiki/DDR5_SDRAM, fetched_at: "2026-09-25", hand: true }

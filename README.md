@@ -23,43 +23,136 @@ Surfaces: Python SDK, CLI with `--json`, MCP server so agents can call it.
 
 - The core depends on `httpx`, `pydantic` and `pyyaml` only. No torch, no transformers. Enforced in CI.
 - Hardware tables, quant tables, rules and recipes are versioned data, not code.
-- Frameworks are declarative recipes that render commands. Running them is an opt-in extra (`rightsize[unsloth]`, `rightsize[llamacpp]`, ...), loaded lazily.
+- Frameworks are declarative recipes that render commands. Running them is opt-in: `rightsize tools install NAME` gives each toolkit its own environment when you pick it, because toolkits pin conflicting library versions. `rightsize[llamacpp]` adds what the GGUF converter needs.
 - Model metadata is fetched on demand from safetensors and GGUF headers (a few KB) and cached.
 
 ## New to model formats?
 
 Read [Choosing a model format](docs/guide/choosing-a-model-format.md): what GGUF is, how to read a quant name like Q4_K_M, what the alternatives are (safetensors, bnb, AWQ, GPTQ, FP8, NVFP4, EXL3, MLX, OpenVINO, ONNX, MLC, Core ML) and their pros and cons, and which hardware each one reaches.
 
+Read [How Rightsize knows a model without downloading it](docs/guide/model-facts.md) for where each number comes from (config, safetensors and GGUF headers), what `confidence` means, and how the cache stays current.
+
 ## Try it
 
 ```bash
 git clone https://github.com/the-anup-das/rightsize-ai && cd rightsize-ai
 uv sync --group dev                       # core only: detect, estimate, recipes
+rightsize recommend                       # the best models for this machine, ranked
+rightsize recommend --task coding --device "RTX 3060 12GB" --commands
+rightsize recommend --finetune-device T4 --mode qlora     # fine-tune on one box, serve on this
+rightsize recommend --mode lora --framework trl --device "RTX 4090"   # one toolkit: trl, axolotl, mlx-lm, unsloth, ollama
+rightsize recommend --finetune-device "RTX 3060 12GB" --mode lora --cloud   # rent a GPU when it won't fit
+rightsize cloud --model Qwen/Qwen3-14B --mode lora --tokens 10M            # cheapest GPUs for that job
 rightsize detect                          # what machine is this?
 rightsize estimate Qwen/Qwen3-4B --quant Q4_K_M --quant Q8_0   # no download, reads Hub headers
+rightsize estimate Qwen/Qwen3-4B --device "RTX 5080"           # or any of 259 catalogued devices
+rightsize estimate Qwen/Qwen3-4B --device @your-hf-username    # or the hardware on your HF profile
+rightsize estimate black-forest-labs/FLUX.1-dev --quant nf4 --te-quant nf4 --offload none --offload model
+rightsize estimate openai/whisper-large-v3-turbo --quant int8 --quant q5_0   # audio, vision, embeddings too
+rightsize estimate unsloth/Qwen3-4B-GGUF --quant UD-Q4_K_XL    # a GGUF repo: sized from its own files
+rightsize variants Qwen/Qwen3-4B          # GGUF, MLX, AWQ, FP8 ... copies already on the Hub
+rightsize search --family diffusion --task text-to-image --max-b 13   # curated lists, offline
 
 # To actually produce files:
 uv sync --group dev --extra llamacpp     # torch CPU + transformers for the conversion step
 rightsize tools install llama.cpp        # pinned binaries + converter into .tools/llama.cpp (auto-picks CUDA/CPU/Metal)
+rightsize tools install unsloth          # any other toolkit: its own environment under .tools/, when you pick it
+rightsize recommend --json > plans.json && rightsize run plans.json   # carry out the top plan here
 rightsize quantize Qwen/Qwen3-1.7B --quant Q4_K_M --imatrix --eval
+rightsize quantize Qwen/Qwen3-4B --to fp8 --install     # other formats, each made by its own toolkit (--to list)
+rightsize bench Qwen/Qwen3-1.7B           # measure this machine's real memory bandwidth
+rightsize calibrate                       # predicted vs measured for what Ollama / LM Studio has loaded
+rightsize data update                     # newer hardware / quant / rules data, validated before use
 ```
 
 `pip install rightsize` works too, but until the next release it installs the 0.0.1 placeholder.
+
+### From an agent (MCP)
+
+`rightsize mcp` serves the same functions as MCP tools over stdio: `recommend`,
+`recommend_for_model`, `estimate_memory`, `cloud_offers`, `list_variants`, `search_models`,
+`list_hardware`, `detect_hardware`, `list_frameworks` and `render_recipe`. Each plan comes
+back with its trace and the commands to carry it out. Most MCP clients take a config like this:
+
+```json
+{
+  "mcpServers": {
+    "rightsize": {
+      "command": "uv",
+      "args": ["run", "--directory", "/path/to/rightsize-ai", "--extra", "mcp", "rightsize", "mcp"]
+    }
+  }
+}
+```
+
+The Plan contract is published as JSON Schema in [schema/plan.schema.json](schema/plan.schema.json)
+for anything that wants typed plans without Python.
+
+
+## Where the hardware numbers come from
+
+A speed estimate is only worth as much as the bandwidth behind it, so this part is built to
+be checkable rather than convenient.
+
+The device catalogue is **ingested, not typed**: `scripts/ingest_hf_hardware.py` reads
+Hugging Face's MIT-licensed SKU table (`huggingface.js`), pinned to a commit, for 259
+accelerators across NVIDIA, AMD, Intel, Apple and Qualcomm, with their memory options,
+compute capability and TFLOPS. Every record keeps the URL it came from.
+
+That table has no memory bandwidth, and nothing redistributable does: Wikidata has no such
+property, TechPowerUp serves a captcha and marks its pages `noindex,nofollow`, and the GPU
+datasets on GitHub are all scrapes of it. So `scripts/ingest_bandwidth.py` reads the
+**primary facts** from Wikipedia's GPU lists - bus width, memory type, memory clock - and
+does the arithmetic itself:
+
+```
+bandwidth_gbps = bus_width_bits * memory_speed_gbps / 8
+```
+
+That is exact for GDDR and LPDDR parts, and it carries its own derivation: your card reads
+`672.0 GB/s  256-bit GDDR6X at 21 Gbps`, not a number copied from a table. It also catches
+errors - Wikipedia's own bandwidth column says 336 GB/s for the RTX 3060 12 GB where its
+bus width and clock give the 360 NVIDIA publishes.
+
+Where a vendor publishes the figure directly and the arithmetic cannot reach it (HBM parts,
+Apple's unified memory, Intel Arc), it is curated from the vendor's own page with a link.
+The ingest refuses to write if it disagrees by more than 2% with anything hand-checked.
+
+**Roughly 200 of 259 devices have a bandwidth.** The rest say so instead of guessing, and
+there are two ways to fill one in:
+
+```bash
+rightsize bench Qwen/Qwen3-1.7B        # measure it: runs llama-bench and solves the
+                                       # speed model backwards for this machine
+rightsize estimate ... --bandwidth 102 # or supply a figure you trust
+```
+
+Measuring is the better answer for laptop GPUs in particular, where NVIDIA publishes a bus
+width but no bandwidth, because the memory speed is the laptop maker's choice - there is no
+single correct number to look up. On this project's RTX 4070 Ti SUPER, a measured 362.7
+tok/s derives 675 GB/s against a published 672, which says the decode reached the 70% of
+peak the speed model assumes.
+
+**Two units, on purpose.** Device memory is **GiB**, because that is what the vendor, the
+box and `nvidia-smi` all say - a "16GB" card holds 16 GiB. Model and file sizes are
+**decimal GB**, matching how Hugging Face lists them. `Device.memory_gb` converts, so the
+fit engine only ever compares like with like: 16 GiB is 17.18 GB, and treating it as 16 made
+every verdict on that card 7% pessimistic.
 
 ## Roadmap
 
 | Feature | Plan | Status |
 |---|---|---|
 | Competitor landscape | [00-competitors](docs/plans/00-competitors.md) | research done |
-| F1 Model catalog | [F01](docs/plans/F01-model-catalog.md) | first slice: facts from Hub headers |
-| F2 Hardware DB + detection | [F02](docs/plans/F02-hardware.md) | first slice: 16 presets, NVIDIA / Apple / CPU detection |
-| F3 Fit engine | [F03](docs/plans/F03-fit-engine.md) | first slice: GGUF inference memory and speed |
-| F4 Rules + ranking | [F04](docs/plans/F04-rules-engine.md) | planned |
-| F5 Framework registry + recipes | [F05](docs/plans/F05-framework-registry.md) | first slice: five llama.cpp recipes |
-| F6 SDK / CLI / MCP | [F06](docs/plans/F06-surfaces.md) | CLI: detect, estimate, frameworks, quantize |
-| F7 Cloud fallback | [F07](docs/plans/F07-cloud-fallback.md) | planned |
-| F8 Execution + eval gate | [F08](docs/plans/F08-execution-eval.md) | first slice: llama.cpp adapter with KL-divergence gate |
-| F9 Calibration loop | [F09](docs/plans/F09-calibration.md) | phase 2 |
+| F1 Model catalog | [F01](docs/plans/F01-model-catalog.md) | facts from config, safetensors and GGUF headers without downloading; published quantizations (`variants`); curated lists and `search` for all five families ([how](docs/guide/model-facts.md)) |
+| F2 Hardware DB + detection | [F02](docs/plans/F02-hardware.md) | 259 devices ingested, bandwidth for ~200, detection, `bench`, HF profile import |
+| F3 Fit engine | [F03](docs/plans/F03-fit-engine.md) | LLM memory, KV and speed; fine-tune memory; diffusion (offload phases), Whisper, vision and embedding memory, each checked against published measurements |
+| F4 Rules + ranking | [F04](docs/plans/F04-rules-engine.md) | `recommend` both flows, 31 sourced rules, plans that render to commands |
+| F5 Framework registry + recipes | [F05](docs/plans/F05-framework-registry.md) | 24 recipes over 14 frameworks (fine-tune, quantize, export, serve); plans render the whole chain; generated [framework pages](docs/frameworks/README.md) |
+| F6 SDK / CLI / MCP | [F06](docs/plans/F06-surfaces.md) | SDK, CLI and MCP server (ten tools, stdio) over the same functions; Plan JSON Schema in `schema/` |
+| F7 Cloud fallback | [F07](docs/plans/F07-cloud-fallback.md) | cheapest rental GPU for a fine-tune that does not fit, from SkyPilot's open price catalog; job time and cost per 10M tokens (low confidence) |
+| F8 Execution + eval gate | [F08](docs/plans/F08-execution-eval.md) | llama.cpp adapter with a KL-divergence gate, run end to end on Qwen3-1.7B (Q4_K_M warn, Q5_K_M and Q8_0 pass); `rightsize run` carries out a plan in each toolkit's own environment (Unsloth QLoRA, merge, GGUF); `quantize --to` makes nine other formats, and the seven that run on Windows were run here, each output within 3% of its predicted size |
+| F9 Calibration loop | [F09](docs/plans/F09-calibration.md) | `rightsize calibrate` compares predictions with what Ollama or LM Studio models hold; opt-in local records; refit script for the overhead constants |
 | F10 Cloud provider connectors | [F10](docs/plans/F10-cloud-connectors.md) | phase 3 |
 
 ## Where this project is at, and where it is going

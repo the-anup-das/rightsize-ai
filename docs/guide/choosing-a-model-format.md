@@ -89,10 +89,14 @@ The file size is only the first term. Rightsize predicts all three:
 flowchart LR
     W["weights<br/>params × real bpw / 8<br/>(Qwen3-4B Q4_K_M: 2.5 GB)"] --> V["VRAM needed"]
     K["KV cache<br/>2 × layers × kv_heads × head_dim<br/>× context × 2 bytes<br/>(Qwen3-4B at 8K: 1.2 GB, at 32K: 4.8 GB)"] --> V
-    O["runtime overhead<br/>compute buffers, CUDA context<br/>(llama.cpp ≈ 0.75 GB + 2 %)"] --> V
+    O["runtime overhead<br/>compute buffers, CUDA context<br/>(llama-server ≈ 0.27 GB + 1 %)"] --> V
 ```
 
 The KV cache is why "the file is 2.5 GB so it fits in 4 GB" is often wrong at long context.
+One part of the file goes the other way: llama.cpp keeps the input embedding table in
+system RAM, so a model with an output head of its own needs that much less VRAM (175 MB for
+Qwen3-1.7B at Q4_K_M). A model whose head is tied to the embedding keeps a copy on the GPU
+as the head, and needs the RAM as well.
 
 ### The importance matrix (imatrix)
 

@@ -1,0 +1,25 @@
+# What this toolkit is for, where it runs, how it installs and how its steps join a plan.
+name: trl
+title: TRL
+summary: >-
+  Hugging Face's training library: supervised fine-tuning with LoRA or QLoRA through PEFT and
+  bitsandbytes, from a command line
+stages: [finetune, export]
+families: [llm]
+formats: [safetensors]
+hardware: {vendors: [nvidia, amd, intel]}
+install:
+  kind: pip
+  packages: ["trl[peft]", bitsandbytes]
+  needs_torch: true
+  check: trl
+  line: pip install "trl[peft]" bitsandbytes
+finetune:
+  modes: [lora, qlora]
+  recipe: trl/sft
+  qlora_quant: {method: bnb, variant: nf4}
+  writes: adapter
+  merge: trl/merge
+homepage: https://github.com/huggingface/trl
+source_doc_url: https://huggingface.co/docs/trl/clis
+version_tested: 1.14.0

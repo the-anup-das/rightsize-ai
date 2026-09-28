@@ -1,0 +1,478 @@
+{
+  "cloud_offers": {
+    "properties": {
+      "min_vram_gb": {
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Min Vram Gb"
+      },
+      "mode": {
+        "default": "qlora",
+        "title": "Mode",
+        "type": "string"
+      },
+      "model": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Model"
+      },
+      "providers": {
+        "anyOf": [
+          {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Providers"
+      },
+      "spot": {
+        "default": false,
+        "title": "Spot",
+        "type": "boolean"
+      },
+      "tokens": {
+        "default": 10000000,
+        "title": "Tokens",
+        "type": "integer"
+      },
+      "top": {
+        "default": 5,
+        "title": "Top",
+        "type": "integer"
+      }
+    },
+    "title": "cloud_offersArguments",
+    "type": "object"
+  },
+  "detect_hardware": {
+    "properties": {},
+    "title": "detect_hardwareArguments",
+    "type": "object"
+  },
+  "estimate_memory": {
+    "properties": {
+      "bandwidth_gbps": {
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Bandwidth Gbps"
+      },
+      "batch": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Batch"
+      },
+      "ctx": {
+        "default": 8192,
+        "title": "Ctx",
+        "type": "integer"
+      },
+      "device": {
+        "default": "detect",
+        "title": "Device",
+        "type": "string"
+      },
+      "frames": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Frames"
+      },
+      "mode": {
+        "default": "infer",
+        "title": "Mode",
+        "type": "string"
+      },
+      "model": {
+        "title": "Model",
+        "type": "string"
+      },
+      "offload": {
+        "default": "none",
+        "title": "Offload",
+        "type": "string"
+      },
+      "quant": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Quant"
+      },
+      "resolution": {
+        "default": "1024x1024",
+        "title": "Resolution",
+        "type": "string"
+      },
+      "runtime": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Runtime"
+      },
+      "text_encoder_quant": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Text Encoder Quant"
+      }
+    },
+    "required": [
+      "model"
+    ],
+    "title": "estimate_memoryArguments",
+    "type": "object"
+  },
+  "list_frameworks": {
+    "properties": {
+      "framework": {
+        "default": "",
+        "title": "Framework",
+        "type": "string"
+      }
+    },
+    "title": "list_frameworksArguments",
+    "type": "object"
+  },
+  "list_hardware": {
+    "properties": {
+      "limit": {
+        "default": 50,
+        "title": "Limit",
+        "type": "integer"
+      },
+      "query": {
+        "default": "",
+        "title": "Query",
+        "type": "string"
+      }
+    },
+    "title": "list_hardwareArguments",
+    "type": "object"
+  },
+  "list_variants": {
+    "properties": {
+      "format": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Format"
+      },
+      "include_unmatched": {
+        "default": false,
+        "title": "Include Unmatched",
+        "type": "boolean"
+      },
+      "limit": {
+        "default": 20,
+        "title": "Limit",
+        "type": "integer"
+      },
+      "model": {
+        "title": "Model",
+        "type": "string"
+      }
+    },
+    "required": [
+      "model"
+    ],
+    "title": "list_variantsArguments",
+    "type": "object"
+  },
+  "recommend": {
+    "properties": {
+      "allow_slow": {
+        "default": false,
+        "title": "Allow Slow",
+        "type": "boolean"
+      },
+      "cloud": {
+        "default": false,
+        "title": "Cloud",
+        "type": "boolean"
+      },
+      "ctx": {
+        "default": 8192,
+        "title": "Ctx",
+        "type": "integer"
+      },
+      "device": {
+        "default": "detect",
+        "title": "Device",
+        "type": "string"
+      },
+      "finetune_device": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Finetune Device"
+      },
+      "framework": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Framework"
+      },
+      "mode": {
+        "default": "infer",
+        "title": "Mode",
+        "type": "string"
+      },
+      "quality": {
+        "default": "noticeable",
+        "title": "Quality",
+        "type": "string"
+      },
+      "task": {
+        "default": "chat",
+        "title": "Task",
+        "type": "string"
+      },
+      "top_k": {
+        "default": 5,
+        "title": "Top K",
+        "type": "integer"
+      }
+    },
+    "title": "recommendArguments",
+    "type": "object"
+  },
+  "recommend_for_model": {
+    "properties": {
+      "ctx": {
+        "default": 8192,
+        "title": "Ctx",
+        "type": "integer"
+      },
+      "device": {
+        "default": "detect",
+        "title": "Device",
+        "type": "string"
+      },
+      "finetune_device": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Finetune Device"
+      },
+      "framework": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Framework"
+      },
+      "mode": {
+        "default": "infer",
+        "title": "Mode",
+        "type": "string"
+      },
+      "model": {
+        "title": "Model",
+        "type": "string"
+      },
+      "quality": {
+        "default": "any",
+        "title": "Quality",
+        "type": "string"
+      },
+      "top_k": {
+        "default": 10,
+        "title": "Top K",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "model"
+    ],
+    "title": "recommend_for_modelArguments",
+    "type": "object"
+  },
+  "render_recipe": {
+    "properties": {
+      "inputs": {
+        "anyOf": [
+          {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Inputs"
+      },
+      "recipe_id": {
+        "title": "Recipe Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "recipe_id"
+    ],
+    "title": "render_recipeArguments",
+    "type": "object"
+  },
+  "search_models": {
+    "properties": {
+      "family": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Family"
+      },
+      "include_gated": {
+        "default": true,
+        "title": "Include Gated",
+        "type": "boolean"
+      },
+      "license": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "License"
+      },
+      "limit": {
+        "default": 20,
+        "title": "Limit",
+        "type": "integer"
+      },
+      "max_params_b": {
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Max Params B"
+      },
+      "min_params_b": {
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Min Params B"
+      },
+      "task": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Task"
+      }
+    },
+    "title": "search_modelsArguments",
+    "type": "object"
+  }
+}

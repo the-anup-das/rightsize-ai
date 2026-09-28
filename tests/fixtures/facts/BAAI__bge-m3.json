@@ -1,0 +1,49 @@
+{
+ "ref": {
+  "repo": "BAAI/bge-m3",
+  "revision": "main",
+  "file": null
+ },
+ "family": "embedding",
+ "params_total": 567786457,
+ "params_active": null,
+ "dtype": "FLOAT32",
+ "num_layers": 24,
+ "num_kv_heads": 16,
+ "head_dim": 64,
+ "context_max": 8194,
+ "license": "mit",
+ "base_model": null,
+ "confidence": 0.7,
+ "extra": {
+  "model_type": "xlm-roberta",
+  "architectures": [
+   "XLMRobertaModel"
+  ],
+  "params_by_dtype": {
+   "FLOAT32": 567786457
+  },
+  "params_counted_from": "file sizes at 4 bytes per parameter (float32)",
+  "shards": [
+   "pytorch_model.bin"
+  ],
+  "library": "sentence-transformers",
+  "pipeline_tag": "sentence-similarity",
+  "pipeline": null,
+  "gated": false,
+  "num_experts": null,
+  "num_experts_per_tok": null,
+  "sliding_window": null,
+  "attention": {
+   "model_type": "xlm-roberta",
+   "hidden_size": 1024
+  },
+  "tie_word_embeddings": null,
+  "vocab_size": 250002,
+  "hidden_size": 1024,
+  "intermediate_size": 4096,
+  "num_attention_heads": 16,
+  "image_size": null,
+  "patch_size": null
+ }
+}

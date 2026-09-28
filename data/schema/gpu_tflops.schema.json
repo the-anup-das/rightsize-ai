@@ -1,0 +1,56 @@
+{
+  "$defs": {
+    "GpuTflopsRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "names": {
+          "description": "SkyPilot catalog accelerator names",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Names",
+          "type": "array"
+        },
+        "note": {
+          "title": "Note",
+          "type": "string"
+        },
+        "source_url": {
+          "title": "Source Url",
+          "type": "string"
+        },
+        "tflops": {
+          "description": "dense 16-bit tensor TFLOPS",
+          "exclusiveMinimum": 0,
+          "title": "Tflops",
+          "type": "number"
+        }
+      },
+      "required": [
+        "names",
+        "tflops",
+        "source_url",
+        "note"
+      ],
+      "title": "GpuTflopsRecord",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "data/cloud/gpu_tflops.yaml: datasheet tensor throughput for the job-time estimate.",
+  "properties": {
+    "gpus": {
+      "items": {
+        "$ref": "#/$defs/GpuTflopsRecord"
+      },
+      "title": "Gpus",
+      "type": "array"
+    }
+  },
+  "required": [
+    "gpus"
+  ],
+  "title": "GpuTflopsFile",
+  "type": "object"
+}

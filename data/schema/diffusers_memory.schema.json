@@ -1,0 +1,247 @@
+{
+  "$defs": {
+    "DiffusionMeasurement": {
+      "additionalProperties": false,
+      "description": "One published peak-memory figure for a pipeline, replayed by the tests.",
+      "properties": {
+        "after_loading_gib": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "After Loading Gib"
+        },
+        "batch": {
+          "minimum": 1,
+          "title": "Batch",
+          "type": "integer"
+        },
+        "hardware": {
+          "title": "Hardware",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "metric": {
+          "enum": [
+            "max_memory_reserved",
+            "max_memory_allocated",
+            "unspecified"
+          ],
+          "title": "Metric",
+          "type": "string"
+        },
+        "model": {
+          "title": "Model",
+          "type": "string"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        },
+        "offload": {
+          "enum": [
+            "none",
+            "model",
+            "sequential"
+          ],
+          "title": "Offload",
+          "type": "string"
+        },
+        "peak_gib": {
+          "exclusiveMinimum": 0,
+          "title": "Peak Gib",
+          "type": "number"
+        },
+        "quant": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "component -> format; others stay 16-bit",
+          "title": "Quant",
+          "type": "object"
+        },
+        "resolution": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Resolution",
+          "type": "array"
+        },
+        "source_url": {
+          "title": "Source Url",
+          "type": "string"
+        },
+        "tolerance": {
+          "description": "relative error the estimate may have",
+          "exclusiveMinimum": 0,
+          "maximum": 0.5,
+          "title": "Tolerance",
+          "type": "number"
+        },
+        "vae_slicing": {
+          "default": false,
+          "title": "Vae Slicing",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "source_url",
+        "model",
+        "hardware",
+        "metric",
+        "resolution",
+        "batch",
+        "offload",
+        "quant",
+        "peak_gib",
+        "tolerance"
+      ],
+      "title": "DiffusionMeasurement",
+      "type": "object"
+    },
+    "Source": {
+      "additionalProperties": false,
+      "description": "Where a number came from. Required on every record (lightweight rule 2).",
+      "properties": {
+        "fetched_at": {
+          "title": "Fetched At",
+          "type": "string"
+        },
+        "hand": {
+          "default": false,
+          "title": "Hand",
+          "type": "boolean"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        },
+        "source_url": {
+          "title": "Source Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_url",
+        "fetched_at"
+      ],
+      "title": "Source",
+      "type": "object"
+    },
+    "_DiffusersConstants": {
+      "additionalProperties": false,
+      "properties": {
+        "allocator_slack": {
+          "exclusiveMaximum": 1,
+          "minimum": 0,
+          "title": "Allocator Slack",
+          "type": "number"
+        },
+        "cuda_context_gb": {
+          "minimum": 0,
+          "title": "Cuda Context Gb",
+          "type": "number"
+        },
+        "default_text_tokens": {
+          "exclusiveMinimum": 0,
+          "title": "Default Text Tokens",
+          "type": "integer"
+        },
+        "dit_activation_factor": {
+          "exclusiveMinimum": 0,
+          "title": "Dit Activation Factor",
+          "type": "number"
+        },
+        "sequential_resident_gb": {
+          "exclusiveMinimum": 0,
+          "title": "Sequential Resident Gb",
+          "type": "number"
+        },
+        "text_encode_gb": {
+          "minimum": 0,
+          "title": "Text Encode Gb",
+          "type": "number"
+        },
+        "unet_bytes_per_latent_pixel": {
+          "exclusiveMinimum": 0,
+          "title": "Unet Bytes Per Latent Pixel",
+          "type": "number"
+        },
+        "vae_decode_bytes_per_pixel": {
+          "exclusiveMinimum": 0,
+          "title": "Vae Decode Bytes Per Pixel",
+          "type": "number"
+        }
+      },
+      "required": [
+        "vae_decode_bytes_per_pixel",
+        "unet_bytes_per_latent_pixel",
+        "dit_activation_factor",
+        "text_encode_gb",
+        "default_text_tokens",
+        "sequential_resident_gb",
+        "cuda_context_gb",
+        "allocator_slack"
+      ],
+      "title": "_DiffusersConstants",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "data/runtimes/diffusers/memory.yaml: the diffusion memory model and its evidence.",
+  "properties": {
+    "constants": {
+      "$ref": "#/$defs/_DiffusersConstants"
+    },
+    "constants_source": {
+      "$ref": "#/$defs/Source"
+    },
+    "measurements": {
+      "items": {
+        "$ref": "#/$defs/DiffusionMeasurement"
+      },
+      "title": "Measurements",
+      "type": "array"
+    }
+  },
+  "required": [
+    "constants",
+    "constants_source",
+    "measurements"
+  ],
+  "title": "DiffusersMemoryFile",
+  "type": "object"
+}

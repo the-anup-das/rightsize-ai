@@ -78,9 +78,16 @@ class Device(BaseModel):
     compute_arch: str | None = Field(
         default=None, description="e.g. ada, hopper, blackwell, rdna3, m4, sm_89"
     )
+    compute_capability: float | None = Field(
+        default=None, description="CUDA compute capability, e.g. 8.9; what most NVIDIA gates key on"
+    )
     backends: list[str] = Field(default_factory=list, description="cuda, rocm, metal, vulkan, ...")
     os: Literal["linux", "windows", "macos", "ios", "android", "unknown"] = "unknown"
     usable_fraction: float = Field(default=1.0, gt=0, le=1.0)
+    unified_memory: bool = Field(
+        default=False,
+        description="memory shared with the CPU and OS (Apple silicon, Jetson, GB10)",
+    )
     provenance: Provenance | None = None
 
     @property
@@ -99,6 +106,49 @@ class ModelRef(BaseModel):
     repo: str = Field(description="Hub id, e.g. Qwen/Qwen3-14B")
     revision: str | None = None
     file: str | None = Field(default=None, description="For GGUF/MLX: the specific file")
+
+
+class Variant(BaseModel):
+    """A quantized copy of a model that someone has already published on the Hub (F1)."""
+
+    ref: ModelRef = Field(description="the repo, and for GGUF the file (the first split part)")
+    format: str = Field(
+        description="gguf, mlx, awq, gptq, bnb, fp8, compressed-tensors, ...; "
+        "'unknown' when no convention in data/models/variants.yaml matched"
+    )
+    quant: str | None = Field(default=None, description="Q4_K_M, UD-Q4_K_XL, 4BIT, W4A16, ...")
+    size_bytes: int | None = None
+    bits_per_weight: float | None = Field(
+        default=None, description="size x 8 / the base model's parameters: effective, not nominal"
+    )
+    publisher: str
+    official: bool = Field(default=False, description="published by the base model's own org")
+    known_publisher: bool = Field(
+        default=False, description="an established quantizer listed in data/models/variants.yaml"
+    )
+    name_matches_base: bool = Field(
+        description="the name is the base model's plus format words; False flags a fine-tune "
+        "published as a quant, a draft model, or an unfamiliar format"
+    )
+    downloads: int | None = Field(default=None, description="as the Hub reports: last 30 days")
+    runtimes: list[str] = Field(default_factory=list, description="what loads this format")
+    gated: bool = False
+    files: list[str] = Field(default_factory=list, description="GGUF parts, in order")
+
+
+class CatalogEntry(BaseModel):
+    """A model on rightsize's curated lists: what search() returns (F1)."""
+
+    repo: str
+    family: Family
+    tasks: list[str] = Field(description="chat / coding for LLMs, else the Hub's task names")
+    publisher: str
+    params_total: int
+    params_active: int | None = Field(default=None, description="MoE active parameters")
+    license: str | list[str] | None = None
+    gated: bool = False
+    created_at: str | None = None
+    downloads_30d: int | None = None
 
 
 class ModelFacts(BaseModel):
@@ -130,6 +180,7 @@ class QuantSpec(BaseModel):
 class RuntimeSpec(BaseModel):
     name: str = Field(description="llama.cpp, ollama, vllm, mlx_lm, diffusers, whisper.cpp, ...")
     version: str | None = None
+    ctx: int | None = Field(default=None, description="context length the plan was sized for")
 
 
 class FitResult(BaseModel):
@@ -171,7 +222,11 @@ class Plan(BaseModel):
     steps: list[PlanStep]
     score: float = Field(description="Ranking score; higher is better")
     quality_penalty: float | None = Field(
-        default=None, description="Estimated quality loss from quantization, 0..1"
+        default=None,
+        description=(
+            "Perplexity the quantization adds over 16-bit, in llama.cpp's own units "
+            "(measured on Llama-3-8B); 0.18 for Q4_K_M, 3.5 for Q2_K"
+        ),
     )
     trace: list[str] = Field(
         default_factory=list, description="Rules that fired, each with its source URL"
@@ -181,9 +236,53 @@ class Plan(BaseModel):
     def to_json(self, **kwargs: Any) -> str:
         return self.model_dump_json(**kwargs)
 
+    def render(self, **inputs: Any) -> list[Any]:
+        """The plan's commands, one RenderedStep per step that has a recipe.
+
+        File names default to ones derived from the model, so a plan renders on its own;
+        pass any recipe input to override (``quantize_bin="/opt/llama/llama-quantize"``)."""
+        from rightsize.rules.render_plan import render_plan
+
+        return render_plan(self, **inputs)
+
     @classmethod
     def schema_json(cls) -> str:
         return json.dumps(cls.model_json_schema(), indent=2)
+
+
+class Offer(BaseModel):
+    """A GPU instance someone rents out by the hour (F7)."""
+
+    provider: str
+    instance_type: str
+    gpu: str = Field(description="the price catalog's accelerator name, e.g. A100-80GB")
+    gpu_count: int = Field(ge=1)
+    vram_gib: float = Field(gt=0, description="per GPU, as the vendor states it")
+    usd_per_hour: float = Field(gt=0, description="for the whole instance")
+    spot: bool = False
+    region: str | None = None
+    device: str | None = Field(default=None, description="the matching rightsize device")
+    compute_capability: float | None = None
+    source_url: str
+    fetched_at: str
+
+    @property
+    def vram_gb(self) -> float:
+        return round(self.vram_gib * GIB / GB, 3)
+
+
+class JobEstimate(BaseModel):
+    """Time and cost of a fine-tuning job on a rented GPU (F7). Low confidence by design."""
+
+    tokens: int = Field(description="training tokens per epoch")
+    epochs: int = 1
+    hours: float | None = None
+    usd: float | None = None
+    tflops: float | None = Field(default=None, description="dense tensor TFLOPS of the GPU")
+    efficiency: float = Field(description="share of those TFLOPS the job is assumed to reach")
+    confidence: float = Field(ge=0, le=1)
+    formula_id: str
+    notes: list[str] = Field(default_factory=list)
 
 
 class Measurement(BaseModel):

@@ -1,0 +1,47 @@
+{
+ "ref": {
+  "repo": "unsloth/gemma-2-9b-it",
+  "revision": "main",
+  "file": null
+ },
+ "family": "llm",
+ "params_total": 9241705984,
+ "params_active": null,
+ "dtype": "BF16",
+ "num_layers": 42,
+ "num_kv_heads": 8,
+ "head_dim": 256,
+ "context_max": 8192,
+ "license": "gemma",
+ "base_model": null,
+ "confidence": 1.0,
+ "extra": {
+  "model_type": "gemma2",
+  "architectures": [
+   "Gemma2ForCausalLM"
+  ],
+  "params_by_dtype": {
+   "BF16": 9241705984
+  },
+  "shards": [
+   "model-00001-of-00004.safetensors",
+   "model-00002-of-00004.safetensors",
+   "model-00003-of-00004.safetensors",
+   "model-00004-of-00004.safetensors"
+  ],
+  "gated": false,
+  "num_experts": null,
+  "num_experts_per_tok": null,
+  "sliding_window": 4096,
+  "attention": {
+   "model_type": "gemma2",
+   "sliding_window": 4096,
+   "hidden_size": 3584
+  },
+  "tie_word_embeddings": null,
+  "vocab_size": 256000,
+  "hidden_size": 3584,
+  "intermediate_size": 14336,
+  "num_attention_heads": 16
+ }
+}

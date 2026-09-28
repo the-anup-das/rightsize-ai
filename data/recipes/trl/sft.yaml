@@ -1,0 +1,26 @@
+id: trl/sft
+framework: trl
+stage: finetune
+families: [llm]
+hardware: { vendors: [nvidia, amd, intel] }
+install_line: 'pip install "trl[peft]" bitsandbytes'
+kind: command
+inputs:
+  model: { type: str, required: true }
+  dataset: { type: str, default: trl-lib/Capybara, help: "a Hub dataset of conversations; replace with yours" }
+  load_in_4bit: { type: bool, default: true, help: "QLoRA; false for 16-bit LoRA" }
+  lora_r: { type: int, default: 16 }
+  lora_alpha: { type: int, default: 32 }
+  dtype: { type: enum, values: [bfloat16, float16, float32, auto], default: bfloat16, help: "the default, float32, also becomes the 4-bit compute dtype" }
+  output_dir: { type: path, default: outputs }
+writes: [output_dir]
+template: >-
+  trl sft --model_name_or_path {{ model }} --dataset_name {{ dataset }} {% if load_in_4bit %}--load_in_4bit{% endif %} --use_peft --lora_r {{ lora_r }} --lora_alpha {{ lora_alpha }} --dtype {{ dtype }} --output_dir {{ output_dir }}
+notes:
+  - "--load_in_4bit only works with --use_peft; drop it for 16-bit LoRA"
+  - "the flag is --dtype, not --torch_dtype; flags checked against trl/trainer/model_config.py at v1.14.0"
+  - "the result is a LoRA adapter: merge it into the base model before converting to GGUF"
+  - "TRL 1.14 wants datasets>=4.7, which unsloth's pins exclude: keep them in separate environments"
+source_doc_url: https://huggingface.co/docs/trl/clis
+version_tested: 1.14.0
+verified: docs

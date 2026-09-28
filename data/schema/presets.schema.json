@@ -1,0 +1,177 @@
+{
+  "$defs": {
+    "PresetRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "backends": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Backends",
+          "type": "array"
+        },
+        "bandwidth_gbps": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bandwidth Gbps"
+        },
+        "compute_arch": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Compute Arch"
+        },
+        "compute_capability": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Compute Capability"
+        },
+        "memory_gib": {
+          "description": "as the vendor states it: a 16GB card is 16",
+          "exclusiveMinimum": 0,
+          "title": "Memory Gib",
+          "type": "number"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "os": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Os"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Source"
+        },
+        "system_ram_gib": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "System Ram Gib"
+        },
+        "unified_memory": {
+          "default": false,
+          "title": "Unified Memory",
+          "type": "boolean"
+        },
+        "usable_fraction": {
+          "default": 1.0,
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "title": "Usable Fraction",
+          "type": "number"
+        },
+        "vendor": {
+          "enum": [
+            "nvidia",
+            "amd",
+            "intel",
+            "apple",
+            "qualcomm",
+            "cpu",
+            "other"
+          ],
+          "title": "Vendor",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "vendor",
+        "memory_gib",
+        "provenance"
+      ],
+      "title": "PresetRecord",
+      "type": "object"
+    },
+    "Source": {
+      "additionalProperties": false,
+      "description": "Where a number came from. Required on every record (lightweight rule 2).",
+      "properties": {
+        "fetched_at": {
+          "title": "Fetched At",
+          "type": "string"
+        },
+        "hand": {
+          "default": false,
+          "title": "Hand",
+          "type": "boolean"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        },
+        "source_url": {
+          "title": "Source Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_url",
+        "fetched_at"
+      ],
+      "title": "Source",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "data/hardware/presets.yaml: complete, curated setups.",
+  "properties": {
+    "presets": {
+      "items": {
+        "$ref": "#/$defs/PresetRecord"
+      },
+      "title": "Presets",
+      "type": "array"
+    }
+  },
+  "required": [
+    "presets"
+  ],
+  "title": "PresetsFile",
+  "type": "object"
+}

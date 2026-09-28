@@ -1,0 +1,52 @@
+{
+ "ref": {
+  "repo": "LiquidAI/LFM2-350M",
+  "revision": "main",
+  "file": null
+ },
+ "family": "llm",
+ "params_total": 354483968,
+ "params_active": null,
+ "dtype": "BF16",
+ "num_layers": 16,
+ "num_kv_heads": 8,
+ "head_dim": 64,
+ "context_max": 128000,
+ "license": "other",
+ "base_model": null,
+ "confidence": 1.0,
+ "extra": {
+  "model_type": "lfm2",
+  "architectures": [
+   "Lfm2ForCausalLM"
+  ],
+  "params_by_dtype": {
+   "BF16": 354483968
+  },
+  "shards": [
+   "model.safetensors"
+  ],
+  "gated": false,
+  "num_experts": null,
+  "num_experts_per_tok": null,
+  "sliding_window": null,
+  "attention": {
+   "model_type": "lfm2",
+   "full_attn_idxs": [
+    2,
+    5,
+    8,
+    10,
+    12,
+    14
+   ],
+   "hidden_size": 1024,
+   "conv_L_cache": 3
+  },
+  "tie_word_embeddings": null,
+  "vocab_size": 65536,
+  "hidden_size": 1024,
+  "intermediate_size": null,
+  "num_attention_heads": 16
+ }
+}

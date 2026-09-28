@@ -38,9 +38,12 @@ def test_kv_cache_llama31_70b_at_128k_is_about_43gb() -> None:
 
 
 def test_real_bpw_not_nominal() -> None:
-    assert gguf_bpw("Q4_K_M")[0] == pytest.approx(4.899, abs=0.001)
-    assert gguf_bpw("Q4_K")[0] == 4.5
-    assert gguf_bpw("Q8_0")[0] == pytest.approx(8.515, abs=0.001)
+    # llama.cpp's measured effective bits on Llama-3.1-8B (tools/quantize/README.md)
+    assert gguf_bpw("Q4_K_M") == (4.8944, "measured by llama.cpp")
+    assert gguf_bpw("Q8_0")[0] == pytest.approx(8.5008, abs=1e-4)
+    # an i-quant's nominal bits undercount its mix: IQ4_XS is 4.46 effective, not 4.25
+    assert gguf_bpw("IQ4_XS")[0] == pytest.approx(4.4597, abs=1e-4)
+    assert gguf_bpw("Q4_K")[0] == 4.5  # a tensor type, not a file type: from the block formula
     assert gguf_bpw("q6_k")[0] > gguf_bpw("q5_k_m")[0] > gguf_bpw("q4_k_m")[0]
 
 
@@ -64,7 +67,7 @@ def test_estimate_fits_on_16gb_and_reports_breakdown() -> None:
         r.breakdown["weights"] + r.breakdown["kv_cache"] + r.breakdown["overhead"], abs=0.02
     )
     assert r.speed and 50 < r.speed < 250  # bandwidth-bound decode on a 672 GB/s card
-    assert r.formula_id == "llm.gguf.analytic.v0"
+    assert r.formula_id == "llm.gguf.analytic.v1"
     assert 0 < r.confidence < 1
 
 
@@ -84,11 +87,11 @@ def test_unknown_quant_raises() -> None:
 
 
 def test_a_model_between_the_two_units_still_fits() -> None:
-    """16 GiB is 17.18 GB, so a 16.6 GB model fits with room to spare. Under the old
+    """16 GiB is 17.18 GB, so a 16.7 GB model fits with room to spare. Under the old
     mix-up the same model was judged against 16.0 and came back no_fit."""
     dev = Device(name="16 GiB card", vendor="nvidia", memory_gib=16, usable_fraction=1.0)
     assert dev.memory_gb == 17.18
-    facts = _qwen3_4b().model_copy(update={"params_total": 25_000_000_000})
+    facts = _qwen3_4b().model_copy(update={"params_total": 26_500_000_000})
     r = estimate(facts, "Q4_K_M", dev, ctx=512)
     assert r.breakdown["usable_memory"] == pytest.approx(17.18, abs=0.01), "budget is decimal GB"
     assert 16.0 < r.vram_gb <= dev.memory_gb, "sits between the decimal and binary readings"

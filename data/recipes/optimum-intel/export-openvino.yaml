@@ -1,0 +1,27 @@
+id: optimum-intel/export-openvino
+framework: optimum-intel
+stage: export
+families: [llm]
+hardware: { vendors: [intel, cpu] }
+install_line: 'pip install -U "optimum-intel[openvino]"'
+kind: command
+inputs:
+  model: { type: str, required: true }
+  weight_format: { type: enum, values: [int4, int8, fp16, fp32, mxfp4, nf4, cb4], default: int4 }
+  group_size: { type: int, default: 128, help: "-1 quantizes per column" }
+  output_dir: { type: path, default: ov_model }
+writes: [output_dir]
+targets:
+  - {name: openvino-int4, inputs: {weight_format: int4}, size_from: int4-asym,
+     embedding_bits: 8, head_bits: 8, weights: openvino_model.bin}
+  - {name: openvino-int8, inputs: {weight_format: int8}, size_from: int8, weights: openvino_model.bin}
+template: >-
+  optimum-cli export openvino --model {{ model }} --weight-format {{ weight_format }} {% if group_size %}--group-size {{ group_size }}{% endif %} {{ output_dir }}
+notes:
+  - "data-aware int4: add --awq --dataset wikitext2 (or --scale-estimation, --gptq); --ratio sets the share of int4 layers, the rest int8"
+  - "models over 1B parameters export with int8 weights unless --weight-format says otherwise"
+  - "--task is needed for a local model, e.g. text-generation-with-past; flags checked against optimum/commands/export/openvino.py at v2.2.0"
+  - "run on Windows with an RTX 4070 Ti SUPER (rightsize quantize --to openvino-int4 and openvino-int8): Qwen3-0.6B, int4 in 43 s (385.1 MB: 196 layers int4_asym in groups of 128, the tied embedding int8 per channel, as NNCF does for embeddings and the last layer) and int8 in 32 s (598 MB); OVModelForCausalLM loads it and answers on the CPU"
+source_doc_url: https://huggingface.co/docs/optimum-intel/en/openvino/export
+version_tested: 2.2.0
+verified: run

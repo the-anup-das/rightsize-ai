@@ -51,6 +51,20 @@ EVAL_CTX = 512
 _IQ_TYPES = re.compile(r"^(IQ\d|TQ\d)", re.IGNORECASE)
 
 
+def requires_imatrix(quant: str) -> bool:
+    """Whether llama-quantize refuses this type without an importance matrix.
+
+    Asked of the binary itself (``--dry-run``) by scripts/ingest_quant_quality.py. It is not
+    the same set as "the i-quants": IQ3_S, IQ3_M and the IQ4s run without one, and Q2_K_S -
+    not an i-quant - does not, which is how a Q2_K_S run used to fail here."""
+    from rightsize._data import load_yaml
+
+    rec = (load_yaml("quality/gguf_types.yaml").get("file_types") or {}).get(quant.upper()) or {}
+    if rec.get("requires_imatrix") is not None:
+        return bool(rec["requires_imatrix"])
+    return bool(_IQ_TYPES.match(quant))  # a type we have not probed: assume it might
+
+
 def _slug(repo: str) -> str:
     return repo.replace("/", "__")
 
@@ -244,7 +258,9 @@ def quantize_model(
 
     # ---- imatrix
     imat: Path | None = None
-    needs_imatrix = imatrix or any(_IQ_TYPES.match(q) for q in quants)
+    # an imatrix when llama.cpp demands one, and for every i-quant anyway: the ones that run
+    # without it still quantize better with it
+    needs_imatrix = imatrix or any(requires_imatrix(q) or _IQ_TYPES.match(q) for q in quants)
     if needs_imatrix:
         imat = models / f"{slug}-imatrix.gguf"
         if dry_run or imat.exists():
@@ -259,7 +275,9 @@ def quantize_model(
             log(f"imatrix: {st.text}")
             if gpu_layers != "0":
                 preflight_vram(
-                    estimate(facts, "BF16", dev, ctx=EVAL_CTX).vram_gb, what="imatrix", log=log
+                    estimate(facts, "BF16", dev, ctx=EVAL_CTX, all_logits=True).vram_gb,
+                    what="imatrix",
+                    log=log,
                 )
             run(st, sample_vram=True, label="imatrix")
         manifest.artifacts["imatrix"] = str(imat)
@@ -303,7 +321,7 @@ def quantize_model(
             part.unlink(missing_ok=True)
             st = kld_base_step(tc, base_gguf, wiki, part, gpu_layers=gpu_layers, chunks=eval_chunks)
             log(f"kld-base: {st.text}")
-            pred = estimate(facts, "BF16", dev, ctx=EVAL_CTX)
+            pred = estimate(facts, "BF16", dev, ctx=EVAL_CTX, all_logits=True)
             if gpu_layers != "0":
                 preflight_vram(pred.vram_gb, what="the reference pass", log=log)
             log(
@@ -326,7 +344,7 @@ def quantize_model(
         for q, out in outputs.items():
             st = kld_eval_step(tc, out, wiki, logits, gpu_layers=gpu_layers, chunks=eval_chunks)
             log(f"kld-eval {q}: {st.text}")
-            pred = estimate(facts, q, dev, ctx=EVAL_CTX)
+            pred = estimate(facts, q, dev, ctx=EVAL_CTX, all_logits=True)
             if gpu_layers != "0":
                 preflight_vram(pred.vram_gb, what=f"the {q} pass", log=log)
             rs, text, peak = run(st, sample_vram=True, label=q)

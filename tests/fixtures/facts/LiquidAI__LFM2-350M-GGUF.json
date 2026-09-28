@@ -1,0 +1,144 @@
+{
+ "ref": {
+  "repo": "LiquidAI/LFM2-350M-GGUF",
+  "revision": "main",
+  "file": "LFM2-350M-Q4_K_M.gguf"
+ },
+ "family": "llm",
+ "params_total": 354483968,
+ "params_active": null,
+ "dtype": "Q4_K_M",
+ "num_layers": 16,
+ "num_kv_heads": 8,
+ "head_dim": 64,
+ "context_max": 128000,
+ "license": "other",
+ "base_model": "LiquidAI/LFM2-350M",
+ "confidence": 1.0,
+ "extra": {
+  "model_type": "lfm2",
+  "architectures": null,
+  "params_by_dtype": {
+   "Q4_K": 248512512,
+   "Q6_K": 105906176,
+   "F32": 65280
+  },
+  "params_counted_from": "GGUF header",
+  "shards": [
+   "LFM2-350M-Q4_K_M.gguf"
+  ],
+  "library": null,
+  "pipeline_tag": "text-generation",
+  "pipeline": null,
+  "gated": false,
+  "private": false,
+  "sha": "8fdc9d526b7ed346b19257551b05816c7912ecc2",
+  "num_experts": null,
+  "num_experts_per_tok": null,
+  "sliding_window": null,
+  "attention": {
+   "model_type": "lfm2",
+   "layer_types": [
+    "recurrent",
+    "recurrent",
+    "full_attention",
+    "recurrent",
+    "recurrent",
+    "full_attention",
+    "recurrent",
+    "recurrent",
+    "full_attention",
+    "recurrent",
+    "full_attention",
+    "recurrent",
+    "full_attention",
+    "recurrent",
+    "full_attention",
+    "recurrent"
+   ],
+   "hidden_size": 1024,
+   "conv_L_cache": 3
+  },
+  "tie_word_embeddings": true,
+  "vocab_size": 65536,
+  "hidden_size": 1024,
+  "intermediate_size": 4608,
+  "num_attention_heads": 16,
+  "image_size": null,
+  "patch_size": null,
+  "gguf": {
+   "file": "LFM2-350M-Q4_K_M.gguf",
+   "files": [
+    "LFM2-350M-Q4_K_M.gguf"
+   ],
+   "quant": "Q4_K_M",
+   "file_type": "Q4_K_M",
+   "architecture": "lfm2",
+   "version": 3,
+   "tensor_bytes": 226925568,
+   "bytes_by_type": {
+    "Q4_K": 139788288,
+    "Q6_K": 86876160,
+    "F32": 261120
+   },
+   "input_embedding_bytes": 55050240,
+   "output_bytes": null,
+   "header_bytes": 2383808,
+   "unknown_types": []
+  },
+  "gguf_files": {
+   "F16": {
+    "files": [
+     "LFM2-350M-F16.gguf"
+    ],
+    "bytes": 711482304,
+    "weights_bytes": 709098496,
+    "exact": false
+   },
+   "Q4_0": {
+    "files": [
+     "LFM2-350M-Q4_0.gguf"
+    ],
+    "bytes": 219306944,
+    "weights_bytes": 216923136,
+    "exact": false
+   },
+   "Q6_K": {
+    "files": [
+     "LFM2-350M-Q6_K.gguf"
+    ],
+    "bytes": 293379008,
+    "weights_bytes": 290995200,
+    "exact": false
+   },
+   "Q8_0": {
+    "files": [
+     "LFM2-350M-Q8_0.gguf"
+    ],
+    "bytes": 379214784,
+    "weights_bytes": 376830976,
+    "exact": false
+   },
+   "Q4_K_M": {
+    "files": [
+     "LFM2-350M-Q4_K_M.gguf"
+    ],
+    "bytes": 229309376,
+    "weights_bytes": 226925568,
+    "exact": true
+   },
+   "Q5_K_M": {
+    "files": [
+     "LFM2-350M-Q5_K_M.gguf"
+    ],
+    "bytes": 260373440,
+    "weights_bytes": 257989632,
+    "exact": false
+   }
+  },
+  "gguf_other_files": [
+   "LFM2-350M-Q4_K_M-hip-optimized.gguf"
+  ],
+  "mmproj": null
+ }
+}

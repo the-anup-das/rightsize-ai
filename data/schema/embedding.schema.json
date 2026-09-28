@@ -1,0 +1,137 @@
+{
+  "$defs": {
+    "_EmbeddingOwn": {
+      "additionalProperties": false,
+      "properties": {
+        "file_types": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "File Types",
+          "type": "object"
+        }
+      },
+      "required": [
+        "file_types"
+      ],
+      "title": "_EmbeddingOwn",
+      "type": "object"
+    },
+    "_EmbeddingTied": {
+      "additionalProperties": false,
+      "properties": {
+        "architectures": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Architectures",
+          "type": "array"
+        },
+        "default": {
+          "title": "Default",
+          "type": "string"
+        },
+        "file_types": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "File Types",
+          "type": "object"
+        },
+        "keep": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Keep",
+          "type": "array"
+        },
+        "uneven_rows": {
+          "title": "Uneven Rows",
+          "type": "string"
+        }
+      },
+      "required": [
+        "uneven_rows",
+        "architectures",
+        "file_types",
+        "keep",
+        "default"
+      ],
+      "title": "_EmbeddingTied",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "data/runtimes/llama.cpp/embedding.yaml: where llama.cpp keeps the input embedding and\nthe tensor type llama-quantize stores it in (F3).",
+  "properties": {
+    "aliases": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Aliases",
+      "type": "object"
+    },
+    "default_type": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Default Type",
+      "type": "object"
+    },
+    "fallback": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Fallback",
+      "type": "object"
+    },
+    "fetched_at": {
+      "title": "Fetched At",
+      "type": "string"
+    },
+    "own": {
+      "$ref": "#/$defs/_EmbeddingOwn"
+    },
+    "placement_source_url": {
+      "title": "Placement Source Url",
+      "type": "string"
+    },
+    "runtime": {
+      "title": "Runtime",
+      "type": "string"
+    },
+    "runtimes": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Runtimes",
+      "type": "array"
+    },
+    "source_url": {
+      "title": "Source Url",
+      "type": "string"
+    },
+    "tied": {
+      "$ref": "#/$defs/_EmbeddingTied"
+    },
+    "version": {
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "runtime",
+    "version",
+    "runtimes",
+    "source_url",
+    "placement_source_url",
+    "fetched_at",
+    "default_type",
+    "tied",
+    "own",
+    "fallback"
+  ],
+  "title": "EmbeddingFile",
+  "type": "object"
+}

@@ -117,13 +117,41 @@ The 14 MVP recipes above plus 4 serve recipes; docs generation; entry point disc
 
 ## TODO
 
-- [ ] `data/schema/recipe.schema.json`; `FrameworkInfo`, `RenderedStep` types
-- [ ] Minimal template renderer with tests
-- [ ] Loader for bundled recipes + entry-point discovery
-- [ ] 14 MVP quantize / fine-tune recipes + 4 serve recipes, each with `source_doc_url` and `version_tested`
+- [x] `data/schema/recipe.schema.json`; `FrameworkInfo`, `RenderedStep` types. Each framework's
+      `framework.yaml` beside its recipes (`data/schema/framework.schema.json`): summary,
+      stages, formats, hardware, install, a `finetune` role (modes, recipe, what it writes,
+      QLoRA's storage, a step it needs first, the vendors it is the default trainer on) and
+      the defaults its recipes read. Trainer choice and every framework-specific default left
+      `recommend.py` and `render_plan.py`; a plugin shipping a descriptor and a recipe becomes
+      a default trainer with no code change (`tests/test_frameworks.py`). MLX QLoRA plans now
+      record MLX's own 4-bit rather than bitsandbytes NF4
+- [x] Minimal template renderer with tests (token-by-token, so Windows paths survive)
+- [x] Loader for bundled recipes + entry-point discovery (`rightsize.recipes`; a plugin may
+      add recipes but not replace a bundled one)
+- [x] 14 MVP quantize / fine-tune recipes + 4 serve recipes, each with `source_doc_url` and `version_tested`:
+      24 recipes over 14 frameworks. llama.cpp's six were run (`verified: run`, `help` for the
+      server). The other 18 (Unsloth, TRL, Axolotl, MLX-LM x3, vLLM, Ollama x2, Optimum Intel,
+      llm-compressor x2, transformers + bnb, diffusers, whisper.cpp x2, CTranslate2,
+      sentence-transformers) were checked on 2026-09-25 against each tool's current docs and,
+      where the docs were stale, its source: `verified: docs`, nothing run yet. Traps the check
+      found, each now a recipe note: Unsloth pins trl<=0.24 and datasets<4.4 (its own
+      environment); vLLM 0.30 moved bitsandbytes and GGUF into plugins; whisper.cpp's quantize
+      binary is whisper-quantize; transformers 5 dropped `load_in_4bit=` and `torch_dtype=`;
+      the diffusers docs' torchao example fails on torchao 0.18. Config recipes declare a
+      `language`, and CI parses every Python and YAML render. Since run end to end as well:
+      `unsloth/sft`, and the six recipes behind `rightsize quantize --to` (F8, 2026-09-28)
+- [x] Recipes that make a format declare it as a target: the name `--to` takes, the inputs
+      that select it, the `quants/formats.yaml` entry that sizes it, the bits the embedding
+      and an untied head keep, and which files are the weights. Nine targets over six
+      toolkits: fp8, w4a16 (llm-compressor), nf4 (transformers), openvino-int4/int8
+      (Optimum Intel), mlx-4bit/8bit (MLX LM), onnx-int8 (sentence-transformers), ct2-int8
+      (CTranslate2); the
+      framework pages name each recipe's formats
 - [ ] TensorRT Model Optimizer recipes: FP8, INT8 SmoothQuant, INT4 AWQ, NVFP4 (`mtq.quantize` + `export_hf_checkpoint`) with serve targets vLLM / SGLang / TensorRT-LLM
 - [ ] AutoQuantize recipe with `effective_bits` supplied by F3's budget-to-bits helper
-- [ ] `render()` and `Plan.render()`
-- [ ] `docs.py` generator; CI diff check
+- [x] `render()` and `Plan.render()`. Two-stage plans render the fine-tune too: Unsloth on
+      NVIDIA and Intel, Axolotl on AMD, MLX-LM on Apple (with an `mlx_lm.convert -q` step first
+      for QLoRA); llama.cpp then converts the merged model. Full fine-tunes have no recipe yet
+- [x] `docs.py` generator; CI diff check (tests/test_framework_docs.py)
 - [ ] Nightly dry-run workflow
 - [ ] Verify the two **(verify)** items

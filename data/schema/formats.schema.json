@@ -1,0 +1,95 @@
+{
+  "$defs": {
+    "FormatRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "aliases": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Aliases",
+          "type": "array"
+        },
+        "bpw": {
+          "maximum": 32.0,
+          "minimum": 1.0,
+          "title": "Bpw",
+          "type": "number"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "layout": {
+          "description": "how the bits add up, so the figure can be checked",
+          "title": "Layout",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/Source"
+        }
+      },
+      "required": [
+        "id",
+        "bpw",
+        "layout",
+        "source"
+      ],
+      "title": "FormatRecord",
+      "type": "object"
+    },
+    "Source": {
+      "additionalProperties": false,
+      "description": "Where a number came from. Required on every record (lightweight rule 2).",
+      "properties": {
+        "fetched_at": {
+          "title": "Fetched At",
+          "type": "string"
+        },
+        "hand": {
+          "default": false,
+          "title": "Hand",
+          "type": "boolean"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        },
+        "source_url": {
+          "title": "Source Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_url",
+        "fetched_at"
+      ],
+      "title": "Source",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "data/quants/formats.yaml: bits per weight for weight formats other than GGUF.",
+  "properties": {
+    "formats": {
+      "items": {
+        "$ref": "#/$defs/FormatRecord"
+      },
+      "title": "Formats",
+      "type": "array"
+    }
+  },
+  "required": [
+    "formats"
+  ],
+  "title": "FormatsFile",
+  "type": "object"
+}

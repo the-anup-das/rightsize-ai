@@ -1,0 +1,115 @@
+# Where llama.cpp keeps a model's input embedding, and the type llama-quantize stores it in (F3).
+#
+# llama.cpp always puts the input layer - token_embd.weight - on the CPU ("always keep it on
+# the CPU", src/llama-model.cpp), so with a GPU of its own the table takes system RAM, not
+# VRAM. A model whose output head is tied to the embedding has no output.weight; llama.cpp
+# loads the same tensor a second time as the output (TENSOR_DUPLICATED), and that copy goes to
+# the GPU with the last layer. So: with an output head of its own, the embedding leaves VRAM;
+# tied, VRAM keeps the copy and system RAM holds the embedding as well.
+#
+# The type llama-quantize gives token_embd.weight depends on the file type and on whether the
+# model has an output head of its own; without one the embedding is quantized as the output
+# head. Read from src/llama-quant.cpp at the tag we pin. Every GGUF fixture's token_embd bytes
+# follow from these rules (tests/test_llm_embedding.py).
+runtime: llama.cpp
+version: b11177
+# runtimes built on llama.cpp that place it the same way
+runtimes: [llama.cpp, ollama, lm studio]
+source_url: https://github.com/ggml-org/llama.cpp/blob/b11177/src/llama-quant.cpp
+placement_source_url: https://github.com/ggml-org/llama.cpp/blob/b11177/src/llama-model.cpp
+fetched_at: "2026-09-28"
+
+# names publishers give a file type: ggml-org's and LM Studio's gpt-oss files say MXFP4
+aliases:
+  MXFP4: MXFP4_MOE
+
+# llama_ftype_get_default_type: the tensor type a file type starts every tensor from
+default_type:
+  Q4_0: Q4_0
+  Q4_1: Q4_1
+  Q5_0: Q5_0
+  Q5_1: Q5_1
+  Q8_0: Q8_0
+  F16: F16
+  BF16: BF16
+  F32: F32
+  Q1_0: Q1_0
+  Q2_0: Q2_0
+  MXFP4_MOE: MXFP4
+  Q2_K_S: Q2_K
+  Q2_K: Q2_K
+  IQ3_XS: IQ3_S
+  Q3_K_S: Q3_K
+  Q3_K_M: Q3_K
+  Q3_K_L: Q3_K
+  Q4_K_S: Q4_K
+  Q4_K_M: Q4_K
+  Q5_K_S: Q5_K
+  Q5_K_M: Q5_K
+  Q6_K: Q6_K
+  TQ1_0: TQ1_0
+  TQ2_0: TQ2_0
+  IQ2_XXS: IQ2_XXS
+  IQ2_XS: IQ2_XS
+  IQ2_S: IQ2_XS
+  IQ2_M: IQ2_S
+  IQ3_XXS: IQ3_XXS
+  IQ1_S: IQ1_S
+  IQ1_M: IQ1_M
+  IQ4_NL: IQ4_NL
+  IQ4_XS: IQ4_XS
+  IQ3_S: IQ3_S
+  IQ3_M: IQ3_S
+
+# No output.weight: the embedding gets the output head's type. In order: a row length the
+# default type's block does not divide, or a Falcon model, gives uneven_rows; a file type
+# listed here gives its entry; a default type in keep stays; anything else gives default.
+tied:
+  uneven_rows: Q8_0
+  architectures: [falcon]
+  file_types:
+    MXFP4_MOE: Q8_0
+    IQ2_XXS: Q5_K
+    IQ2_XS: Q5_K
+    IQ3_XXS: Q5_K
+    IQ1_S: Q5_K
+    IQ2_S: Q5_K
+    IQ2_M: Q5_K
+    IQ1_M: Q5_K
+  keep: [Q8_0]
+  default: Q6_K
+
+# An output head of its own: the embedding keeps the default type, except in these file types
+own:
+  file_types:
+    MXFP4_MOE: Q8_0
+    IQ2_XXS: Q2_K
+    IQ2_XS: Q2_K
+    IQ1_S: Q2_K
+    IQ1_M: Q2_K
+    IQ2_S: IQ3_S
+    IQ2_M: IQ3_S
+    IQ3_XXS: IQ3_S
+    TQ1_0: Q4_K
+    TQ2_0: Q4_K
+    Q2_0: Q4_K
+
+# tensor_type_fallback: when the hidden size is not a multiple of the chosen type's block, the
+# type falls back to one with 32-wide blocks, and to F16 if that does not divide it either
+fallback:
+  IQ1_S: IQ4_NL
+  IQ1_M: IQ4_NL
+  IQ2_XXS: IQ4_NL
+  IQ2_XS: IQ4_NL
+  IQ2_S: IQ4_NL
+  IQ3_XXS: IQ4_NL
+  IQ3_S: IQ4_NL
+  IQ4_XS: IQ4_NL
+  Q2_0: Q4_0
+  Q2_K: Q4_0
+  Q3_K: Q4_0
+  TQ1_0: Q4_0
+  TQ2_0: Q4_0
+  Q4_K: Q5_0
+  Q5_K: Q5_1
+  Q6_K: Q8_0

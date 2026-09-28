@@ -1,0 +1,54 @@
+id: axolotl/qlora
+framework: axolotl
+stage: finetune
+families: [llm]
+hardware: { vendors: [nvidia, amd] }
+install_line: 'uv pip install --no-build-isolation "axolotl[deepspeed]", after installing PyTorch for your CUDA or ROCm version'
+kind: config
+language: yaml
+inputs:
+  model: { type: str, required: true }
+  adapter: { type: enum, values: [qlora, lora], default: qlora }
+  load_in_4bit: { type: bool, default: true, help: "true with qlora, false with lora" }
+  dataset: { type: str, default: mlabonne/FineTome-100k, help: "a Hub dataset of conversations; replace with yours" }
+  lora_r: { type: int, default: 16 }
+  lora_alpha: { type: int, default: 32 }
+  sequence_len: { type: int, default: 2048 }
+  micro_batch_size: { type: int, default: 2 }
+  grad_accum: { type: int, default: 4 }
+  num_epochs: { type: int, default: 1 }
+  learning_rate: { type: float, default: 0.0002, help: required by axolotl }
+  output_dir: { type: path, default: ./outputs/qlora-out }
+file: axolotl.yml
+run: axolotl train {file}
+writes: [output_dir]
+template: |
+  base_model: {{ model }}
+  load_in_4bit: {{ load_in_4bit }}
+  adapter: {{ adapter }}
+  lora_r: {{ lora_r }}
+  lora_alpha: {{ lora_alpha }}
+  lora_dropout: 0.05
+  lora_target_linear: true
+  datasets:
+    - path: {{ dataset }}
+      type: chat_template
+      field_messages: conversations
+      message_property_mappings:
+        role: from
+        content: value
+  sequence_len: {{ sequence_len }}
+  micro_batch_size: {{ micro_batch_size }}
+  gradient_accumulation_steps: {{ grad_accum }}
+  num_epochs: {{ num_epochs }}
+  learning_rate: {{ learning_rate }}
+  optimizer: paged_adamw_32bit
+  bf16: auto
+  output_dir: {{ output_dir }}
+notes:
+  - "save as qlora.yml and run: axolotl train qlora.yml"
+  - "field_messages and message_property_mappings read ShareGPT data (from/value); drop them for a messages column of role/content"
+  - "the result is a LoRA adapter: merge it into the base model before converting to GGUF"
+source_doc_url: https://docs.axolotl.ai/docs/config-reference.html
+version_tested: 0.19.0
+verified: docs

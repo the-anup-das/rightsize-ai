@@ -1,0 +1,39 @@
+# What this toolkit is for, where it runs, how it installs and how its steps join a plan.
+name: mlx-lm
+title: MLX LM
+summary: >-
+  Quantizes, fine-tunes (LoRA, and QLoRA on a model it quantized first) and serves LLMs on
+  Apple silicon with Apple's MLX; the default trainer on a Mac
+stages: [quantize, finetune, export, serve]
+families: [llm]
+formats: [mlx]
+hardware: {vendors: [apple], os: [macos]}
+install:
+  kind: pip
+  packages: [mlx-lm]
+  check: mlx_lm
+  line: pip install mlx-lm
+finetune:
+  modes: [lora, qlora]
+  recipe: mlx-lm/lora
+  qlora_quant: {method: mlx, variant: 4bit, bits_per_weight: 4.5}
+  before:
+    qlora:
+      recipe: mlx-lm/convert
+      stage: quantize
+      quant: {method: mlx, variant: 4bit, bits_per_weight: 4.5}
+      model_from: mlx_path
+  writes: adapter
+  merge: mlx-lm/fuse
+  default_for: [apple]
+  priority: 10
+serve:
+  recipes: [mlx-lm/server]
+  runtime: mlx-lm
+  formats: [mlx]
+defaults:
+  mlx_path: "{slug}-mlx-4bit"
+  bits: "4"
+homepage: https://github.com/ml-explore/mlx-lm
+source_doc_url: https://github.com/ml-explore/mlx-lm/blob/main/mlx_lm/LORA.md
+version_tested: 0.31.3

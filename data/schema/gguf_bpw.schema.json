@@ -1,0 +1,73 @@
+{
+  "$defs": {
+    "Source": {
+      "additionalProperties": false,
+      "description": "Where a number came from. Required on every record (lightweight rule 2).",
+      "properties": {
+        "fetched_at": {
+          "title": "Fetched At",
+          "type": "string"
+        },
+        "hand": {
+          "default": false,
+          "title": "Hand",
+          "type": "boolean"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        },
+        "source_url": {
+          "title": "Source Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_url",
+        "fetched_at"
+      ],
+      "title": "Source",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "data/quants/gguf_bpw.yaml: real bits per weight, scales and mins included.",
+  "properties": {
+    "file_types": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "title": "File Types",
+      "type": "object"
+    },
+    "file_types_provenance": {
+      "$ref": "#/$defs/Source"
+    },
+    "provenance": {
+      "$ref": "#/$defs/Source"
+    },
+    "tensor_types": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "title": "Tensor Types",
+      "type": "object"
+    }
+  },
+  "required": [
+    "provenance",
+    "tensor_types",
+    "file_types_provenance",
+    "file_types"
+  ],
+  "title": "GgufBpwFile",
+  "type": "object"
+}

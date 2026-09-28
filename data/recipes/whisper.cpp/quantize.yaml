@@ -1,0 +1,21 @@
+id: whisper.cpp/quantize
+framework: whisper.cpp
+stage: quantize
+families: [audio]
+hardware: { vendors: [any] }
+install_line: 'git clone https://github.com/ggml-org/whisper.cpp && cd whisper.cpp && cmake -B build && cmake --build build -j --config Release; models: sh ./models/download-ggml-model.sh large-v3-turbo'
+kind: command
+inputs:
+  quantize_bin: { type: path, default: ./build/bin/whisper-quantize }
+  input_model: { type: path, default: models/ggml-large-v3-turbo.bin }
+  output_model: { type: path, default: models/ggml-large-v3-turbo-q5_0.bin }
+  qtype: { type: enum, values: [q5_0, q5_1, q8_0, q4_0, q4_1, q2_k, q3_k, q4_k, q5_k, q6_k], default: q5_0 }
+writes: [output_model]
+template: >-
+  {{ quantize_bin }} {{ input_model }} {{ output_model }} {{ qtype }}
+notes:
+  - "the binary is whisper-quantize (the target in examples/quantize/CMakeLists.txt); the README still says ./build/bin/quantize"
+  - "rightsize estimate openai/whisper-large-v3-turbo --quant q5_0 --runtime whisper.cpp gives the memory"
+source_doc_url: https://github.com/ggml-org/whisper.cpp/blob/master/README.md
+version_tested: v1.9.4
+verified: docs

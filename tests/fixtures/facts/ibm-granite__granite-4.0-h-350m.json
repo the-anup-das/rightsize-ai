@@ -1,0 +1,83 @@
+{
+ "ref": {
+  "repo": "ibm-granite/granite-4.0-h-350m",
+  "revision": "main",
+  "file": null
+ },
+ "family": "llm",
+ "params_total": 340332224,
+ "params_active": null,
+ "dtype": "BF16",
+ "num_layers": 32,
+ "num_kv_heads": 4,
+ "head_dim": 64,
+ "context_max": 32768,
+ "license": "apache-2.0",
+ "base_model": "ibm-granite/granite-4.0-h-350m-base",
+ "confidence": 1.0,
+ "extra": {
+  "model_type": "granitemoehybrid",
+  "architectures": [
+   "GraniteMoeHybridForCausalLM"
+  ],
+  "params_by_dtype": {
+   "BF16": 340332224
+  },
+  "shards": [
+   "model.safetensors"
+  ],
+  "gated": false,
+  "num_experts": null,
+  "num_experts_per_tok": null,
+  "sliding_window": null,
+  "attention": {
+   "model_type": "granitemoehybrid",
+   "layer_types": [
+    "mamba",
+    "mamba",
+    "mamba",
+    "mamba",
+    "mamba",
+    "mamba",
+    "mamba",
+    "mamba",
+    "mamba",
+    "mamba",
+    "attention",
+    "mamba",
+    "mamba",
+    "attention",
+    "mamba",
+    "mamba",
+    "mamba",
+    "attention",
+    "mamba",
+    "mamba",
+    "mamba",
+    "mamba",
+    "mamba",
+    "mamba",
+    "mamba",
+    "mamba",
+    "mamba",
+    "attention",
+    "mamba",
+    "mamba",
+    "mamba",
+    "mamba"
+   ],
+   "hidden_size": 768,
+   "mamba_d_state": 128,
+   "mamba_d_conv": 4,
+   "mamba_expand": 2,
+   "mamba_n_groups": 1,
+   "mamba_n_heads": 48,
+   "mamba_d_head": 32
+  },
+  "tie_word_embeddings": true,
+  "vocab_size": 100352,
+  "hidden_size": 768,
+  "intermediate_size": 2048,
+  "num_attention_heads": 12
+ }
+}

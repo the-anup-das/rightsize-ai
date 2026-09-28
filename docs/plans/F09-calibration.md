@@ -50,10 +50,32 @@ Consent flow, local recording from Ollama / LM Studio / nvidia-smi, `submit()` v
 
 ## TODO
 
-- [ ] Consent flag, storage and copy; `rightsize telemetry on|off|status`
-- [ ] `Measurement` type and schema; redaction rules with tests
-- [ ] Recorders: Ollama, LM Studio, nvidia-smi; hook from F8 manifests
-- [ ] Local JSONL store
-- [ ] `submit()` via PR to a submissions repo
-- [ ] Refit script producing a `rightsize-data` PR with error stats
-- [ ] Dataset licence decision recorded here
+- [x] Consent flag, storage and copy; `rightsize telemetry on|off|status|show|export`.
+      Off by default; `on` prints exactly what a record holds and asks (or takes `--yes`)
+- [x] `CalibrationRecord` type (telemetry/record.py); redaction by allowlist: every
+      sub-model forbids extra keys, repo ids only for repos the Hub marks public, device
+      names only when they are catalogue names. Tests push a host name, a user path and a
+      private repo through and check none comes out
+- [x] Recorders: Ollama (`/api/ps`, which reports VRAM per model), LM Studio (`/api/v0/models`
+      for what is loaded; memory per process from nvidia-smi on Linux and from the
+      "GPU Process Memory" counters on Windows, where WDDM hides it from nvidia-smi). A
+      reading is attributed only when one model is loaded in that runtime. First live
+      result: gpt-oss-20b MXFP4 in LM Studio at ctx 8192 on an RTX 4070 Ti SUPER,
+      predicted 12.35 GB, measured 11.74 GB (+5.2%). That prediction had two errors that
+      cancelled (2026-09-28): MXFP4 sized at 4.25 bits throughout, where llama-quantize makes
+      everything but the experts Q8_0 (12.10 GB of tensors, not 11.11), and the embedding
+      counted in VRAM. Both fixed, it says 12.70 GB (+8.2%); the rest is LM Studio's overhead
+      constant, still the first estimate (0.80 GB + 2%). llama-server's refit to 0.27 GB + 1%
+      suggests it is high too; a second LM Studio reading should settle it
+- [ ] Hook from F8 manifests (they record peak VRAM of quantize/eval runs, not serving)
+- [x] Local JSONL store (`~/.local/share/rightsize/measurements.jsonl`); `rightsize calibrate`
+      prints the comparison whether or not recording is on
+- [ ] `submit()` via PR to a submissions repo. For now `rightsize telemetry export FILE`
+      writes the records for the user to read and attach to an issue: nothing is sent
+- [x] Refit script: `scripts/refit_constants.py` fits overhead = fixed + fraction x weights
+      per runtime from the residuals, prints the error before and after, and with `--write`
+      updates `data/runtimes/overheads.yaml` (the constants moved there from code), but only
+      with five or more records for a runtime
+- [ ] Refit the speed efficiency (0.70) from measured tok/s: calibrate does not time
+      generation yet; `rightsize bench` does, on one model
+- [ ] Dataset licence decision recorded here (CC-BY-4.0 is the candidate; the user decides)

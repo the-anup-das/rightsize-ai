@@ -1,0 +1,17 @@
+id: axolotl/merge
+framework: axolotl
+stage: export
+families: [llm]
+hardware: { vendors: [nvidia, amd] }
+install_line: 'uv pip install --no-build-isolation "axolotl[deepspeed]"'
+inputs:
+  config: { type: path, default: axolotl.yml, help: "the config the training step used" }
+  merged_dir: { type: path, default: outputs/merged, help: "where it writes: <output_dir>/merged" }
+writes: [merged_dir]
+template: >-
+  axolotl merge-lora {{ config }} --dequant
+notes:
+  - "writes <output_dir>/merged; --dequant makes it 16-bit, where a QLoRA base would otherwise be re-quantized to its own format, which the GGUF converter does not read"
+source_doc_url: https://github.com/axolotl-ai-cloud/axolotl/blob/v0.19.0/docs/cli.qmd
+version_tested: 0.19.0
+verified: docs

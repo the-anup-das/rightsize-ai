@@ -1,0 +1,47 @@
+{
+ "ref": {
+  "repo": "google/vit-base-patch16-224",
+  "revision": "main",
+  "file": null
+ },
+ "family": "vision",
+ "params_total": 86567656,
+ "params_active": null,
+ "dtype": "F32",
+ "num_layers": 12,
+ "num_kv_heads": 12,
+ "head_dim": 64,
+ "context_max": null,
+ "license": "apache-2.0",
+ "base_model": null,
+ "confidence": 1.0,
+ "extra": {
+  "model_type": "vit",
+  "architectures": [
+   "ViTForImageClassification"
+  ],
+  "params_by_dtype": {
+   "F32": 86567656
+  },
+  "params_counted_from": "Hub parameter summary",
+  "shards": [],
+  "library": "transformers",
+  "pipeline_tag": "image-classification",
+  "pipeline": null,
+  "gated": false,
+  "num_experts": null,
+  "num_experts_per_tok": null,
+  "sliding_window": null,
+  "attention": {
+   "model_type": "vit",
+   "hidden_size": 768
+  },
+  "tie_word_embeddings": null,
+  "vocab_size": null,
+  "hidden_size": 768,
+  "intermediate_size": 3072,
+  "num_attention_heads": 12,
+  "image_size": 224,
+  "patch_size": 16
+ }
+}

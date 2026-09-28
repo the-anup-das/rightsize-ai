@@ -1,0 +1,50 @@
+# Product decisions rather than hardware facts: what rightsize will and will not recommend by
+# default. They cite the plan that argues for them, and each can be overridden by the caller.
+rules:
+  - id: too_slow_for_interactive_use
+    applies_to: {stage: serve, task: [chat, coding]}
+    condition: "plan.tok_s < 5"
+    effect: block
+    message: >-
+      estimated under 5 tokens a second, too slow to use interactively; pass --allow-slow
+      to see these plans anyway
+    source_url: https://github.com/the-anup-das/rightsize-ai/blob/main/docs/plans/F04-rules-engine.md
+    test:
+      fires: {stage: serve, task: chat, plan: {tok_s: 3.2}}
+      silent: {stage: serve, task: chat, plan: {tok_s: 40}}
+
+  - id: context_beyond_the_model
+    applies_to: {stage: serve}
+    condition: "model.context_max < plan.ctx"
+    effect: block
+    message: the requested context is longer than the model was trained for
+    source_url: https://github.com/the-anup-das/rightsize-ai/blob/main/docs/plans/F04-rules-engine.md
+    test:
+      fires: {stage: serve, model: {context_max: 8192}, plan: {ctx: 32768}}
+      silent: {stage: serve, model: {context_max: 131072}, plan: {ctx: 32768}}
+
+  - id: offload_is_slow
+    applies_to: {stage: serve}
+    condition: "plan.verdict == 'offload'"
+    effect: penalize
+    penalty: 0.3
+    message: >-
+      fits only by spilling layers to system RAM, which costs most of the speed; shown
+      below plans that fit on the device
+    source_url: https://github.com/the-anup-das/rightsize-ai/blob/main/docs/plans/F03-fit-engine.md
+    test:
+      fires: {stage: serve, plan: {verdict: offload}}
+      silent: {stage: serve, plan: {verdict: fits}}
+
+  - id: tight_fit
+    applies_to: {stage: serve}
+    condition: "plan.verdict == 'tight'"
+    effect: penalize
+    penalty: 0.95
+    message: >-
+      fits with under 10% to spare; a longer conversation or another app on the GPU can
+      push it over, so a comfortable fit of near-equal quality ranks above it
+    source_url: https://github.com/the-anup-das/rightsize-ai/blob/main/docs/plans/F03-fit-engine.md
+    test:
+      fires: {stage: serve, plan: {verdict: tight}}
+      silent: {stage: serve, plan: {verdict: fits}}

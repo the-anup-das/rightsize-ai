@@ -1,0 +1,359 @@
+{
+ "ref": {
+  "repo": "tiiuae/Falcon-H1-1.5B-Instruct-GGUF",
+  "revision": "main",
+  "file": "Falcon-H1-1.5B-Instruct-Q4_K_M.gguf"
+ },
+ "family": "llm",
+ "params_total": 1554863488,
+ "params_active": null,
+ "dtype": "Q4_K_M",
+ "num_layers": 24,
+ "num_kv_heads": 2,
+ "head_dim": 128,
+ "context_max": 131072,
+ "license": "other",
+ "base_model": "tiiuae/Falcon-H1-1.5B-Instruct",
+ "confidence": 1.0,
+ "extra": {
+  "model_type": "falcon-h1",
+  "architectures": null,
+  "params_by_dtype": {
+   "Q4_K": 1300498432,
+   "Q6_K": 253757440,
+   "F32": 607616
+  },
+  "params_counted_from": "GGUF header",
+  "shards": [
+   "Falcon-H1-1.5B-Instruct-Q4_K_M.gguf"
+  ],
+  "library": "transformers",
+  "pipeline_tag": "text-generation",
+  "pipeline": null,
+  "gated": false,
+  "private": false,
+  "sha": "0d3a6cfe25fb4eeab0153fb8623aac5b69d6bd0a",
+  "num_experts": null,
+  "num_experts_per_tok": null,
+  "sliding_window": null,
+  "attention": {
+   "model_type": "falcon-h1",
+   "hidden_size": 2048,
+   "mamba_d_state": 256,
+   "mamba_d_conv": 4,
+   "mamba_n_groups": 1,
+   "mamba_d_ssm": 3072
+  },
+  "tie_word_embeddings": false,
+  "vocab_size": 65537,
+  "hidden_size": 2048,
+  "intermediate_size": 4608,
+  "num_attention_heads": 8,
+  "image_size": null,
+  "patch_size": null,
+  "gguf": {
+   "file": "Falcon-H1-1.5B-Instruct-Q4_K_M.gguf",
+   "files": [
+    "Falcon-H1-1.5B-Instruct-Q4_K_M.gguf"
+   ],
+   "quant": "Q4_K_M",
+   "file_type": "Q4_K_M",
+   "architecture": "falcon-h1",
+   "version": 3,
+   "tensor_bytes": 942121232,
+   "bytes_by_type": {
+    "Q4_K": 731530368,
+    "Q6_K": 208160400,
+    "F32": 2430464
+   },
+   "input_embedding_bytes": 75498624,
+   "output_bytes": 110102160,
+   "header_bytes": 2665408,
+   "unknown_types": []
+  },
+  "gguf_files": {
+   "F16": {
+    "files": [
+     "Falcon-H1-1.5B-Instruct-F16.gguf"
+    ],
+    "bytes": 3113607616,
+    "weights_bytes": 3110942208,
+    "exact": false
+   },
+   "F32": {
+    "files": [
+     "Falcon-H1-1.5B-Instruct-F32.gguf"
+    ],
+    "bytes": 6222119552,
+    "weights_bytes": 6219454144,
+    "exact": false
+   },
+   "BF16": {
+    "files": [
+     "Falcon-H1-1.5B-Instruct-BF16.gguf"
+    ],
+    "bytes": 3113607616,
+    "weights_bytes": 3110942208,
+    "exact": false
+   },
+   "Q2_K": {
+    "files": [
+     "Falcon-H1-1.5B-Instruct-Q2_K.gguf"
+    ],
+    "bytes": 612211712,
+    "weights_bytes": 609546304,
+    "exact": false
+   },
+   "Q3_K": {
+    "files": [
+     "Falcon-H1-1.5B-Instruct-Q3_K.gguf"
+    ],
+    "bytes": 765117664,
+    "weights_bytes": 762452256,
+    "exact": false
+   },
+   "Q4_0": {
+    "files": [
+     "Falcon-H1-1.5B-Instruct-Q4_0.gguf"
+    ],
+    "bytes": 913968352,
+    "weights_bytes": 911302944,
+    "exact": false
+   },
+   "Q4_1": {
+    "files": [
+     "Falcon-H1-1.5B-Instruct-Q4_1.gguf"
+    ],
+    "bytes": 1002720608,
+    "weights_bytes": 1000055200,
+    "exact": false
+   },
+   "Q4_K": {
+    "files": [
+     "Falcon-H1-1.5B-Instruct-Q4_K.gguf"
+    ],
+    "bytes": 944786656,
+    "weights_bytes": 942121248,
+    "exact": false
+   },
+   "Q5_0": {
+    "files": [
+     "Falcon-H1-1.5B-Instruct-Q5_0.gguf"
+    ],
+    "bytes": 1091472864,
+    "weights_bytes": 1088807456,
+    "exact": false
+   },
+   "Q5_1": {
+    "files": [
+     "Falcon-H1-1.5B-Instruct-Q5_1.gguf"
+    ],
+    "bytes": 1180225120,
+    "weights_bytes": 1177559712,
+    "exact": false
+   },
+   "Q5_K": {
+    "files": [
+     "Falcon-H1-1.5B-Instruct-Q5_K.gguf"
+    ],
+    "bytes": 1107348960,
+    "weights_bytes": 1104683552,
+    "exact": false
+   },
+   "Q6_K": {
+    "files": [
+     "Falcon-H1-1.5B-Instruct-Q6_K.gguf"
+    ],
+    "bytes": 1280071424,
+    "weights_bytes": 1277406016,
+    "exact": false
+   },
+   "Q8_0": {
+    "files": [
+     "Falcon-H1-1.5B-Instruct-Q8_0.gguf"
+    ],
+    "bytes": 1656492736,
+    "weights_bytes": 1653827328,
+    "exact": false
+   },
+   "IQ1_M": {
+    "files": [
+     "Falcon-H1-1.5B-Instruct-IQ1_M.gguf"
+    ],
+    "bytes": 432073440,
+    "weights_bytes": 429408032,
+    "exact": false
+   },
+   "IQ1_S": {
+    "files": [
+     "Falcon-H1-1.5B-Instruct-IQ1_S.gguf"
+    ],
+    "bytes": 404075232,
+    "weights_bytes": 401409824,
+    "exact": false
+   },
+   "IQ2_M": {
+    "files": [
+     "Falcon-H1-1.5B-Instruct-IQ2_M.gguf"
+    ],
+    "bytes": 578556864,
+    "weights_bytes": 575891456,
+    "exact": false
+   },
+   "IQ2_S": {
+    "files": [
+     "Falcon-H1-1.5B-Instruct-IQ2_S.gguf"
+    ],
+    "bytes": 541225920,
+    "weights_bytes": 538560512,
+    "exact": false
+   },
+   "IQ3_M": {
+    "files": [
+     "Falcon-H1-1.5B-Instruct-IQ3_M.gguf"
+    ],
+    "bytes": 737486048,
+    "weights_bytes": 734820640,
+    "exact": false
+   },
+   "IQ3_S": {
+    "files": [
+     "Falcon-H1-1.5B-Instruct-IQ3_S.gguf"
+    ],
+    "bytes": 727041248,
+    "weights_bytes": 724375840,
+    "exact": false
+   },
+   "TQ1_0": {
+    "files": [
+     "Falcon-H1-1.5B-Instruct-TQ1_0.gguf"
+    ],
+    "bytes": 461923808,
+    "weights_bytes": 459258400,
+    "exact": false
+   },
+   "TQ2_0": {
+    "files": [
+     "Falcon-H1-1.5B-Instruct-TQ2_0.gguf"
+    ],
+    "bytes": 522196448,
+    "weights_bytes": 519531040,
+    "exact": false
+   },
+   "IQ2_XS": {
+    "files": [
+     "Falcon-H1-1.5B-Instruct-IQ2_XS.gguf"
+    ],
+    "bytes": 517640928,
+    "weights_bytes": 514975520,
+    "exact": false
+   },
+   "IQ3_XS": {
+    "files": [
+     "Falcon-H1-1.5B-Instruct-IQ3_XS.gguf"
+    ],
+    "bytes": 708166880,
+    "weights_bytes": 705501472,
+    "exact": false
+   },
+   "IQ4_NL": {
+    "files": [
+     "Falcon-H1-1.5B-Instruct-IQ4_NL.gguf"
+    ],
+    "bytes": 915541472,
+    "weights_bytes": 912876064,
+    "exact": false
+   },
+   "IQ4_XS": {
+    "files": [
+     "Falcon-H1-1.5B-Instruct-IQ4_XS.gguf"
+    ],
+    "bytes": 871558560,
+    "weights_bytes": 868893152,
+    "exact": false
+   },
+   "Q2_K_S": {
+    "files": [
+     "Falcon-H1-1.5B-Instruct-Q2_K_S.gguf"
+    ],
+    "bytes": 590732288,
+    "weights_bytes": 588066880,
+    "exact": false
+   },
+   "Q3_K_L": {
+    "files": [
+     "Falcon-H1-1.5B-Instruct-Q3_K_L.gguf"
+    ],
+    "bytes": 799982816,
+    "weights_bytes": 797317408,
+    "exact": false
+   },
+   "Q3_K_M": {
+    "files": [
+     "Falcon-H1-1.5B-Instruct-Q3_K_M.gguf"
+    ],
+    "bytes": 765117664,
+    "weights_bytes": 762452256,
+    "exact": false
+   },
+   "Q3_K_S": {
+    "files": [
+     "Falcon-H1-1.5B-Instruct-Q3_K_S.gguf"
+    ],
+    "bytes": 725370080,
+    "weights_bytes": 722704672,
+    "exact": false
+   },
+   "Q4_K_M": {
+    "files": [
+     "Falcon-H1-1.5B-Instruct-Q4_K_M.gguf"
+    ],
+    "bytes": 944786656,
+    "weights_bytes": 942121232,
+    "exact": true
+   },
+   "Q4_K_S": {
+    "files": [
+     "Falcon-H1-1.5B-Instruct-Q4_K_S.gguf"
+    ],
+    "bytes": 917769440,
+    "weights_bytes": 915104032,
+    "exact": false
+   },
+   "Q5_K_M": {
+    "files": [
+     "Falcon-H1-1.5B-Instruct-Q5_K_M.gguf"
+    ],
+    "bytes": 1107348960,
+    "weights_bytes": 1104683552,
+    "exact": false
+   },
+   "Q5_K_S": {
+    "files": [
+     "Falcon-H1-1.5B-Instruct-Q5_K_S.gguf"
+    ],
+    "bytes": 1091472864,
+    "weights_bytes": 1088807456,
+    "exact": false
+   },
+   "IQ2_XXS": {
+    "files": [
+     "Falcon-H1-1.5B-Instruct-IQ2_XXS.gguf"
+    ],
+    "bytes": 478737120,
+    "weights_bytes": 476071712,
+    "exact": false
+   },
+   "IQ3_XXS": {
+    "files": [
+     "Falcon-H1-1.5B-Instruct-IQ3_XXS.gguf"
+    ],
+    "bytes": 647959488,
+    "weights_bytes": 645294080,
+    "exact": false
+   }
+  },
+  "gguf_other_files": [],
+  "mmproj": null
+ }
+}

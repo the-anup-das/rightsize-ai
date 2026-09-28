@@ -1,0 +1,18 @@
+id: mlx-lm/fuse
+framework: mlx-lm
+stage: export
+families: [llm]
+hardware: { vendors: [apple] }
+install_line: pip install mlx-lm
+inputs:
+  model: { type: str, required: true, help: "the model the adapter was trained on (the 4-bit MLX one for QLoRA)" }
+  adapter_dir: { type: path, default: adapters }
+  merged_dir: { type: path, default: fused_model }
+writes: [merged_dir]
+template: >-
+  mlx_lm.fuse --model {{ model }} --adapter-path {{ adapter_dir }} --save-path {{ merged_dir }} --dequantize
+notes:
+  - "--dequantize writes 16-bit weights, which the GGUF converter reads; without it a QLoRA fuse stays 4-bit MLX"
+source_doc_url: https://github.com/ml-explore/mlx-lm/blob/v0.31.3/mlx_lm/fuse.py
+version_tested: 0.31.3
+verified: docs

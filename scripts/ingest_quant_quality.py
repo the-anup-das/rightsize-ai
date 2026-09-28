@@ -1,0 +1,144 @@
+"""Record what llama.cpp itself measured about each GGUF file type (F3, F4).
+
+    uv run python scripts/ingest_quant_quality.py [--reference path/to/16-bit.gguf]
+
+Two sources, both from the llama.cpp tag we pin:
+
+* ``llama-quantize --help`` prints, for the K-quants and legacy types, the perplexity each
+  adds over 16-bit on Llama-3-8B: "Q4_K_M : 4.58G, +0.1754 ppl @ Llama-3-8B".
+* ``tools/quantize/README.md`` tabulates effective bits per weight for every type on
+  Llama-3.1-8B, i-quants included - the real figure for each mix, where the help text gives
+  i-quants only their nominal bits (IQ4_XS is 4.46 effective, not 4.25).
+
+Interpolating the i-quants' quality has to use effective bits on both sides; mixing nominal
+and effective bits once put IQ4_XS below Q3_K_L.
+
+With ``--reference`` pointing at any 16-bit GGUF, it also asks ``llama-quantize --dry-run``
+which types refuse to run without an importance matrix. That is not "the i-quants": IQ3_S,
+IQ3_M and the IQ4s run without one, and Q2_K_S, which is not an i-quant, does not.
+"""
+
+from __future__ import annotations
+
+import contextlib
+import datetime as dt
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+import httpx
+import yaml
+
+from rightsize.data_models import GgufTypesFile
+from rightsize.execution.llamacpp import find_tools
+
+OUT = Path(__file__).resolve().parents[1] / "data" / "quality" / "gguf_types.yaml"
+README = "https://raw.githubusercontent.com/ggml-org/llama.cpp/{tag}/tools/quantize/README.md"
+README_URL = "https://github.com/ggml-org/llama.cpp/blob/{tag}/tools/quantize/README.md"
+HELP_LINE = re.compile(r"^\s*\d+\s+or\s+(\S+)\s*:\s*([\d.]+)G,\s*([+-][\d.]+)\s+ppl\s+@\s+(\S+)")
+
+
+def ppl_from_help(quantize_bin: Path) -> dict[str, dict]:
+    proc = subprocess.run(
+        [str(quantize_bin), "--help"], capture_output=True, text=True, check=False
+    )
+    rows = {}
+    for line in (proc.stdout + proc.stderr).splitlines():
+        m = HELP_LINE.match(line)
+        if m:
+            name, _, delta, ref = m.groups()
+            rows[name] = {"ppl_delta": float(delta), "ppl_reference": ref}
+    return rows
+
+
+def bpw_from_readme(tag: str) -> dict[str, float]:
+    """The README's tables run one type per column: a "Measure" header, then a bits/weight
+    row with a value per column."""
+    text = httpx.get(README.format(tag=tag), timeout=60, follow_redirects=True).text
+    out: dict[str, float] = {}
+    header: list[str] = []
+    for line in text.splitlines():
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if cells and cells[0] == "Measure":
+            header = cells[1:]
+        elif header and cells and cells[0] == "bits/weight":
+            for name, value in zip(header, cells[1:], strict=False):
+                with contextlib.suppress(ValueError):  # a blank cell, not a number
+                    out[name] = float(value)
+            header = []
+    return out
+
+
+def needs_imatrix(quantize_bin: Path, reference: Path, qtype: str) -> bool:
+    """llama-quantize's own answer, from a dry run that writes nothing (about 80 ms)."""
+    proc = subprocess.run(
+        [str(quantize_bin), "--dry-run", str(reference), qtype],
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=False,
+    )
+    return "will require an imatrix" in (proc.stdout + proc.stderr)
+
+
+def main() -> int:
+    tools = find_tools()
+    ppl = ppl_from_help(tools.quantize)
+    bpw = bpw_from_readme(tools.version)
+    reference = None
+    if "--reference" in sys.argv:
+        reference = Path(sys.argv[sys.argv.index("--reference") + 1])
+    if not ppl or not bpw:
+        print(f"parsed {len(ppl)} ppl lines and {len(bpw)} bpw values; has a format changed?")
+        return 1
+    types = {}
+    for name in sorted(set(ppl) | set(bpw), key=lambda n: bpw.get(n, 99)):
+        rec: dict = {}
+        if name in bpw:
+            rec["bpw"] = bpw[name]
+        if name in ppl:
+            rec.update(ppl[name])
+        if reference and name not in ("F16", "BF16", "F32"):
+            rec["requires_imatrix"] = needs_imatrix(tools.quantize, reference, name)
+        types[name] = rec
+    doc = {
+        "llama_cpp": tools.version,
+        "sources": {
+            "ppl_delta": {
+                "source_url": f"https://github.com/ggml-org/llama.cpp/blob/{tools.version}/tools/quantize/quantize.cpp",
+                "fetched_at": dt.date.today().isoformat(),
+                "note": "printed by `llama-quantize --help`; perplexity added over 16-bit",
+            },
+            "bpw": {
+                "source_url": README_URL.format(tag=tools.version),
+                "fetched_at": dt.date.today().isoformat(),
+                "note": "effective bits per weight measured on Llama-3.1-8B",
+            },
+            **(
+                {
+                    "requires_imatrix": {
+                        "source_url": f"https://github.com/ggml-org/llama.cpp/blob/{tools.version}/src/llama-quant.cpp",
+                        "fetched_at": dt.date.today().isoformat(),
+                        "note": "asked of `llama-quantize --dry-run` (tensor_requires_imatrix)",
+                    }
+                }
+                if reference
+                else {}
+            ),
+        },
+        "file_types": types,
+    }
+    GgufTypesFile.model_validate(doc)
+    header = (
+        "# What llama.cpp measured about each GGUF file type: effective bits per weight for all\n"
+        "# of them, and the perplexity added over 16-bit for those it prints one for.\n"
+        "# Generated by scripts/ingest_quant_quality.py - do not hand edit.\n"
+    )
+    OUT.write_text(header + yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
+    print(f"wrote {OUT}: {len(bpw)} with bits per weight, {len(ppl)} with a perplexity cost")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

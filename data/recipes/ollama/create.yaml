@@ -1,0 +1,17 @@
+id: ollama/create
+framework: ollama
+stage: serve
+families: [llm]
+hardware: { vendors: [any] }
+install_line: 'curl -fsSL https://ollama.com/install.sh | sh (Linux, macOS); irm https://ollama.com/install.ps1 | iex (Windows)'
+kind: command
+inputs:
+  name: { type: str, required: true, help: the model name to run it by }
+  modelfile: { type: path, default: Modelfile }
+template: >-
+  ollama create {{ name }} -f {{ modelfile }}
+notes:
+  - "then: ollama run NAME"
+source_doc_url: https://docs.ollama.com/import
+version_tested: v0.34.4
+verified: docs

@@ -1,0 +1,73 @@
+# Fine-tuning: which trainer runs where, and which frameworks to stop recommending. Checked
+# against each project's own requirements page or README on 2026-09-25.
+rules:
+  - id: unsloth_below_pascal
+    applies_to: {stage: finetune, runtime.name: unsloth}
+    condition: "device.vendor == 'nvidia' and device.compute_capability < 6.0"
+    effect: block
+    message: Unsloth needs a Pascal-or-newer NVIDIA GPU
+    source_url: https://unsloth.ai/docs/get-started/fine-tuning-for-beginners/unsloth-requirements
+    test:
+      fires: {stage: finetune, runtime: {name: unsloth}, device: {vendor: nvidia, compute_capability: 5.2}}
+      silent: {stage: finetune, runtime: {name: unsloth}, device: {vendor: nvidia, compute_capability: 7.5}}
+
+  - id: unsloth_slow_below_volta
+    applies_to: {stage: finetune, runtime.name: unsloth}
+    condition: >-
+      device.vendor == 'nvidia' and device.compute_capability >= 6.0
+      and device.compute_capability < 7.0
+    effect: penalize
+    penalty: 0.5
+    message: >-
+      Unsloth's stated minimum is compute capability 7.0; it says the GTX 1070 and 1080 work,
+      but slowly
+    source_url: https://unsloth.ai/docs/get-started/fine-tuning-for-beginners/unsloth-requirements
+    test:
+      fires: {stage: finetune, runtime: {name: unsloth}, device: {vendor: nvidia, compute_capability: 6.1}}
+      silent: {stage: finetune, runtime: {name: unsloth}, device: {vendor: nvidia, compute_capability: 8.6}}
+
+  - id: unsloth_on_apple_is_unsettled
+    applies_to: {stage: finetune, runtime.name: unsloth}
+    condition: "device.vendor == 'apple'"
+    effect: note
+    message: >-
+      Unsloth's own docs disagree about Apple Silicon (Core says in the works, Studio says
+      full support); mlx_lm.lora is the documented path for LoRA and QLoRA on a Mac
+    source_url: https://unsloth.ai/docs/get-started/fine-tuning-for-beginners/unsloth-requirements
+    test:
+      fires: {stage: finetune, runtime: {name: unsloth}, device: {vendor: apple}}
+      silent: {stage: finetune, runtime: {name: unsloth}, device: {vendor: nvidia}}
+
+  - id: mlx_lora_trains_on_apple
+    applies_to: {stage: finetune, runtime.name: mlx-lm}
+    condition: "device.vendor == 'apple'"
+    effect: note
+    message: >-
+      mlx_lm.lora trains LoRA, DoRA and full fine-tunes, and QLoRA when pointed at a
+      quantized model
+    source_url: https://github.com/ml-explore/mlx-lm/blob/main/mlx_lm/LORA.md
+    test:
+      fires: {stage: finetune, runtime: {name: mlx-lm}, device: {vendor: apple}}
+      silent: {stage: finetune, runtime: {name: mlx-lm}, device: {vendor: nvidia}}
+
+  - id: torchtune_is_unmaintained
+    applies_to: {runtime.name: torchtune}
+    effect: block
+    message: >-
+      torchtune development wound down in 2025 and the project is no longer maintained;
+      TRL, Axolotl or Unsloth instead
+    source_url: https://github.com/meta-pytorch/torchtune
+    test:
+      fires: {runtime: {name: torchtune}}
+      silent: {runtime: {name: unsloth}}
+
+  - id: autotrain_is_unmaintained
+    applies_to: {runtime.name: autotrain}
+    effect: block
+    message: >-
+      AutoTrain Advanced is no longer maintained; its README points to Axolotl, TRL or
+      transformers.Trainer
+    source_url: https://github.com/huggingface/autotrain-advanced
+    test:
+      fires: {runtime: {name: autotrain}}
+      silent: {runtime: {name: axolotl}}

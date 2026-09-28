@@ -1,0 +1,38 @@
+# Memory a runtime adds on top of weights and KV cache: CUDA context, compute buffers,
+# scratch. overhead_gb = fixed_gb + fraction x weights_gb (fit/llm.py).
+#
+# These began as hand estimates and are what scripts/refit_constants.py proposes new values
+# for, from calibration records (rightsize calibrate) and run manifests. A refit is a
+# reviewed change to this file, with the before/after error in the commit that makes it.
+runtimes:
+  - name: llama.cpp
+    fixed_gb: 0.27
+    fraction: 0.01
+    source:
+      source_url: https://github.com/ggml-org/llama.cpp/blob/b11177/tools/server/README.md
+      fetched_at: "2026-09-28"
+      note: >-
+        fitted to llama-server b11177 serving six GGUFs (Qwen3-0.6B and 1.7B, gemma-3-270m,
+        LFM2-350M, granite-4.0-h-350m) at ctx 4096 and 16384 on an RTX 4070 Ti SUPER under
+        Windows: the VRAM rise less llama.cpp's own model, KV and recurrent-state buffers.
+        About 0.23 GB of it is the CUDA context, the same in every run; the compute buffers
+        were 23-64 MiB, since a server keeps logits only for the tokens it samples. Error of
+        the total over the twelve: mean 0.0%, worst -7.5%; the first estimate, 0.75 GB + 2%,
+        was +54% on average and +106% at worst. One machine: other drivers and operating
+        systems have other context sizes
+  - name: ollama
+    fixed_gb: 0.90
+    fraction: 0.03
+    source:
+      source_url: https://github.com/ollama/ollama/blob/main/docs/api.md
+      fetched_at: "2026-09-25"
+      hand: true
+      note: first estimate; refit from measurements (F9)
+  - name: lm studio
+    fixed_gb: 0.80
+    fraction: 0.02
+    source:
+      source_url: https://lmstudio.ai/docs/app/api/endpoints/rest
+      fetched_at: "2026-09-25"
+      hand: true
+      note: first estimate; refit from measurements (F9)

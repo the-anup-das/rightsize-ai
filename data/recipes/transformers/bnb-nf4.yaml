@@ -1,0 +1,35 @@
+id: transformers/bnb-nf4
+framework: transformers
+stage: quantize
+families: [llm]
+hardware: { vendors: [nvidia, amd, intel] }
+install_line: pip install --upgrade transformers accelerate bitsandbytes
+kind: config
+language: python
+inputs:
+  model: { type: str, required: true }
+  double_quant: { type: enum, values: ["True", "False"], default: "True", help: "saves about 0.4 bits per parameter" }
+  output_dir: { type: path, default: model-bnb-nf4, help: "where the 4-bit checkpoint is saved" }
+file: bnb_nf4.py
+writes: [output_dir]
+targets:
+  - {name: nf4, size_from: nf4-dq, embedding_bits: 16, head_bits: 16}
+template: |
+  import torch
+  from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+
+  bnb_config = BitsAndBytesConfig(
+      load_in_4bit=True, bnb_4bit_quant_type="nf4",
+      bnb_4bit_compute_dtype=torch.bfloat16, bnb_4bit_use_double_quant={{ double_quant }})
+  model = AutoModelForCausalLM.from_pretrained(
+      "{{ model }}", quantization_config=bnb_config, device_map="auto", dtype=torch.bfloat16)
+  tokenizer = AutoTokenizer.from_pretrained("{{ model }}")
+  model.save_pretrained("{{ output_dir }}")  # loads back 4-bit, quantization config included
+  tokenizer.save_pretrained("{{ output_dir }}")
+notes:
+  - "quantizes while loading, then saves the 4-bit checkpoint; from_pretrained on output_dir loads it back quantized"
+  - "transformers 5 removed load_in_4bit= as a from_pretrained argument, and dtype= replaces torch_dtype="
+  - "run on Windows with an RTX 4070 Ti SUPER (rightsize quantize --to nf4): Qwen3-0.6B in 10 s, at most 1.34 GB of VRAM; 538.9 MB of weights with the embedding and the tied head left in BF16; loads back 4-bit and answers"
+source_doc_url: https://huggingface.co/docs/transformers/en/quantization/bitsandbytes
+version_tested: 5.17.0
+verified: run

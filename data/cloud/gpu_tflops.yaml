@@ -1,0 +1,46 @@
+# Dense 16-bit tensor-core TFLOPS from the vendors' datasheets: the ceiling a BF16 (FP16 on
+# Turing) training step works against. NVIDIA's pages quote most figures with sparsity; the
+# values here are half of those, as the pages' own footnotes say. The Hugging Face hardware
+# table's "tflops" is the non-tensor FP16 rate - a quarter of this on an H100, half on an
+# RTX 4090 - so it would mis-rank data-center against consumer cards; it is not used here.
+#
+# names are the SkyPilot catalog's accelerator names (catalogs/v8/*/vms.csv). A name that
+# does not say its form factor takes the SXM figure: rented H100s are mostly SXM boards.
+# GPUs missing here get a price but no job time.
+gpus:
+  - names: [H100, H100-SXM, H100-80G-SXM5, H100-NVLINK, H100-MEGA]
+    tflops: 989.5
+    source_url: https://www.nvidia.com/en-us/data-center/h100/
+    note: "H100 SXM, BFLOAT16 Tensor Core 1,979 with sparsity"
+  - names: [H100-NVL]
+    tflops: 835.5
+    source_url: https://www.nvidia.com/en-us/data-center/h100/
+    note: "H100 NVL, BFLOAT16 Tensor Core 1,671 with sparsity"
+  - names: [H200, H200-SXM]
+    tflops: 989.5
+    source_url: https://www.nvidia.com/en-us/data-center/h200/
+    note: "H200 SXM, BF16 Tensor Core 1,979 with sparsity"
+  - names: [A100, A100-80GB, A100-80GB-SXM, A100-80G-PCIe, A100-80G-PCIe-NVLink]
+    tflops: 312
+    source_url: https://www.nvidia.com/en-us/data-center/a100/
+    note: "BF16 Tensor Core 312, 624 with sparsity; the same for PCIe and SXM"
+  - names: [L40S]
+    tflops: 362.05
+    source_url: https://www.nvidia.com/en-us/data-center/l40s/
+    note: "BF16 Tensor Core 362.05, 733 with sparsity"
+  - names: [L4]
+    tflops: 121
+    source_url: https://www.nvidia.com/en-us/data-center/l4/
+    note: "BFLOAT16 Tensor Core 242 shown with sparsity; one half without"
+  - names: [A10]
+    tflops: 125
+    source_url: https://www.nvidia.com/en-us/data-center/products/a10-gpu/
+    note: "BFLOAT16 Tensor Core 125, 250 with sparsity; the A10G is a different part"
+  - names: [T4]
+    tflops: 65
+    source_url: https://www.nvidia.com/en-us/data-center/tesla-t4/
+    note: "Mixed Precision (FP16/FP32) 65; Turing has no BF16, so FP16 training"
+  - names: [RTX4090]
+    tflops: 165.2
+    source_url: https://images.nvidia.com/aem-dam/Solutions/geforce/ada/nvidia-ada-gpu-architecture.pdf
+    note: "Appendix A: Peak FP16 Tensor TFLOPS with FP32 Accumulate 165.2/330.4; GeForce runs FP32 accumulate at half rate"

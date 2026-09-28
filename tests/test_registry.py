@@ -21,7 +21,22 @@ def test_bundled_recipes_load_and_have_provenance() -> None:
     for r in recipes.values():
         assert r.source_doc_url.startswith("https://")
         assert r.version_tested
-    assert frameworks() == ["llama.cpp"]
+    assert {
+        "llama.cpp",
+        "unsloth",
+        "trl",
+        "axolotl",
+        "mlx-lm",
+        "vllm",
+        "ollama",
+        "optimum-intel",
+        "llm-compressor",
+        "transformers",
+        "diffusers",
+        "whisper.cpp",
+        "ctranslate2",
+        "sentence-transformers",
+    } == set(frameworks())
 
 
 def test_render_quantize_with_and_without_imatrix() -> None:
@@ -88,3 +103,59 @@ def test_template_syntax_checks() -> None:
 def test_recipe_model_rejects_unknown_stage() -> None:
     with pytest.raises(ValueError):
         Recipe(id="x", framework="y", stage="teleport", template="a", source_doc_url="https://x")
+
+
+def _example_values(recipe: Recipe) -> dict:
+    """Every input filled: its default, else its first allowed value, else a stand-in."""
+    values = {}
+    for name, spec in recipe.inputs.items():
+        if spec.default is not None:
+            values[name] = spec.default
+        elif spec.values:
+            values[name] = spec.values[0]
+        elif spec.required:
+            values[name] = "org/model" if name == "model" else f"{name}.bin"
+    return values
+
+
+@pytest.mark.parametrize("recipe_id", sorted(all_recipes()))
+def test_every_recipe_renders_and_config_recipes_parse(recipe_id: str) -> None:
+    """A config recipe that renders broken Python or YAML would only fail on the user's
+    machine; parsing the render here catches it first."""
+    import ast
+
+    import yaml
+
+    recipe = get(recipe_id)
+    step = render(recipe, **_example_values(recipe))
+    assert step.text and "{{" not in step.text and "{%" not in step.text
+    if recipe.language == "python":
+        ast.parse(step.text)
+    elif recipe.language == "yaml":
+        assert isinstance(yaml.safe_load(step.text), dict)
+
+
+def test_python_recipes_spell_booleans_the_python_way() -> None:
+    text = render(get("unsloth/sft"), model="org/model", load_in_4bit="False").text
+    assert "load_in_4bit=False" in text
+    text = render(get("axolotl/qlora"), model="org/model", load_in_4bit=True).text
+    assert "load_in_4bit: true" in text
+
+
+def test_every_toolkit_recipe_says_how_far_it_was_checked() -> None:
+    """Recipes transcribed from documentation say so. The ones marked run were run end to end
+    here, and adding one to that list is a deliberate edit to this test."""
+    ran_outside_llama_cpp = set()
+    for recipe in all_recipes().values():
+        assert recipe.version_tested, recipe.id
+        if recipe.framework != "llama.cpp" and recipe.verified != "docs":
+            ran_outside_llama_cpp.add(recipe.id)
+    assert ran_outside_llama_cpp == {
+        "unsloth/sft",
+        "llm-compressor/fp8-dynamic",
+        "llm-compressor/gptq-w4a16",
+        "transformers/bnb-nf4",
+        "optimum-intel/export-openvino",
+        "sentence-transformers/onnx-int8",
+        "ctranslate2/convert-whisper",
+    }

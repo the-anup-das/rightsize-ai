@@ -22,9 +22,69 @@ uv run ruff format --check .
 
 ## Adding a framework or toolkit
 
-You do not write Python. Add a recipe under `data/recipes/<framework>/<stage>.yaml` following `data/schema/recipe.schema.json` (schema lands with F5), with typed inputs, the command or config template, the install extra, hardware constraints and the doc URL you took the flags from. CI renders every recipe; a nightly job dry-runs them against the installed toolkit.
+You do not write Python. A framework is one folder, `data/recipes/<name>/`:
 
-Third-party packages can ship recipes too, via the `rightsize.recipes` entry point. See `docs/plans/F05-framework-registry.md`.
+- `framework.yaml` says what the toolkit is for, where it runs, how it installs and how its
+  steps join a plan (`data/schema/framework.schema.json`). A trainer declares a `finetune`
+  role: the modes it has a recipe for, the recipe, what it writes (a merged model or an
+  adapter), how QLoRA holds the base weights, and `default_for`, the device vendors it is the
+  default trainer on (`"*"` for any vendor no other framework names; `priority` breaks a
+  tie). `defaults` gives the file and binary names its recipes read when a plan does not set
+  them, with `{slug}` for the model and `{quant}` for the quantization.
+- one YAML file per recipe (`data/schema/recipe.schema.json`): typed inputs, the command or
+  config template, hardware constraints and the doc URL you took the flags from.
+
+For example, a trainer that should become the default on NVIDIA needs this and one recipe:
+
+```yaml
+name: zoomtune
+title: ZoomTune
+summary: what it is for, in a sentence
+stages: [finetune]
+hardware: {vendors: [nvidia]}
+install: {kind: pip, check: zoomtune, line: pip install zoomtune}
+finetune:
+  modes: [lora, qlora]
+  recipe: zoomtune/train
+  qlora_quant: {method: bnb, variant: nf4}
+  writes: merged
+  default_for: [nvidia]
+  priority: 20
+homepage: https://example.org/zoomtune
+source_doc_url: https://example.org/zoomtune/docs
+```
+
+CI validates both files, renders every recipe, checks that each `defaults` key is an input
+one of the framework's recipes reads, and regenerates `docs/frameworks/`
+(`python -m rightsize.registry.docs`). `tests/test_frameworks.py` shows a trainer added this
+way taking over plans without any change to rightsize.
+
+Third-party packages ship the same folder layout through the `rightsize.recipes` entry point
+(a directory, or a callable returning dicts: recipes have a `template`, descriptors do not).
+A plugin may add frameworks and recipes but never replace a bundled one.
+
+A recipe also says how it runs: a config recipe names the `file` it is written to and the
+`run` line that executes it (Python configs default to `python {file}`), and `writes` lists
+the inputs that name what the step produces, which `rightsize run` checks and measures. List
+the Python packages in `framework.yaml`'s `install.packages` and `rightsize tools install
+<name>` gives the toolkit its own environment. A toolkit whose steps need more than a
+command (binaries of its own, a download first) can register a runner under the
+`rightsize.runners` entry point; `execution/runner.py` has the protocol and llama.cpp's.
+
+A recipe that makes a weight format lists it under `targets`, and `rightsize quantize MODEL
+--to NAME` then runs it:
+
+```yaml
+targets:
+  - {name: fp8, size_from: fp8, embedding_bits: 16, head_bits: 16}
+```
+
+`size_from` names the `data/quants/formats.yaml` entry that predicts the output size;
+`inputs` sets the recipe inputs that select the format; `embedding_bits` and `head_bits`
+say what the toolkit leaves unquantized (llm-compressor and bitsandbytes skip everything but
+Linear layers); `weights` is a glob for the files the prediction covers when the output
+folder holds more than the quantized model. Run it once and compare the manifest's measured
+size with the prediction before marking the recipe `verified: run`.
 
 ## Adding a rule
 

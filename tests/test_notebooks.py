@@ -35,3 +35,22 @@ def test_notebook_is_valid_and_code_parses(path: Path) -> None:
         if cell["cell_type"] == "code":
             ast.parse(src, filename=f"{path.name}#cell{i}")
             assert cell["outputs"] == [], "notebooks are committed without outputs"
+
+
+def test_hardware_notebook_covers_what_the_readme_promises() -> None:
+    """The hardware story moved a long way past "16 presets"; the walkthrough must follow.
+
+    Cheap guard against the notebooks drifting back behind the code, which is how they
+    stopped mentioning the catalogue, bench and the unit convention in the first place.
+    """
+    import json
+    from pathlib import Path
+
+    nb = json.loads(
+        (Path(__file__).resolve().parents[1] / "notebooks" / "02-hardware.ipynb").read_text(
+            encoding="utf-8"
+        )
+    )
+    text = "\n".join("".join(c["source"]) for c in nb["cells"])
+    for topic in ("catalog(", "from_hf", "bench", "memory_gib", "A100 40GB"):
+        assert topic in text, f"02-hardware.ipynb no longer mentions {topic}"

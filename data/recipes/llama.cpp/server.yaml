@@ -1,0 +1,24 @@
+id: llama.cpp/server
+framework: llama.cpp
+stage: serve
+families: [llm]
+hardware: { vendors: [any] }
+install_line: 'download a release from https://github.com/ggml-org/llama.cpp/releases (llama-server), or rightsize tools install llama.cpp'
+kind: command
+inputs:
+  server_bin: { type: path, required: true }
+  model_gguf: { type: path, required: true, help: the quantized GGUF to serve }
+  ctx: { type: int, default: 8192, help: context length the plan was sized for }
+  gpu_layers: { type: str, default: all, help: layers on the GPU; all, auto, or a number }
+  host: { type: str, default: 127.0.0.1 }
+  port: { type: int, default: 8080 }
+  flash_attn: { type: enum, values: [auto, "on", "off"], default: auto }
+template: >-
+  {{ server_bin }} -m {{ model_gguf }} -c {{ ctx }} -ngl {{ gpu_layers }} -fa {{ flash_attn }} --host {{ host }} --port {{ port }}
+notes:
+  - "serves an OpenAI-compatible API at http://host:port/v1; the chat template comes from the GGUF (--jinja is on by default)"
+  - "keep --host 127.0.0.1 unless you mean to expose it; add --api-key before binding to 0.0.0.0"
+  - "-c is the context the plan was sized for; a larger one needs more KV cache than the plan counted"
+source_doc_url: https://github.com/ggml-org/llama.cpp/blob/b11177/tools/server/README.md
+version_tested: b11177
+verified: help

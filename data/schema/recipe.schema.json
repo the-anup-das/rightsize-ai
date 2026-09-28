@@ -1,0 +1,316 @@
+{
+  "$defs": {
+    "RecipeInput": {
+      "properties": {
+        "default": {
+          "default": null,
+          "title": "Default"
+        },
+        "help": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Help"
+        },
+        "required": {
+          "default": false,
+          "title": "Required",
+          "type": "boolean"
+        },
+        "type": {
+          "default": "str",
+          "enum": [
+            "path",
+            "str",
+            "int",
+            "float",
+            "bool",
+            "enum"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "values": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Values"
+        }
+      },
+      "title": "RecipeInput",
+      "type": "object"
+    },
+    "Target": {
+      "additionalProperties": false,
+      "description": "A format ``rightsize quantize --to NAME`` produces with this recipe.",
+      "properties": {
+        "embedding_bits": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "bits the input embedding keeps, e.g. 16 where only Linear layers are quantized; empty means the format's own",
+          "title": "Embedding Bits"
+        },
+        "head_bits": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "bits an output head of its own keeps (a tied head is saved once, as the embedding); empty means the format's own",
+          "title": "Head Bits"
+        },
+        "inputs": {
+          "additionalProperties": true,
+          "description": "the recipe inputs that select this format",
+          "title": "Inputs",
+          "type": "object"
+        },
+        "name": {
+          "description": "what --to takes: fp8, w4a16, nf4, openvino-int4, ...",
+          "title": "Name",
+          "type": "string"
+        },
+        "size_from": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "the quants/formats.yaml entry that predicts the output size",
+          "title": "Size From"
+        },
+        "weights": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "glob, inside what the recipe writes, for the files the prediction covers; empty means every weight file, not the tokenizer and config beside them",
+          "title": "Weights"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "Target",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "families": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Families",
+      "type": "array"
+    },
+    "file": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "for a config: the file it is written to in the run directory (default <framework>_<name>.<ext>)",
+      "title": "File"
+    },
+    "framework": {
+      "title": "Framework",
+      "type": "string"
+    },
+    "hardware": {
+      "additionalProperties": true,
+      "title": "Hardware",
+      "type": "object"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "inputs": {
+      "additionalProperties": {
+        "$ref": "#/$defs/RecipeInput"
+      },
+      "title": "Inputs",
+      "type": "object"
+    },
+    "install_extra": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Install Extra"
+    },
+    "install_line": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Install Line"
+    },
+    "kind": {
+      "default": "command",
+      "enum": [
+        "command",
+        "config"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "language": {
+      "anyOf": [
+        {
+          "enum": [
+            "bash",
+            "python",
+            "yaml",
+            "modelfile"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "what a config renders to; tests parse python and yaml renders",
+      "title": "Language"
+    },
+    "notes": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Notes",
+      "type": "array"
+    },
+    "run": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "for a config: the command that runs the written file, with {file} for its path; python configs default to 'python {file}', other configs are only written",
+      "title": "Run"
+    },
+    "source_doc_url": {
+      "title": "Source Doc Url",
+      "type": "string"
+    },
+    "stage": {
+      "enum": [
+        "convert",
+        "finetune",
+        "quantize",
+        "export",
+        "serve",
+        "calibrate",
+        "evaluate"
+      ],
+      "title": "Stage",
+      "type": "string"
+    },
+    "targets": {
+      "description": "formats this recipe produces for rightsize quantize --to",
+      "items": {
+        "$ref": "#/$defs/Target"
+      },
+      "title": "Targets",
+      "type": "array"
+    },
+    "template": {
+      "title": "Template",
+      "type": "string"
+    },
+    "verified": {
+      "default": "docs",
+      "description": "How far this recipe has been checked against version_tested: 'run' means it was run end to end, 'help' that every flag was checked against the tool's own --help, 'docs' that it was transcribed from the documentation only",
+      "enum": [
+        "run",
+        "help",
+        "docs"
+      ],
+      "title": "Verified",
+      "type": "string"
+    },
+    "version_tested": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Version Tested"
+    },
+    "writes": {
+      "description": "the inputs naming what this step produces (a file or a directory), checked and measured after a run",
+      "items": {
+        "type": "string"
+      },
+      "title": "Writes",
+      "type": "array"
+    }
+  },
+  "required": [
+    "id",
+    "framework",
+    "stage",
+    "template",
+    "source_doc_url"
+  ],
+  "title": "Recipe",
+  "type": "object"
+}

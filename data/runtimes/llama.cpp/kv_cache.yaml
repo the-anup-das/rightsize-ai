@@ -1,0 +1,106 @@
+# How llama.cpp sizes the KV cache for architectures that are not plain GQA (F3).
+#
+# Plain GQA needs 2 * layers * kv_heads * head_dim * ctx * bytes, and that formula is wrong -
+# sometimes by two orders of magnitude - for three families of modern models:
+#
+#   sliding window  Only some layers see the whole context; the rest attend to a window, and
+#                   llama.cpp caches just that window for them.
+#   MLA             DeepSeek-style attention caches one compressed latent per token, with no
+#                   separate V cache. DeepSeek-V3 at 128K is ~9 GB, not the ~655 GB the GQA
+#                   formula gives from its config.
+#   hybrid          Linear-attention or state-space layers keep a small fixed-size state
+#                   instead of a KV cache; only the attention layers grow with context.
+#
+# Every rule below was read from llama.cpp's source at the tag we pin (b11177). Other runtimes
+# differ - vLLM, for instance, pages its cache differently - which is why this lives under
+# runtimes/llama.cpp rather than with the model.
+runtime: llama.cpp
+version: b11177
+source_url: https://github.com/ggml-org/llama.cpp/tree/b11177/src
+fetched_at: "2026-09-25"
+
+# llama_kv_cache_iswa: the sliding layers get
+#     size_swa = pad(min(ctx, n_swa * n_seq + n_ubatch), 256)
+# cells, and the full layers get the whole context. --swa-full turns that off.
+defaults:
+  n_ubatch: 512
+  # llama-perplexity and llama-imatrix run n_batch / ctx sequences at once (-b, default
+  # 2048): at -c 512 that is four, each with its own KV
+  n_batch: 2048
+  swa_pad: 256
+  # recurrent and conv states are float32 regardless of --cache-type-k
+  recurrent_state_bytes: 4
+  swa_source_url: https://github.com/ggml-org/llama.cpp/blob/b11177/src/llama-kv-cache-iswa.cpp
+
+# model_types lists both names a model goes by: config.json's model_type and the architecture
+# a GGUF declares (general.architecture, from llama.cpp's src/llama-arch.cpp), so a model read
+# from its GGUF header meets the same rule as the model it was converted from.
+architectures:
+  # ---------------------------------------------------------------- sliding window
+  # llama_hparams::set_swa_pattern(n): layer il slides when il % n < n - 1, so the last layer
+  # of every group of n sees the full context. A per-layer list in the config wins.
+  - model_types: [gemma3, gemma3_text]
+    sliding:
+      pattern: 6
+      window_key: sliding_window
+    note: five sliding layers to one full
+    source_url: https://github.com/ggml-org/llama.cpp/blob/b11177/src/models/gemma3.cpp
+  - model_types: [gemma2]
+    sliding:
+      pattern: 2
+      window_key: sliding_window
+      window_default: 4096
+    note: sliding and full layers alternate
+    source_url: https://github.com/ggml-org/llama.cpp/blob/b11177/src/models/gemma2.cpp
+  - model_types: [llama4, llama4_text]
+    sliding:
+      pattern: 4
+      window_default: 8192
+    note: chunked attention in 8192-token chunks; three chunked layers to one full
+    source_url: https://github.com/ggml-org/llama.cpp/blob/b11177/src/models/llama4.cpp
+  - model_types: [gpt_oss, gpt-oss]
+    sliding:
+      pattern: 2
+      window_key: sliding_window
+    note: 128-token window on alternating layers
+    source_url: https://github.com/ggml-org/llama.cpp/blob/b11177/src/models/openai-moe.cpp
+
+  # ---------------------------------------------------------------- MLA
+  # The converter turns MLA into MQA with one large head (conversion/deepseek.py sets
+  # num_key_value_heads = 1 and key_length = kv_lora_rank + qk_rope_head_dim), and the cache
+  # allocates no V tensor for MLA models (llama-kv-cache.cpp: has_v = !is_mla).
+  - model_types: [deepseek_v2, deepseek_v3, deepseek_v32, kimi_k2, deepseek2, deepseek32]
+    mla: true
+    note: one compressed latent of kv_lora_rank + qk_rope_head_dim per token and layer
+    source_url: https://github.com/ggml-org/llama.cpp/blob/b11177/src/llama-kv-cache.cpp
+
+  # ---------------------------------------------------------------- hybrid
+  # Only attention layers keep a KV cache. Recurrent layers keep a fixed state per sequence:
+  #     d_state * d_inner + (d_conv - 1) * (d_inner + 2 * n_groups * d_state)
+  # floats (llama_hparams::n_embd_s and n_embd_r), independent of context length.
+  - model_types: [qwen3_next, qwen3next]
+    hybrid:
+      rule: full_attention_interval
+      interval_default: 4
+    note: gated delta-net layers with full attention on every fourth
+    source_url: https://github.com/ggml-org/llama.cpp/blob/b11177/src/models/qwen3next.cpp
+  - model_types: [jamba]
+    hybrid:
+      rule: attn_layer_period
+    note: one attention layer per attn_layer_period, at attn_layer_offset
+    source_url: https://github.com/ggml-org/llama.cpp/blob/b11177/src/models/jamba.cpp
+  - model_types: [nemotron_h, nemotron_h_moe]
+    hybrid:
+      rule: hybrid_override_pattern
+    note: "'*' marks attention, 'M' Mamba2, '-' MLP-only"
+    source_url: https://github.com/ggml-org/llama.cpp/blob/b11177/src/models/nemotron-h.cpp
+  - model_types: [granitemoehybrid, lfm2, lfm2_moe, granitehybrid, lfm2moe]
+    hybrid:
+      rule: layer_types
+    note: per-layer list (Granite layer_types) or attention indices (LFM2 full_attn_idxs)
+    source_url: https://github.com/ggml-org/llama.cpp/blob/b11177/src/models/granite-hybrid.cpp
+  - model_types: [falcon_h1, falcon-h1]
+    hybrid:
+      rule: parallel
+    note: attention and a Mamba2 block side by side in every layer, so every layer has both
+    source_url: https://github.com/ggml-org/llama.cpp/blob/b11177/src/models/falcon-h1.cpp

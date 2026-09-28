@@ -1,0 +1,233 @@
+{
+ "ref": {
+  "repo": "ibm-granite/granite-4.0-h-350m-GGUF",
+  "revision": "main",
+  "file": "granite-4.0-h-350m-Q4_K_M.gguf"
+ },
+ "family": "llm",
+ "params_total": 340332224,
+ "params_active": null,
+ "dtype": "Q4_K_M",
+ "num_layers": 32,
+ "num_kv_heads": 4,
+ "head_dim": 64,
+ "context_max": 1048576,
+ "license": "apache-2.0",
+ "base_model": "ibm-granite/granite-4.0-h-350m",
+ "confidence": 1.0,
+ "extra": {
+  "model_type": "granitehybrid",
+  "architectures": null,
+  "params_by_dtype": {
+   "Q4_K": 237355008,
+   "Q6_K": 102629376,
+   "F32": 347840
+  },
+  "params_counted_from": "GGUF header",
+  "shards": [
+   "granite-4.0-h-350m-Q4_K_M.gguf"
+  ],
+  "library": "transformers",
+  "pipeline_tag": null,
+  "pipeline": null,
+  "gated": false,
+  "private": false,
+  "sha": "a864f823cce6e6048b5752e2816fe7a23987d790",
+  "num_experts": 0,
+  "num_experts_per_tok": 0,
+  "sliding_window": null,
+  "attention": {
+   "model_type": "granitehybrid",
+   "layer_types": [
+    "recurrent",
+    "recurrent",
+    "recurrent",
+    "recurrent",
+    "recurrent",
+    "recurrent",
+    "recurrent",
+    "recurrent",
+    "recurrent",
+    "recurrent",
+    "full_attention",
+    "recurrent",
+    "recurrent",
+    "full_attention",
+    "recurrent",
+    "recurrent",
+    "recurrent",
+    "full_attention",
+    "recurrent",
+    "recurrent",
+    "recurrent",
+    "recurrent",
+    "recurrent",
+    "recurrent",
+    "recurrent",
+    "recurrent",
+    "recurrent",
+    "full_attention",
+    "recurrent",
+    "recurrent",
+    "recurrent",
+    "recurrent"
+   ],
+   "hidden_size": 768,
+   "mamba_d_state": 128,
+   "mamba_d_conv": 4,
+   "mamba_n_groups": 1,
+   "mamba_d_ssm": 1536
+  },
+  "tie_word_embeddings": true,
+  "vocab_size": 100352,
+  "hidden_size": 768,
+  "intermediate_size": 2048,
+  "num_attention_heads": 12,
+  "image_size": null,
+  "patch_size": null,
+  "gguf": {
+   "file": "granite-4.0-h-350m-Q4_K_M.gguf",
+   "files": [
+    "granite-4.0-h-350m-Q4_K_M.gguf"
+   ],
+   "quant": "Q4_K_M",
+   "file_type": "Q4_K_M",
+   "architecture": "granitehybrid",
+   "version": 3,
+   "tensor_bytes": 219091712,
+   "bytes_by_type": {
+    "Q4_K": 133512192,
+    "Q6_K": 84188160,
+    "F32": 1391360
+   },
+   "input_embedding_bytes": 63221760,
+   "output_bytes": null,
+   "header_bytes": 3570848,
+   "unknown_types": []
+  },
+  "gguf_files": {
+   "Q2_K": {
+    "files": [
+     "granite-4.0-h-350m-Q2_K.gguf"
+    ],
+    "bytes": 159883936,
+    "weights_bytes": 156313088,
+    "exact": false
+   },
+   "Q4_0": {
+    "files": [
+     "granite-4.0-h-350m-Q4_0.gguf"
+    ],
+    "bytes": 216073120,
+    "weights_bytes": 212502272,
+    "exact": false
+   },
+   "Q4_1": {
+    "files": [
+     "granite-4.0-h-350m-Q4_1.gguf"
+    ],
+    "bytes": 232505248,
+    "weights_bytes": 228934400,
+    "exact": false
+   },
+   "Q5_0": {
+    "files": [
+     "granite-4.0-h-350m-Q5_0.gguf"
+    ],
+    "bytes": 248937376,
+    "weights_bytes": 245366528,
+    "exact": false
+   },
+   "Q5_1": {
+    "files": [
+     "granite-4.0-h-350m-Q5_1.gguf"
+    ],
+    "bytes": 265369504,
+    "weights_bytes": 261798656,
+    "exact": false
+   },
+   "Q6_K": {
+    "files": [
+     "granite-4.0-h-350m-Q6_K.gguf"
+    ],
+    "bytes": 283855648,
+    "weights_bytes": 280284800,
+    "exact": false
+   },
+   "Q8_0": {
+    "files": [
+     "granite-4.0-h-350m-Q8_0.gguf"
+    ],
+    "bytes": 366195616,
+    "weights_bytes": 362624768,
+    "exact": false
+   },
+   "BF16": {
+    "files": [
+     "granite-4.0-h-350m-bf16.gguf"
+    ],
+    "bytes": 684931200,
+    "weights_bytes": 681360352,
+    "exact": false
+   },
+   "Q3_K_L": {
+    "files": [
+     "granite-4.0-h-350m-Q3_K_L.gguf"
+    ],
+    "bytes": 194941984,
+    "weights_bytes": 191371136,
+    "exact": false
+   },
+   "Q3_K_M": {
+    "files": [
+     "granite-4.0-h-350m-Q3_K_M.gguf"
+    ],
+    "bytes": 188699680,
+    "weights_bytes": 185128832,
+    "exact": false
+   },
+   "Q3_K_S": {
+    "files": [
+     "granite-4.0-h-350m-Q3_K_S.gguf"
+    ],
+    "bytes": 181154848,
+    "weights_bytes": 177584000,
+    "exact": false
+   },
+   "Q4_K_M": {
+    "files": [
+     "granite-4.0-h-350m-Q4_K_M.gguf"
+    ],
+    "bytes": 222662560,
+    "weights_bytes": 219091712,
+    "exact": true
+   },
+   "Q4_K_S": {
+    "files": [
+     "granite-4.0-h-350m-Q4_K_S.gguf"
+    ],
+    "bytes": 216957856,
+    "weights_bytes": 213387008,
+    "exact": false
+   },
+   "Q5_K_M": {
+    "files": [
+     "granite-4.0-h-350m-Q5_K_M.gguf"
+    ],
+    "bytes": 252331936,
+    "weights_bytes": 248761088,
+    "exact": false
+   },
+   "Q5_K_S": {
+    "files": [
+     "granite-4.0-h-350m-Q5_K_S.gguf"
+    ],
+    "bytes": 248937376,
+    "weights_bytes": 245366528,
+    "exact": false
+   }
+  },
+  "gguf_other_files": [],
+  "mmproj": null
+ }
+}

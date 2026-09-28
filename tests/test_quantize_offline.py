@@ -85,7 +85,7 @@ def test_dry_run_predictions_are_in_manifest_json(fake_env) -> None:
         log=lambda s: None,
     )
     data = (tmp / "runs" / m.id / "manifest.json").read_text()
-    assert '"formula_id": "llm.gguf.analytic.v0"' in data and '"Q8_0"' in data
+    assert '"formula_id": "llm.gguf.analytic.v1"' in data and '"Q8_0"' in data
 
 
 def test_logits_file_size_matches_a_real_run() -> None:

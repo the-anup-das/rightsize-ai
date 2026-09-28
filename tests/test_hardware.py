@@ -31,8 +31,11 @@ def test_fuzzy_lookup(query: str, expected: str) -> None:
 
 
 def test_unknown_preset_raises_with_hint() -> None:
-    with pytest.raises(KeyError, match="known"):
+    with pytest.raises(KeyError, match="no device matches"):
         get("Voodoo 3")
+    # a near miss suggests rather than dumping all 250-odd catalogue names
+    with pytest.raises(KeyError, match="did you mean"):
+        get("RTX 9999")
 
 
 def test_resolve_accepts_device_or_name() -> None:
@@ -43,12 +46,33 @@ def test_resolve_accepts_device_or_name() -> None:
 
 def test_nvidia_smi_parser(monkeypatch) -> None:
     monkeypatch.setattr(
-        probe, "_run", lambda cmd, timeout=15.0: "NVIDIA GeForce RTX 4070 Ti SUPER, 16376, 610.88\n"
+        probe,
+        "_run",
+        lambda cmd, timeout=15.0: "NVIDIA GeForce RTX 4070 Ti SUPER, 16376, 610.88, 8.9\n",
     )
-    gpus = probe.nvidia_gpus()
-    assert gpus == [
-        {"name": "NVIDIA GeForce RTX 4070 Ti SUPER", "memory_gib": 16.0, "driver": "610.88"}
+    assert probe.nvidia_gpus() == [
+        {
+            "name": "NVIDIA GeForce RTX 4070 Ti SUPER",
+            "memory_gib": 16.0,
+            "driver": "610.88",
+            "compute_capability": 8.9,
+        }
     ]
+
+
+def test_old_drivers_without_compute_cap_still_detect(monkeypatch) -> None:
+    """A driver that does not know compute_cap rejects the whole query; ask again without it
+    rather than reporting no GPU at all."""
+    calls: list[str] = []
+
+    def fake_run(cmd, timeout=15.0):
+        calls.append(cmd[1])
+        return None if "compute_cap" in cmd[1] else "Tesla T4, 15360, 470.82\n"
+
+    monkeypatch.setattr(probe, "_run", fake_run)
+    gpus = probe.nvidia_gpus()
+    assert len(calls) == 2 and gpus[0]["name"] == "Tesla T4"
+    assert gpus[0]["compute_capability"] is None
 
 
 def test_detect_fills_bandwidth_from_preset(monkeypatch) -> None:
@@ -81,3 +105,183 @@ def test_device_memory_is_gib_and_converts_to_decimal_gb() -> None:
     assert pytest.approx(dev.memory_gib, abs=0.01) == 16376 / 1024
     assert Device(name="cpu box", memory_gib=8, system_ram_gib=64).system_ram_gb == 68.719
     assert Device(name="no ram", memory_gib=8).system_ram_gb is None
+
+
+def test_catalog_is_ingested_and_joined_to_bandwidth() -> None:
+    """The catalogue comes from Hugging Face's SKU table; bandwidth comes from ours.
+
+    HF publishes memory, TFLOPS and compute capability for ~250 accelerators but no memory
+    bandwidth, so the two files are joined on the device name. A device we have no
+    bandwidth for still resolves - the fit engine gives a memory verdict without a tok/s.
+    """
+    cat = db.catalog()
+    assert len(cat) > 200, "the whole HF table, one entry per memory option"
+    assert cat["RTX 4090 24GB"].bandwidth_gbps == 1008.0
+    # A card nobody has curated and no list covers keeps None rather than a guess
+    assert cat["A800 80GB"].bandwidth_gbps is None, "not covered anywhere, and it says so"
+    assert cat["RTX 4090 24GB"].compute_arch == "sm_89"
+    for dev in cat.values():
+        assert dev.provenance and dev.provenance.source_url.startswith("https://")
+
+
+def test_bandwidth_is_computed_from_bus_width_and_speed() -> None:
+    """256-bit GDDR6X at 21 Gbps is 672 GB/s, which is what this card actually does.
+
+    Storing the two facts the vendor publishes, rather than a bandwidth figure copied out
+    of someone's database, means the number carries its own derivation.
+    """
+    table = db.bandwidth()
+    ti = table[db._norm("RTX 4070 Ti Super")]
+    assert ti["gbps"] == 672.0
+    assert ti["how"] == "256-bit GDDR6X at 21 Gbps"
+    assert ti["formula_id"] == "mem.bandwidth.bus_x_rate.v0"
+    # HBM and unified memory do not divide cleanly, so those are the vendor's own figure
+    assert table[db._norm("H100 80GB")]["how"] == "stated by the source"
+    assert table[db._norm("Apple M4 Max")]["gbps"] == 546.0
+
+
+def test_lookup_prefers_presets_then_falls_through_to_the_catalog() -> None:
+    assert get("RTX 4070 Ti SUPER").usable_fraction == 0.92  # curated preset
+    desktop = get("RTX 5080")
+    assert desktop.name == "RTX 5080 16GB", "a bare name means the desktop card, not Mobile"
+
+
+# ---------------------------------------------------------------- Hub profile hardware
+
+#: The shape https://huggingface.co/api/users/<name>/overview really returns.
+_OVERVIEW = {
+    "hardwareItems": [
+        {"sku": ["GPU", "NVIDIA", "RTX 3090"], "mem": 24, "num": 2},
+        {"sku": ["Apple Silicon", "-", "Apple M4 Max"], "mem": 64, "num": 1, "isPrimary": True},
+        {"sku": ["GPU", "NVIDIA", "RTX 4090"], "mem": 48, "num": 1},
+    ]
+}
+
+
+def _stub(payload, status=200):
+    import httpx
+
+    return httpx.MockTransport(lambda request: httpx.Response(status, json=payload))
+
+
+def test_from_hf_reads_saved_hardware() -> None:
+    from rightsize.hardware.hf import from_hf as impl
+
+    devices = impl("someone", transport=_stub(_OVERVIEW))
+    assert devices[0].name == "Apple M4 Max 64GB", "the primary machine comes first"
+    assert devices[0].bandwidth_gbps == 546.0, "resolved against our own tables"
+    assert [d.name for d in devices[1:3]] == ["RTX 3090 24GB #1", "RTX 3090 24GB #2"]
+    # 48GB is not a stock 4090; keep the catalogue record but take the user's word on size
+    odd = devices[-1]
+    assert odd.memory_gib == 48 and odd.vendor == "nvidia"
+    assert all(d.provenance and "profile" in (d.provenance.note or "") for d in devices)
+
+
+def test_from_hf_is_loud_when_there_is_nothing_to_read() -> None:
+    from rightsize.hardware.hf import HubHardwareError
+    from rightsize.hardware.hf import from_hf as impl
+
+    with pytest.raises(HubHardwareError, match="no Hugging Face profile"):
+        impl("ghost", transport=_stub({}, status=404))
+    with pytest.raises(HubHardwareError, match="no hardware saved"):
+        impl("empty", transport=_stub({"hardwareItems": []}))
+
+
+def test_ingested_bandwidth_covers_cards_nobody_curated() -> None:
+    """Wikipedia's GPU lists fill in what Hugging Face's table and our hand list do not."""
+    cat = db.catalog()
+    assert cat["RTX 3090 24GB"].bandwidth_gbps == 936.0  # 384-bit GDDR6X at 19.5 Gbps
+    assert cat["RTX 5080 16GB"].bandwidth_gbps == 960.0  # 256-bit GDDR7 at 30
+    assert cat["RX 7900 XTX 24GB"].bandwidth_gbps == 960.0  # 384-bit GDDR6 at 20
+    assert "GDDR6X at 19.5 Gbps" in cat["RTX 3090 24GB"].provenance.note
+
+
+def test_bandwidth_never_crosses_vendors() -> None:
+    """_norm drops the vendor word, so "Apple M4" and a Mobility Radeon M4 collide.
+
+    Whichever page a record came from is recorded, and a device only takes a number from
+    its own vendor's list. Without this an Apple chip silently reported a Radeon's memory.
+    """
+    assert db._bandwidth_for("M4", "amd")[0] != db._bandwidth_for("Apple M4", "apple")[0]
+    gbps, hit = db._bandwidth_for("Apple M4", "apple")
+    assert gbps == 120.0 and hit["how"] == "stated by the source"
+    assert db._bandwidth_for("H100 80GB", "nvidia")[0] == 3350.0
+
+
+def test_a_source_that_is_consistently_wrong_is_overridden_by_hand() -> None:
+    """The cross-check catches a source contradicting itself, not one that is just wrong.
+
+    Wikipedia's GPU list gives the H200 3360 GB/s - the H100's figure - and its bus width
+    and clock agree with that, so the arithmetic reproduces the error faithfully. NVIDIA
+    states 4.8 TB/s. bandwidth.yaml records the vendor's number and flags the disagreement
+    so the ingest does not keep failing on it.
+    """
+    dev = db.catalog()["H200 141GB"]
+    assert dev.bandwidth_gbps == 4800.0
+    assert "nvidia.com" in dev.provenance.source_url
+
+
+def test_size_variants_do_not_borrow_each_others_bandwidth() -> None:
+    """An A100 40GB is 1555 GB/s and an 80GB is 2039; a 3060 is 240 at 8GB and 360 at 12.
+
+    The join asks for "<model> <size>GB" before the bare model name, because a name on its
+    own does not identify the card when the memory differs.
+    """
+    cat = db.catalog()
+    assert cat["A100 40GB"].bandwidth_gbps == 1555.2
+    assert cat["A100 80GB"].bandwidth_gbps == 2039.0
+    assert cat["RTX 3060 8GB"].bandwidth_gbps == 240.0
+    assert cat["RTX 3060 12GB"].bandwidth_gbps == 360.0
+
+
+def test_apple_silicon_is_covered_and_derived() -> None:
+    """Apple's table gives bus width, memory type and a stated bandwidth that reconcile.
+
+    The memory standard names its own data rate - LPDDR5X-8533 is 8533 MT/s - so these
+    compute the same way the GPUs do rather than being copied.
+    """
+    cat = db.catalog()
+    assert cat["Apple M1 Max 64GB"].bandwidth_gbps == 409.6  # 512-bit LPDDR5-6400
+    assert cat["Apple M2 Ultra 192GB"].bandwidth_gbps == 819.2  # 1024-bit
+    assert "LPDDR5-6400 at 6.4 Gbps" in cat["Apple M1 Max 64GB"].provenance.note
+    # the M4 Max ships in two widths and they must not share a number
+    assert cat["Apple M4 Max 36GB"].bandwidth_gbps == 409.6  # 384-bit x 8.533
+    assert cat["Apple M4 Max 64GB"].bandwidth_gbps == pytest.approx(546, abs=0.2)  # 512-bit
+
+
+def test_intel_arc_comes_from_intels_own_spec_pages() -> None:
+    """Intel publishes bus width, memory speed and bandwidth per SKU on ark.intel.com.
+
+    Found by search, read from the vendor, and each one reconciles with our formula, so
+    these are curated rather than scraped: 192-bit GDDR6 at 19 Gbps is the B580's 456 GB/s.
+    """
+    cat = db.catalog()
+    assert cat["Arc B580 12GB"].bandwidth_gbps == 456.0
+    assert cat["Arc A380 6GB"].bandwidth_gbps == 186.0  # 96-bit at 15.5
+    assert "intel.com" in cat["Arc B580 12GB"].provenance.source_url
+    # the A770 runs its 16GB variant faster than its 8GB one, 17.5 Gbps against 16
+    assert cat["Arc A770 8GB"].bandwidth_gbps == 512.0
+    assert cat["Arc A770 16GB"].bandwidth_gbps == 560.0
+
+
+def test_implausible_rows_are_dropped_rather_than_published() -> None:
+    """An MI250 row parsed to 2 GB/s on a 4096-bit bus. No number beats a wrong one.
+
+    A bus can only run between RATE_RANGE Gbps, so bus width and bandwidth bound each
+    other; a pair that cannot go together means the parse failed on that row.
+    """
+    cat = db.catalog()
+    assert cat["MI250 128GB"].bandwidth_gbps is None
+    # its siblings parse cleanly and are kept
+    assert cat["MI210 64GB"].bandwidth_gbps == 1638.4  # 4096-bit HBM2E at 3.2
+    assert cat["MI100 32GB"].bandwidth_gbps == 1228.8
+
+
+def test_mobile_parts_resolve_after_the_laptop_suffix_is_normalised() -> None:
+    """Wikipedia names these "GeForce RTX 3060 Mobile/ Laptop"; the catalogue says
+    "RTX 3060 Mobile". The trailing "laptop" token kept ~30 devices from matching.
+
+    NVIDIA publishes a bus width but not a bandwidth for laptop GPUs, because the memory
+    speed is an OEM choice, so these come from the list rather than the vendor.
+    """
+    assert db.catalog()["RTX 3060 Mobile 6GB"].bandwidth_gbps == 288.0

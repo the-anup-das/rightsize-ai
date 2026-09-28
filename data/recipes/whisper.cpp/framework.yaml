@@ -1,0 +1,19 @@
+# What this toolkit is for, where it runs, how it installs and how its steps join a plan.
+name: whisper.cpp
+title: whisper.cpp
+summary: >-
+  Quantizes Whisper models to ggml types and transcribes with them, on CPUs and GPUs
+stages: [quantize, serve]
+families: [audio]
+formats: [ggml]
+hardware: {vendors: [any]}
+install:
+  kind: binary
+  check: whisper-cli
+  line: >-
+    git clone https://github.com/ggml-org/whisper.cpp && cd whisper.cpp && cmake -B build &&
+    cmake --build build -j --config Release
+  note: or brew install whisper-cpp on a Mac
+homepage: https://github.com/ggml-org/whisper.cpp
+source_doc_url: https://github.com/ggml-org/whisper.cpp/blob/master/README.md
+version_tested: v1.9.4

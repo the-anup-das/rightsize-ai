@@ -1,0 +1,127 @@
+{
+  "$defs": {
+    "Source": {
+      "additionalProperties": false,
+      "description": "Where a number came from. Required on every record (lightweight rule 2).",
+      "properties": {
+        "fetched_at": {
+          "title": "Fetched At",
+          "type": "string"
+        },
+        "hand": {
+          "default": false,
+          "title": "Hand",
+          "type": "boolean"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        },
+        "source_url": {
+          "title": "Source Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_url",
+        "fetched_at"
+      ],
+      "title": "Source",
+      "type": "object"
+    },
+    "_TypeMeasures": {
+      "additionalProperties": false,
+      "properties": {
+        "bpw": {
+          "anyOf": [
+            {
+              "maximum": 32,
+              "minimum": 1,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bpw"
+        },
+        "ppl_delta": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ppl Delta"
+        },
+        "ppl_reference": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ppl Reference"
+        },
+        "requires_imatrix": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Requires Imatrix"
+        }
+      },
+      "title": "_TypeMeasures",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "data/quality/gguf_types.yaml, generated from llama.cpp's own measurements.",
+  "properties": {
+    "file_types": {
+      "additionalProperties": {
+        "$ref": "#/$defs/_TypeMeasures"
+      },
+      "title": "File Types",
+      "type": "object"
+    },
+    "llama_cpp": {
+      "title": "Llama Cpp",
+      "type": "string"
+    },
+    "sources": {
+      "additionalProperties": {
+        "$ref": "#/$defs/Source"
+      },
+      "title": "Sources",
+      "type": "object"
+    }
+  },
+  "required": [
+    "llama_cpp",
+    "sources",
+    "file_types"
+  ],
+  "title": "GgufTypesFile",
+  "type": "object"
+}
