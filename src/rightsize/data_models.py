@@ -454,6 +454,7 @@ class KvRule(_Strict):
 
 class _KvDefaults(_Strict):
     n_ubatch: int = Field(gt=0)
+    n_batch: int = Field(gt=0)
     swa_pad: int = Field(gt=0)
     recurrent_state_bytes: int = Field(gt=0)
     swa_source_url: str
@@ -479,6 +480,48 @@ class KvCacheFile(_Strict):
                 raise ValueError(f"model types claimed by two rules: {sorted(clash)}")
             seen.update(rule.model_types)
         return v
+
+
+class _EmbeddingTied(_Strict):
+    uneven_rows: str
+    architectures: list[str]
+    file_types: dict[str, str]
+    keep: list[str]
+    default: str
+
+
+class _EmbeddingOwn(_Strict):
+    file_types: dict[str, str]
+
+
+class EmbeddingFile(_Strict):
+    """data/runtimes/llama.cpp/embedding.yaml: where llama.cpp keeps the input embedding and
+    the tensor type llama-quantize stores it in (F3)."""
+
+    runtime: str
+    version: str
+    runtimes: list[str] = Field(min_length=1)
+    source_url: str
+    placement_source_url: str
+    fetched_at: str
+    aliases: dict[str, str] = Field(default_factory=dict)
+    default_type: dict[str, str]
+    tied: _EmbeddingTied
+    own: _EmbeddingOwn
+    fallback: dict[str, str]
+
+    @model_validator(mode="after")
+    def _known_types(self) -> EmbeddingFile:
+        from rightsize._data import load_yaml
+
+        known = {t["name"] for t in load_yaml("quants/ggml_types.yaml")["tensor_types"]}
+        named = {*self.default_type.values(), self.tied.uneven_rows, self.tied.default,
+                 *self.tied.keep, *self.tied.file_types.values(), *self.own.file_types.values(),
+                 *self.fallback, *self.fallback.values()}
+        unknown = sorted(named - known)
+        if unknown:
+            raise ValueError(f"not ggml tensor types: {unknown}")
+        return self
 
 
 # ---------------------------------------------------------------- other families (F3)
@@ -679,6 +722,7 @@ DATA_FILES: dict[str, tuple[str, Any]] = {
     "models/families.yaml": ("families", FamiliesFile),
     "rules/*.yaml": ("rules", RulesFile),
     "runtimes/*/kv_cache.yaml": ("kv_cache", KvCacheFile),
+    "runtimes/llama.cpp/embedding.yaml": ("embedding", EmbeddingFile),
     # first match wins: a framework's descriptor sits beside its recipes
     "recipes/*/framework.yaml": ("framework", _framework_model),
     "recipes/*/*.yaml": ("recipe", _recipe_model),

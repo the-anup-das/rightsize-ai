@@ -40,6 +40,7 @@ from typing import Any
 
 from rightsize._data import load_yaml
 from rightsize.fit import estimate, estimate_finetune, ppl_delta
+from rightsize.fit.finetune import merged
 from rightsize.fit.llm import gguf_bpw
 from rightsize.fit.quality import band
 from rightsize.rules.engine import Outcome, evaluate, load_rules
@@ -422,7 +423,9 @@ def _evaluate_candidate(
         if delta is None or delta > max_delta:
             rejected.append(Rejection(c.repo, q, f"quality: {band(delta)} ({how})"))
             continue
-        fit = estimate(c.facts, q, target, ctx=ctx, runtime=runtime)
+        # after a fine-tune the steps convert the model the trainer saved, not the base
+        fit = estimate(merged(c.facts) if ft is not None else c.facts, q, target, ctx=ctx,
+                       runtime=runtime)
         if fit.verdict is Verdict.no_fit:
             rejected.append(Rejection(c.repo, q, f"does not fit: needs {fit.vram_gb:.1f} GB"))
             continue

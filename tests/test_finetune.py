@@ -87,7 +87,7 @@ def test_lora_adapter_count_matches_the_standard_formula() -> None:
 
 def test_estimate_dispatches_training_modes() -> None:
     r = estimate(_qwen3_4b(), "Q4_K_M", CARD, mode=Mode.qlora)
-    assert r.formula_id == "llm.finetune.components.v0"
+    assert r.formula_id == "llm.finetune.components.v1"
 
 
 def test_quantization_quality_from_llama_cpp() -> None:
@@ -108,3 +108,20 @@ def test_below_every_measured_type_is_not_guessed() -> None:
     delta, how = ppl_delta("IQ1_S")
     assert delta is None and "too far out" in how
     assert band(delta) == "unknown"
+
+
+@pytest.mark.parametrize("name, allocated_gb", [
+    ("Qwen__Qwen3-0.6B", 1.798),
+    ("Qwen__Qwen3-1.7B", 2.758),
+])
+def test_qlora_tensors_match_what_unsloth_allocated(name: str, allocated_gb: float) -> None:
+    """Unsloth 2026.9.11 QLoRA, batch 2, 2048 tokens, 30 steps on an RTX 4070 Ti SUPER
+    (2026-09-28): torch.cuda.max_memory_allocated() for the training step alone. Without the
+    logits the parts came to 0.86 and 1.99 GB."""
+    import json
+
+    path = Path(__file__).parent / "fixtures" / "facts" / f"{name}.json"
+    facts = ModelFacts.model_validate(json.loads(path.read_text(encoding="utf-8")))
+    b = estimate_finetune(facts, CARD, Mode.qlora, batch=2).breakdown
+    tensors = b["weights"] + b["trainable_state"] + b["activations"] + b["logits"]
+    assert tensors == pytest.approx(allocated_gb, rel=0.05)

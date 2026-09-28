@@ -24,6 +24,9 @@ fetched_at: "2026-09-25"
 # cells, and the full layers get the whole context. --swa-full turns that off.
 defaults:
   n_ubatch: 512
+  # llama-perplexity and llama-imatrix run n_batch / ctx sequences at once (-b, default
+  # 2048): at -c 512 that is four, each with its own KV
+  n_batch: 2048
   swa_pad: 256
   # recurrent and conv states are float32 regardless of --cache-type-k
   recurrent_state_bytes: 4

@@ -1,13 +1,17 @@
 """LLM fit estimator, GGUF path (F3, first slice).
 
-formula_id ``llm.gguf.analytic.v0``:
+formula_id ``llm.gguf.analytic.v1``:
   weights_gb   = params x effective_bpw / 8, or the tensor bytes of the repo's own GGUF
                  for that quantization when the facts came from a GGUF repo
+  embedding_gb = the input embedding at the type llama-quantize gives it; llama.cpp keeps it
+                 in system RAM (data/runtimes/llama.cpp/embedding.yaml). v0 counted it in VRAM
+  gpu_weights  = weights - embedding, unless the output head is tied to it: llama.cpp then
+                 keeps a copy on the GPU as the head, and only RAM grows
   kv_gb        = per-layer KV as llama.cpp allocates it (fit/kv.py): plain GQA is
                  2 x layers x kv_heads x head_dim x ctx x batch x kv_bytes; sliding-window,
                  MLA and hybrid models follow data/runtimes/llama.cpp/kv_cache.yaml
-  overhead_gb  = runtime constant + fraction x weights  (llama.cpp ~0.75 GB + 2%)
-  vram_gb      = weights + kv + overhead
+  overhead_gb  = runtime constant + fraction x gpu_weights  (llama.cpp ~0.75 GB + 2%)
+  vram_gb      = gpu_weights + kv + overhead;  ram_gb = embedding_gb
   tok/s        ~ bandwidth / (weights + kv) bytes read per decoded token, x efficiency
 Confidence 0.6 (analytic, uncalibrated). Every number is explainable in ``breakdown``.
 """
@@ -18,7 +22,7 @@ from rightsize._data import load_yaml
 from rightsize.fit import kv as _kv
 from rightsize.types import Device, FitResult, Mode, ModelFacts, QuantSpec, RuntimeSpec, Verdict
 
-FORMULA_ID = "llm.gguf.analytic.v0"
+FORMULA_ID = "llm.gguf.analytic.v1"
 
 
 
@@ -64,8 +68,34 @@ def gguf_bpw(quant: str) -> tuple[float, str]:
 def predicted_file_gb(facts: ModelFacts, quant: str) -> float:
     if not facts.params_total:
         raise ValueError("params_total unknown; cannot predict size")
-    bpw, _ = gguf_bpw(quant)
-    return facts.params_total * bpw / 8 / 1e9
+    return _table_weights(facts, quant)[0]
+
+
+def _routed_experts(facts: ModelFacts) -> int | None:
+    """Parameters in routed expert tensors. The catalog counts active parameters as the total
+    less the idle share of the routed experts, so the routed count follows back from it."""
+    extra = facts.extra or {}
+    n, k = extra.get("num_experts"), extra.get("num_experts_per_tok")
+    if not (facts.params_total and facts.params_active and n and k and n > k):
+        return None
+    return round((facts.params_total - facts.params_active) * n / (n - k))
+
+
+def _table_weights(facts: ModelFacts, quant: str) -> tuple[float, float, str]:
+    """(GB, bits per weight, where from) from the tables. MXFP4_MOE - "MXFP4" in ggml-org's
+    and LM Studio's file names - is MXFP4 only for the routed experts: llama-quantize writes
+    every other tensor as Q8_0, which params x 4.25 bits left out (gpt-oss-20b: 11.11 GB
+    against the 12.10 GB of tensors its GGUF holds)."""
+    total = facts.params_total or 0
+    experts = _routed_experts(facts) if quant.upper() in ("MXFP4", "MXFP4_MOE") else None
+    if experts:
+        sizes = _type_sizes()
+        mx, q8 = (sizes[t][1] * 8 / sizes[t][0] for t in ("MXFP4", "Q8_0"))
+        bits = experts * mx + (total - experts) * q8
+        return (bits / 8 / 1e9, bits / total,
+                "MXFP4 routed experts, Q8_0 elsewhere (llama-quantize's MXFP4_MOE)")
+    bpw, source = gguf_bpw(quant)
+    return total * bpw / 8 / 1e9, bpw, source
 
 
 def repo_file(facts: ModelFacts, quant: str) -> dict | None:
@@ -88,8 +118,78 @@ def weights(facts: ModelFacts, quant: str) -> tuple[float, float, str]:
         how = "its header" if own.get("exact") else "its file size"
         return (nbytes / 1e9, nbytes * 8 / facts.params_total,
                 f"the repo's {quant.upper()} file ({how})")
-    bpw, source = gguf_bpw(quant)
-    return facts.params_total * bpw / 8 / 1e9, bpw, source
+    return _table_weights(facts, quant)
+
+
+def _type_sizes() -> dict[str, tuple[int, int]]:
+    """(block size, bytes per block) for every ggml tensor type."""
+    return {t["name"]: (t["block_size"], t["type_size"])
+            for t in load_yaml("quants/ggml_types.yaml")["tensor_types"]}
+
+
+def embedding_type(file_type: str, hidden: int, *, tied: bool,
+                   architecture: str | None = None) -> str | None:
+    """The tensor type llama-quantize stores ``token_embd.weight`` in for ``file_type``, from
+    data/runtimes/llama.cpp/embedding.yaml; None for a name llama-quantize does not make,
+    such as a publisher's own mix."""
+    rules = load_yaml("runtimes/llama.cpp/embedding.yaml")
+    ft = rules.get("aliases", {}).get(file_type.upper(), file_type.upper())
+    new = rules["default_type"].get(ft)
+    if new is None:
+        return None
+    sizes = _type_sizes()
+    if sizes[new][0] == 1:  # F32, F16, BF16 are not quantized, so no rule applies
+        return new
+    if tied:
+        t = rules["tied"]
+        if hidden % sizes[new][0] or (architecture or "").lower() in t["architectures"]:
+            new = t["uneven_rows"]
+        elif ft in t["file_types"]:
+            new = t["file_types"][ft]
+        elif new not in t["keep"]:
+            new = t["default"]
+    else:
+        new = rules["own"]["file_types"].get(ft, new)
+    if hidden % sizes[new][0]:
+        new = rules["fallback"].get(new, new)
+        if hidden % sizes[new][0]:
+            new = "F16"
+    return new
+
+
+def input_embedding(facts: ModelFacts, quant: str) -> tuple[float, bool, str] | None:
+    """The input embedding table of the model's GGUF at ``quant``: (GB, whether the model has
+    an output head of its own, where the figure came from), or None when the facts cannot say.
+
+    Our converter writes an output head whenever the checkpoint stores one, tied or not; a
+    GGUF repo's own tensors say whether it has one. A config that does not say is taken as
+    tied, which leaves the VRAM estimate where it was."""
+    extra = facts.extra or {}
+    g = extra.get("gguf") or {}
+    if g:
+        own_head = g.get("output_bytes") is not None
+        read = {str(g.get("quant", "")).upper(), str(g.get("file_type", "")).upper()}
+        if g.get("input_embedding_bytes") and quant.upper() in read:
+            return g["input_embedding_bytes"] / 1e9, own_head, "its GGUF header"
+    else:
+        own_head = extra.get("tie_word_embeddings") is False or bool(extra.get("tied_head_stored"))
+    vocab, hidden = extra.get("vocab_size"), extra.get("hidden_size")
+    if not (vocab and hidden):
+        return None
+    typ = embedding_type(quant, hidden, tied=not own_head, architecture=extra.get("model_type"))
+    if typ is None:
+        return None
+    block, size = _type_sizes()[typ]
+    return (vocab * hidden * size / block / 1e9, own_head,
+            f"{typ}, the type llama-quantize gives it in {quant.upper()}")
+
+
+def embedding_in_ram(runtime: str, device: Device) -> bool:
+    """llama.cpp and the runtimes built on it keep the input embedding on the CPU; where GPU
+    and CPU share one memory, that is no saving."""
+    runtimes = load_yaml("runtimes/llama.cpp/embedding.yaml")["runtimes"]
+    return (runtime.lower() in runtimes and not device.unified_memory
+            and device.vendor != "cpu")
 
 
 def kv_cache_gb(facts: ModelFacts, ctx: int, batch: int = 1, kv_bytes: float = 2.0) -> float:
@@ -120,7 +220,10 @@ def estimate(
     ctx: int = 8192,
     batch: int = 1,
     kv_bytes: float = 2.0,
+    all_logits: bool = False,
 ) -> FitResult:
+    """``all_logits`` sizes a pass that keeps every token's logits - llama-perplexity and
+    llama-imatrix - rather than a server, which keeps them only for the tokens it samples."""
     if mode is not Mode.infer:
         # training memory does not depend on the serving quantization; see fit/finetune.py
         from rightsize.fit.finetune import estimate_finetune
@@ -138,12 +241,30 @@ def estimate(
             f"KV cache cannot be sized.{hint}"
         )
     weights_gb, bpw, bpw_source = weights(facts, qname)
+    notes = [f"bpw {bpw:.3f} from {bpw_source}", f"ctx {ctx}, kv {kv_bytes:g} B/elem"]
+    logits = 0.0
+    if all_logits:
+        # n_batch / ctx sequences at once, each with its own KV, and a micro-batch of logits
+        d = load_yaml("runtimes/llama.cpp/kv_cache.yaml")["defaults"]
+        batch *= max(1, d["n_batch"] // ctx)
+        logits = d["n_ubatch"] * ((facts.extra or {}).get("vocab_size") or 0) * 4 / 1e9
+        notes.append(f"every token's logits kept: {batch} sequences in parallel, "
+                     f"{logits:.3f} GB of logits for a {d['n_ubatch']}-token micro-batch")
     kv = kv_cache_gb(facts, ctx, batch, kv_bytes)
-    overhead = fixed + frac * weights_gb
-    vram = weights_gb + kv + overhead
+    # llama.cpp keeps the input embedding in system RAM; a tied output head is a copy of it
+    # that stays on the GPU, so only a model with a head of its own sheds it from VRAM
+    ram = on_gpu = 0.0
+    embedding = input_embedding(facts, qname) if embedding_in_ram(rname, device) else None
+    if embedding:
+        ram, own_head, where = embedding
+        on_gpu = ram if not own_head else 0.0
+        notes.append(f"input embedding {ram:.3f} GB in system RAM ({where})"
+                     + ("" if own_head else "; its tied copy as the output head stays in VRAM"))
+    gpu_weights = weights_gb - ram + on_gpu
+    overhead = fixed + frac * gpu_weights + logits
+    vram = gpu_weights + kv + overhead
     usable = device.memory_gb * device.usable_fraction
 
-    notes = [f"bpw {bpw:.3f} from {bpw_source}", f"ctx {ctx}, kv {kv_bytes:g} B/elem"]
     if repo_file(facts, qname) is None and (facts.extra or {}).get("gguf_files"):
         notes.append(f"the repo has no {qname.upper()} file; sized from the bits-per-weight table")
     lay = _kv.layout(facts)
@@ -154,7 +275,7 @@ def estimate(
         verdict = Verdict.fits
     elif vram <= usable:
         verdict = Verdict.tight
-    elif weights_gb * 0.5 + kv + overhead <= usable and device.system_ram_gb:
+    elif gpu_weights * 0.5 + kv + overhead <= usable and device.system_ram_gb:
         verdict = Verdict.offload
         notes.append("does not fit fully; partial offload to system RAM possible")
     else:
@@ -187,9 +308,10 @@ def estimate(
     return FitResult(
         verdict=verdict,
         vram_gb=round(vram, 2),
-        ram_gb=0.0,
+        ram_gb=round(ram, 2),
         breakdown={
-            "weights": round(weights_gb, 3),
+            "weights": round(gpu_weights, 3),
+            **({"input_embedding_ram": round(ram, 3)} if ram else {}),
             "kv_cache": round(kv, 3),
             **{k: v for k, v in _kv.kv_breakdown(facts, ctx, batch, kv_bytes).items() if v},
             "overhead": round(overhead, 3),

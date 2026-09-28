@@ -212,4 +212,4 @@ def test_refit_writes_only_with_enough_records(tmp_path) -> None:
     assert refit.write(many, data) == ["lm studio"]
     text = data.read_text(encoding="utf-8")
     assert "fixed_gb: 0.18" in text and "refit from 6 records" in text
-    assert "fixed_gb: 0.75" in text, "other runtimes untouched"
+    assert "fixed_gb: 0.27" in text, "other runtimes untouched"

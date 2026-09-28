@@ -67,7 +67,7 @@ def test_estimate_fits_on_16gb_and_reports_breakdown() -> None:
         r.breakdown["weights"] + r.breakdown["kv_cache"] + r.breakdown["overhead"], abs=0.02
     )
     assert r.speed and 50 < r.speed < 250  # bandwidth-bound decode on a 672 GB/s card
-    assert r.formula_id == "llm.gguf.analytic.v0"
+    assert r.formula_id == "llm.gguf.analytic.v1"
     assert 0 < r.confidence < 1
 
 
@@ -87,11 +87,11 @@ def test_unknown_quant_raises() -> None:
 
 
 def test_a_model_between_the_two_units_still_fits() -> None:
-    """16 GiB is 17.18 GB, so a 16.6 GB model fits with room to spare. Under the old
+    """16 GiB is 17.18 GB, so a 16.7 GB model fits with room to spare. Under the old
     mix-up the same model was judged against 16.0 and came back no_fit."""
     dev = Device(name="16 GiB card", vendor="nvidia", memory_gib=16, usable_fraction=1.0)
     assert dev.memory_gb == 17.18
-    facts = _qwen3_4b().model_copy(update={"params_total": 25_000_000_000})
+    facts = _qwen3_4b().model_copy(update={"params_total": 26_500_000_000})
     r = estimate(facts, "Q4_K_M", dev, ctx=512)
     assert r.breakdown["usable_memory"] == pytest.approx(17.18, abs=0.01), "budget is decimal GB"
     assert 16.0 < r.vram_gb <= dev.memory_gb, "sits between the decimal and binary readings"

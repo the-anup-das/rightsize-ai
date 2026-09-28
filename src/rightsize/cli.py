@@ -341,6 +341,7 @@ def cmd_estimate(args: argparse.Namespace) -> int:
                 f"{r.breakdown['weights']:.2f}",
                 f"{r.breakdown['kv_cache']:.2f}",
                 f"{r.vram_gb:.2f}",
+                f"{r.ram_gb:.2f}" if r.ram_gb else "",
                 r.verdict.value,
                 f"{r.speed:.0f} {r.speed_unit}" if r.speed else "?",
                 f"{r.confidence:.1f}",
@@ -348,7 +349,7 @@ def cmd_estimate(args: argparse.Namespace) -> int:
         )
         styles.append(verdict_style(r.verdict.value))
     con.table(
-        ["quant", "file GB", "weights", "kv", "vram GB", "verdict", "speed", "conf"],
+        ["quant", "file GB", "weights", "kv", "vram GB", "ram GB", "verdict", "speed", "conf"],
         rows,
         styles=styles,
     )
@@ -396,6 +397,7 @@ def _estimate_training(args: argparse.Namespace, fx, dev) -> int:
                 f"{b['weights']:.2f}",
                 f"{b['trainable_state']:.2f}",
                 f"{b['activations']:.2f}",
+                f"{b.get('logits', 0):.2f}",
                 f"{b.get('published_minimum', 0) or '':}",
                 f"{r.vram_gb:.2f}",
                 r.verdict.value,
@@ -403,7 +405,8 @@ def _estimate_training(args: argparse.Namespace, fx, dev) -> int:
         )
         styles.append(verdict_style(r.verdict.value))
     con.table(
-        ["mode", "weights", "trainable", "activations", "published min", "vram GB", "verdict"],
+        ["mode", "weights", "trainable", "activations", "logits", "published min", "vram GB",
+         "verdict"],
         rows,
         styles=styles,
     )

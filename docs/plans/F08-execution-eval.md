@@ -125,13 +125,13 @@ Unsloth QLoRA adapter (fine-tune -> merged or GGUF), llama.cpp quantize adapter,
 
       The 16-bit reference pass took 11 s with the GPU to itself; the earlier attempt shared
       it with LM Studio and failed after 18 minutes, 40% through.
-- [ ] llama.cpp VRAM estimates run high. The VRAM sampler recorded what the whole card held,
-      desktop included (about 1.5 GB when this run started); less that, the evaluation
-      passes used about 1.9 (Q4_K_M), 2.0 (Q5_K_M) and 2.6 GB (Q8_0) against 2.08, 2.29 and
-      3.01 GB predicted, 10-14% under. llama.cpp keeps the input embedding table in system
-      RAM (src/llama-model.cpp: "always keep it on the CPU"); taking it out of the estimate,
-      then refitting the overheads, is the likely fix (F3). The sampler has to measure the
-      rise over its starting point first
+- [x] llama.cpp VRAM estimates ran high: the evaluation passes used about 1.9 (Q4_K_M), 2.0
+      (Q5_K_M) and 2.6 GB (Q8_0) against 2.08, 2.29 and 3.01 GB predicted. Three causes, all
+      fixed in F3: llama.cpp keeps the input embedding in system RAM, the overhead constant
+      was a guess (0.75 GB against a measured 0.27), and a perplexity pass runs four
+      sequences and keeps a micro-batch of logits, which the serving estimate did not model.
+      Measured again as the rise over what the card held before (llama-perplexity at -c 512,
+      2026-09-28): 1.88 and 2.62 GB for the Q4_K_M and Q8_0 passes, 1.89 and 2.66 GB predicted
 - [x] Extras: `llamacpp` for the converter. The empty `unsloth` and `diffusers` extras are
       gone: toolkits install into their own environments instead
 - [x] Mocked tests; one `slow` GPU test (Qwen3-0.6B end to end)

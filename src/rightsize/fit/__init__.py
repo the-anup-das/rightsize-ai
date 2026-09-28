@@ -19,7 +19,7 @@ from rightsize.types import Device, Family, FitResult, Mode, ModelFacts
 #: The keyword arguments each family's estimator takes. Others are ignored, so one call
 #: shape (the CLI's, the MCP tool's) works for every family.
 FAMILY_ARGS: dict[Family, frozenset[str]] = {
-    Family.llm: frozenset({"runtime", "mode", "ctx", "batch", "kv_bytes"}),
+    Family.llm: frozenset({"runtime", "mode", "ctx", "batch", "kv_bytes", "all_logits"}),
     Family.diffusion: frozenset(
         {"offload", "resolution", "batch", "frames", "text_encoder_quant", "vae_slicing"}
     ),

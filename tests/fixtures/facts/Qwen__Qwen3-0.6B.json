@@ -1,0 +1,52 @@
+{
+ "ref": {
+  "repo": "Qwen/Qwen3-0.6B",
+  "revision": "main",
+  "file": null
+ },
+ "family": "llm",
+ "params_total": 751632384,
+ "params_active": null,
+ "dtype": "BF16",
+ "num_layers": 28,
+ "num_kv_heads": 8,
+ "head_dim": 128,
+ "context_max": 40960,
+ "license": "apache-2.0",
+ "base_model": "Qwen/Qwen3-0.6B-Base",
+ "confidence": 1.0,
+ "extra": {
+  "model_type": "qwen3",
+  "architectures": [
+   "Qwen3ForCausalLM"
+  ],
+  "params_by_dtype": {
+   "BF16": 751632384
+  },
+  "params_counted_from": "Hub parameter summary",
+  "shards": [],
+  "library": "transformers",
+  "pipeline_tag": "text-generation",
+  "pipeline": null,
+  "gated": false,
+  "private": false,
+  "sha": "c1899de289a04d12100db370d81485cdf75e47ca",
+  "other_checkpoints": null,
+  "num_experts": null,
+  "num_experts_per_tok": null,
+  "sliding_window": null,
+  "attention": {
+   "model_type": "qwen3",
+   "use_sliding_window": false,
+   "hidden_size": 1024
+  },
+  "tie_word_embeddings": true,
+  "tied_head_stored": 155582464,
+  "vocab_size": 151936,
+  "hidden_size": 1024,
+  "intermediate_size": 3072,
+  "num_attention_heads": 16,
+  "image_size": null,
+  "patch_size": null
+ }
+}

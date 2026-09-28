@@ -253,7 +253,7 @@ def test_each_family_gets_its_estimator_and_ignores_other_arguments() -> None:
         "openai/whisper-small": "audio.whisper.v0",
         "BAAI/bge-m3": "encoder.weights.v0",
         "google/vit-base-patch16-224": "encoder.weights.v0",
-        "Qwen/Qwen3-4B": "llm.gguf.analytic.v0",
+        "Qwen/Qwen3-4B": "llm.gguf.analytic.v1",
     }
 
 

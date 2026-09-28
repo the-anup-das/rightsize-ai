@@ -275,7 +275,8 @@ def quantize_model(
             log(f"imatrix: {st.text}")
             if gpu_layers != "0":
                 preflight_vram(
-                    estimate(facts, "BF16", dev, ctx=EVAL_CTX).vram_gb, what="imatrix", log=log
+                    estimate(facts, "BF16", dev, ctx=EVAL_CTX, all_logits=True).vram_gb,
+                    what="imatrix", log=log,
                 )
             run(st, sample_vram=True, label="imatrix")
         manifest.artifacts["imatrix"] = str(imat)
@@ -319,7 +320,7 @@ def quantize_model(
             part.unlink(missing_ok=True)
             st = kld_base_step(tc, base_gguf, wiki, part, gpu_layers=gpu_layers, chunks=eval_chunks)
             log(f"kld-base: {st.text}")
-            pred = estimate(facts, "BF16", dev, ctx=EVAL_CTX)
+            pred = estimate(facts, "BF16", dev, ctx=EVAL_CTX, all_logits=True)
             if gpu_layers != "0":
                 preflight_vram(pred.vram_gb, what="the reference pass", log=log)
             log(
@@ -342,7 +343,7 @@ def quantize_model(
         for q, out in outputs.items():
             st = kld_eval_step(tc, out, wiki, logits, gpu_layers=gpu_layers, chunks=eval_chunks)
             log(f"kld-eval {q}: {st.text}")
-            pred = estimate(facts, q, dev, ctx=EVAL_CTX)
+            pred = estimate(facts, q, dev, ctx=EVAL_CTX, all_logits=True)
             if gpu_layers != "0":
                 preflight_vram(pred.vram_gb, what=f"the {q} pass", log=log)
             rs, text, peak = run(st, sample_vram=True, label=q)

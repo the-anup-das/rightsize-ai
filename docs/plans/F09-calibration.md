@@ -61,7 +61,12 @@ Consent flow, local recording from Ollama / LM Studio / nvidia-smi, `submit()` v
       "GPU Process Memory" counters on Windows, where WDDM hides it from nvidia-smi). A
       reading is attributed only when one model is loaded in that runtime. First live
       result: gpt-oss-20b MXFP4 in LM Studio at ctx 8192 on an RTX 4070 Ti SUPER,
-      predicted 12.35 GB, measured 11.74 GB (+5.2%)
+      predicted 12.35 GB, measured 11.74 GB (+5.2%). That prediction had two errors that
+      cancelled (2026-09-28): MXFP4 sized at 4.25 bits throughout, where llama-quantize makes
+      everything but the experts Q8_0 (12.10 GB of tensors, not 11.11), and the embedding
+      counted in VRAM. Both fixed, it says 12.70 GB (+8.2%); the rest is LM Studio's overhead
+      constant, still the first estimate (0.80 GB + 2%). llama-server's refit to 0.27 GB + 1%
+      suggests it is high too; a second LM Studio reading should settle it
 - [ ] Hook from F8 manifests (they record peak VRAM of quantize/eval runs, not serving)
 - [x] Local JSONL store (`~/.local/share/rightsize/measurements.jsonl`); `rightsize calibrate`
       prints the comparison whether or not recording is on

@@ -104,13 +104,42 @@ LLM analytic + oobabooga path + speed; fine-tune components with Unsloth floors;
       time; confidence 0.3 because nothing measured backs it
 - [x] Audio estimator: Whisper per runtime, anything else weights-only
 - [x] Vision / embedding estimator: weights + one batch of activations
-- [ ] Fine-tuning memory for small models with large vocabularies runs low: Unsloth QLoRA on
-      Qwen3-0.6B (batch 2, 2048 tokens) used 3.72 GB against 1.82 GB predicted. The logits
-      of a 152k vocabulary are likely the gap; measure the training step alone (the peak also
-      spans the merge) before refitting
-- [ ] After a fine-tune the converter reads the merged model, which stores a tied output head
+- [x] Fine-tuning memory for small models with large vocabularies ran low: Unsloth QLoRA on
+      Qwen3-0.6B (batch 2, 2048 tokens) raised the card 3.72 GB against 1.82 GB predicted.
+      The training step alone (2026-09-28): PyTorch allocated at most 1.80 GB for Qwen3-0.6B
+      and 2.76 GB for 1.7B, where the parts came to 0.86 and 1.99 GB; the loss's logits had
+      no term. With 0.7 x batch x sequence x vocabulary x 2 bytes (Unsloth chunks its loss)
+      and the weights counted as transformers loads them, the parts are -4.0% and +3.7% off
+      what was allocated. PyTorch's caching allocator reserved 1.6 GB beyond that and the
+      card rose 4.2 and 4.6 GB, room a full card would not have given it: the estimate is
+      the need, the rise is what a roomy card shows. Two models of one vocabulary fit the
+      0.7; other vocabularies and trainers should be measured before it is trusted there
+- [x] After a fine-tune the converter reads the merged model, which stores a tied output head
       once: the Q8_0 of Unsloth's Qwen3-0.6B merge was 0.639 GB against 0.799 GB predicted
-      from the checkpoint's count (`tied_head_stored`, F1). Size post-fine-tune steps without it
+      from the checkpoint's count (`tied_head_stored`, F1). `fit.finetune.merged()` drops the
+      second copy for every step after a fine-tune, in `recommend` and in the runner's size
+      check: 0.633 GB predicted
+- [x] llama.cpp keeps the input embedding in system RAM (`data/runtimes/llama.cpp/embedding.yaml`,
+      from `src/llama-model.cpp` and `src/llama-quant.cpp` at b11177). With an output head of
+      its own the embedding leaves VRAM; tied, llama.cpp puts a copy on the GPU as the head, so
+      VRAM keeps it and RAM holds it as well. Its type follows llama-quantize's rules (Q6_K
+      when tied, the file type's own otherwise, Q8_0 when the hidden size does not divide the
+      block), which give every GGUF fixture's token_embd bytes exactly. Loading seven GGUFs,
+      llama.cpp's CPU buffer and CUDA buffer matched the rule to 0.02 MB on all six made with
+      llama-quantize's defaults; Unsloth's UD mixes choose their own types, so only a header
+      read sizes theirs. Applies to llama.cpp, Ollama and LM Studio, not on unified memory
+- [x] Overhead refit for llama.cpp: 0.27 GB + 1% of the weights on the GPU, fitted to
+      llama-server serving six GGUFs at ctx 4096 and 16384, VRAM rise less llama.cpp's own
+      buffers. About 0.23 GB is the CUDA context in every run; a server's compute buffer is
+      small (23-64 MiB) because it keeps logits only for sampled tokens. Error of the total:
+      mean 0.0%, worst -7.5%; 0.75 GB + 2% was +54% on average. Perplexity and imatrix passes
+      keep every token's logits and run n_batch / ctx sequences at once: `all_logits=True`
+      adds 512 x vocab x 4 bytes and the extra KV (Qwen3-1.7B at -c 512: 1.89 GB predicted,
+      1.88 measured). Ollama's and LM Studio's constants are still first estimates
+- [x] MXFP4_MOE (gpt-oss): llama-quantize writes only the routed experts as MXFP4 and every
+      other tensor as Q8_0. params x 4.25 bits said 11.11 GB for gpt-oss-20b; the split, with
+      the expert count recovered from the active parameters, says 12.07 against the GGUF's
+      12.10 GB of tensors
 - [ ] Multi-GPU and offload split
 - [ ] `bits_that_fit(model, device, ctx, runtime)` helper: the effective bits-per-weight a budget allows after KV and overhead; feeds ModelOpt AutoQuantize and GGUF mix candidates (F4, F5)
 - [ ] Golden tests listed above

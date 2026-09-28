@@ -98,6 +98,11 @@
     "_KvDefaults": {
       "additionalProperties": false,
       "properties": {
+        "n_batch": {
+          "exclusiveMinimum": 0,
+          "title": "N Batch",
+          "type": "integer"
+        },
         "n_ubatch": {
           "exclusiveMinimum": 0,
           "title": "N Ubatch",
@@ -120,6 +125,7 @@
       },
       "required": [
         "n_ubatch",
+        "n_batch",
         "swa_pad",
         "recurrent_state_bytes",
         "swa_source_url"

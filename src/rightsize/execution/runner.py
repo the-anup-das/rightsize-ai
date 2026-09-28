@@ -334,8 +334,12 @@ def run_plan(
                            if pstep.quant and t.name == pstep.quant.method), None)
             if recipe.id == "llama.cpp/quantize":
                 from rightsize.fit import predicted_file_gb
+                from rightsize.fit.finetune import merged
 
-                predicted = round(predicted_file_gb(plan.model, str(wanted.get("quant"))), 3)
+                # after a fine-tune, the converter read the model the trainer saved
+                tuned = any(s.stage == "finetune" for s in plan.steps)
+                model = merged(plan.model) if tuned else plan.model
+                predicted = round(predicted_file_gb(model, str(wanted.get("quant"))), 3)
             elif target is not None and "file_gb" in pstep.fit.breakdown:
                 predicted = pstep.fit.breakdown["file_gb"]
                 weights = _weight_size(out, target.weights)
