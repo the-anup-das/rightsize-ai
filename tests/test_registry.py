@@ -163,4 +163,5 @@ def test_every_toolkit_recipe_says_how_far_it_was_checked() -> None:
         "sentence-transformers/cosine-eval",
         "llm-compressor/awq-w4a16",
         "modelopt/ptq",
+        "modelopt/autoquant",
     }

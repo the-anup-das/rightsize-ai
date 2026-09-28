@@ -1111,6 +1111,7 @@ def _quantize_to(args: argparse.Namespace) -> int:
         dry_run=args.dry_run,
         evaluate=args.eval,
         eval_chunks=args.eval_chunks,
+        ctx=args.ctx,
         revision=args.revision,
         log=con.info,
         echo=con.debug,

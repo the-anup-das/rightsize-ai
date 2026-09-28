@@ -152,7 +152,12 @@ The 14 MVP recipes above plus 4 serve recipes; docs generation; entry point disc
 - [x] Model Optimizer recipes: FP8, INT8 SmoothQuant, INT4 AWQ, NVFP4 (`mtq.quantize` +
       `export_hf_checkpoint`) as `modelopt/ptq`, run and gated on Qwen3-0.6B (F8); the
       export serves through vLLM (`--quantization modelopt`), SGLang and TensorRT-LLM
-- [ ] AutoQuantize recipe with `effective_bits` supplied by F3's budget-to-bits helper
+- [x] AutoQuantize recipe (`modelopt/autoquant`, `--to modelopt-auto`) with `effective_bits`
+      from F3's `bits_that_fit` unless `--set` names one. Qwen3-1.7B for a 12 GB card at 57k
+      context: 11.7 bits, 66 layers at FP8, 46 kept 16-bit, one at INT4 AWQ, 2.516 GB as
+      predicted, gate pass at KLD 0.010 where every uniform 4-bit format of that model
+      failed. The target says what its bits average over (`bits_over: linear`, Model
+      Optimizer's definition), since the export lands on budget only when the two agree
 - [x] `render()` and `Plan.render()`. Two-stage plans render the fine-tune too: Unsloth on
       NVIDIA and Intel, Axolotl on AMD, MLX-LM on Apple (with an `mlx_lm.convert -q` step first
       for QLoRA); llama.cpp then converts the merged model. Full fine-tunes have no recipe yet

@@ -74,6 +74,17 @@ class Target(BaseModel):
         default_factory=dict,
         description="inputs the serve step needs for this output, e.g. quantization: modelopt",
     )
+    bits_from_input: str | None = Field(
+        default=None,
+        description="the recipe input that is the output's bits per weight (a mixed-precision "
+        "target); rightsize quantize sets it from the device when it is not given",
+    )
+    bits_over: Literal["quantized", "linear"] = Field(
+        default="quantized",
+        description="what that input averages over: the quantized layers with the embedding "
+        "and head kept 16-bit, or, as Model Optimizer counts, every Linear layer including "
+        "the output head with only the embedding outside",
+    )
 
 
 class Recipe(BaseModel):
