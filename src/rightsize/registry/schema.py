@@ -142,7 +142,13 @@ class FinetuneRole(BaseModel):
     )
     before: dict[TrainMode, BeforeStep] = Field(default_factory=dict)
     writes: Literal["merged", "adapter"] = Field(
-        description="a merged 16-bit model, or an adapter the recipe merges into merged_dir"
+        description="a merged 16-bit model, or an adapter that the merge recipe folds into "
+        "merged_dir"
+    )
+    merge: str | None = Field(
+        default=None,
+        description="for a trainer that writes an adapter: the recipe that merges it into "
+        "the 16-bit model the conversion reads next",
     )
     default_for: list[str] = Field(
         default_factory=list,
@@ -150,6 +156,18 @@ class FinetuneRole(BaseModel):
         "framework names",
     )
     priority: int = Field(default=0, description="breaks a tie between two defaults")
+
+
+class ServeRole(BaseModel):
+    """What a framework does as a server: the steps that start it, the runtime name the fit
+    engine and the rules know it by, and the weight formats it loads."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    recipes: list[str] = Field(min_length=1, description="the serve steps, in order")
+    runtime: str = Field(description="the name in runtimes/overheads.yaml and the rules")
+    formats: list[str] = Field(min_length=1, description="gguf, mlx, compressed-tensors, ...")
+    default: bool = Field(default=False, description="the server a plan uses unless one is pinned")
 
 
 class FrameworkInfo(BaseModel):
@@ -173,10 +191,12 @@ class FrameworkInfo(BaseModel):
     )
     install: InstallSpec
     finetune: FinetuneRole | None = None
+    serve: ServeRole | None = None
     defaults: dict[str, str] = Field(
         default_factory=dict,
         description="values this framework's recipes read when a plan does not set them; "
-        "{slug} is the model's repo id with / as __, {quant} the plan's quantization",
+        "{slug} is the model's repo id with / as __, {name} the part after the slash in "
+        "lower case, {quant} the plan's quantization",
     )
     homepage: str
     source_doc_url: str

@@ -8,11 +8,11 @@ kind: config
 language: modelfile
 inputs:
   model_gguf: { type: path, required: true, help: "the GGUF to import, absolute or relative to the Modelfile" }
-  num_ctx: { type: int, default: 8192, help: context length the plan was sized for }
+  ctx: { type: int, default: 8192, help: "context length the plan was sized for (Ollama's num_ctx)" }
 file: Modelfile
 template: |
   FROM {{ model_gguf }}
-  PARAMETER num_ctx {{ num_ctx }}
+  PARAMETER num_ctx {{ ctx }}
 notes:
   - "save as Modelfile, then run the ollama/create step"
   - "Ollama imports a GGUF as is; ollama create -q quantizes safetensors only"

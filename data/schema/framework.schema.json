@@ -79,6 +79,19 @@
           "title": "Default For",
           "type": "array"
         },
+        "merge": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "for a trainer that writes an adapter: the recipe that merges it into the 16-bit model the conversion reads next",
+          "title": "Merge"
+        },
         "modes": {
           "description": "modes it has a recipe for",
           "items": {
@@ -116,7 +129,7 @@
           "type": "string"
         },
         "writes": {
-          "description": "a merged 16-bit model, or an adapter the recipe merges into merged_dir",
+          "description": "a merged 16-bit model, or an adapter that the merge recipe folds into merged_dir",
           "enum": [
             "merged",
             "adapter"
@@ -236,6 +249,48 @@
       ],
       "title": "QuantShape",
       "type": "object"
+    },
+    "ServeRole": {
+      "additionalProperties": false,
+      "description": "What a framework does as a server: the steps that start it, the runtime name the fit\nengine and the rules know it by, and the weight formats it loads.",
+      "properties": {
+        "default": {
+          "default": false,
+          "description": "the server a plan uses unless one is pinned",
+          "title": "Default",
+          "type": "boolean"
+        },
+        "formats": {
+          "description": "gguf, mlx, compressed-tensors, ...",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Formats",
+          "type": "array"
+        },
+        "recipes": {
+          "description": "the serve steps, in order",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Recipes",
+          "type": "array"
+        },
+        "runtime": {
+          "description": "the name in runtimes/overheads.yaml and the rules",
+          "title": "Runtime",
+          "type": "string"
+        }
+      },
+      "required": [
+        "recipes",
+        "runtime",
+        "formats"
+      ],
+      "title": "ServeRole",
+      "type": "object"
     }
   },
   "additionalProperties": false,
@@ -245,7 +300,7 @@
       "additionalProperties": {
         "type": "string"
       },
-      "description": "values this framework's recipes read when a plan does not set them; {slug} is the model's repo id with / as __, {quant} the plan's quantization",
+      "description": "values this framework's recipes read when a plan does not set them; {slug} is the model's repo id with / as __, {name} the part after the slash in lower case, {quant} the plan's quantization",
       "title": "Defaults",
       "type": "object"
     },
@@ -291,6 +346,17 @@
     "name": {
       "title": "Name",
       "type": "string"
+    },
+    "serve": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ServeRole"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "source_doc_url": {
       "title": "Source Doc Url",

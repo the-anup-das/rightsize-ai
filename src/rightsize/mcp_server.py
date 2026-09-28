@@ -79,17 +79,21 @@ def build_server():
         top_k: int = 5,
         allow_slow: bool = False,
         cloud: bool = False,
+        framework: str | None = None,
     ) -> dict[str, Any]:
         """task: chat, coding or agentic. mode: infer, or lora / qlora / full to plan a
         fine-tune on finetune_device first. quality: near-lossless, good, noticeable, any.
         cloud: plan a fine-tune that does not fit on the cheapest rental GPU it fits; the
-        plan's cloud_fallback then names the offer and a cost per 10M training tokens."""
+        plan's cloud_fallback then names the offer and a cost per 10M training tokens.
+        framework: use one toolkit where it has a role, a trainer (unsloth, trl, axolotl,
+        mlx-lm) or a GGUF server (ollama, llama.cpp); list_frameworks names them."""
         from rightsize.rules.recommend import recommend_result
 
         return _result_payload(
             recommend_result(
                 task, device, finetune_device=finetune_device, mode=mode, ctx=ctx,
                 quality=quality, allow_slow=allow_slow, top_k=top_k, cloud=cloud,
+                framework=framework,
             )
         )
 
@@ -102,13 +106,15 @@ def build_server():
         quality: str = "any",
         ctx: int = 8192,
         top_k: int = 10,
+        framework: str | None = None,
     ) -> dict[str, Any]:
-        """model: a Hugging Face repo id such as Qwen/Qwen3-14B."""
+        """model: a Hugging Face repo id such as Qwen/Qwen3-14B. framework: a trainer or a
+        GGUF server to use, as in recommend."""
         from rightsize.rules.recommend import recommend_for_model as _for_model
 
         return _result_payload(
             _for_model(model, device, finetune_device=finetune_device, mode=mode, ctx=ctx,
-                       quality=quality, top_k=top_k)
+                       quality=quality, top_k=top_k, framework=framework)
         )
 
     @server.tool(

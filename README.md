@@ -40,6 +40,7 @@ uv sync --group dev                       # core only: detect, estimate, recipes
 rightsize recommend                       # the best models for this machine, ranked
 rightsize recommend --task coding --device "RTX 3060 12GB" --commands
 rightsize recommend --finetune-device T4 --mode qlora     # fine-tune on one box, serve on this
+rightsize recommend --mode lora --framework trl --device "RTX 4090"   # one toolkit: trl, axolotl, mlx-lm, unsloth, ollama
 rightsize recommend --finetune-device "RTX 3060 12GB" --mode lora --cloud   # rent a GPU when it won't fit
 rightsize cloud --model Qwen/Qwen3-14B --mode lora --tokens 10M            # cheapest GPUs for that job
 rightsize detect                          # what machine is this?

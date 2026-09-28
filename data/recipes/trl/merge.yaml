@@ -1,0 +1,34 @@
+id: trl/merge
+framework: trl
+stage: export
+families: [llm]
+hardware: { vendors: [nvidia, amd, intel, cpu] }
+install_line: pip install "trl[peft]"
+kind: config
+language: python
+inputs:
+  output_dir: { type: path, default: outputs, help: "where trl sft saved the adapter" }
+  merged_dir: { type: path, default: merged, help: "the merged 16-bit model the conversion reads" }
+file: trl_merge.py
+writes: [merged_dir]
+template: |
+  import torch
+  from peft import AutoPeftModelForCausalLM
+  from transformers import AutoTokenizer
+
+
+  def main():
+      # loads the base named in the adapter's config at 16 bits, not the 4 bits QLoRA trained on
+      model = AutoPeftModelForCausalLM.from_pretrained("{{ output_dir }}", dtype=torch.bfloat16)
+      model = model.merge_and_unload()
+      model.save_pretrained("{{ merged_dir }}")
+      AutoTokenizer.from_pretrained("{{ output_dir }}").save_pretrained("{{ merged_dir }}")
+
+
+  if __name__ == "__main__":
+      main()
+notes:
+  - "merge_and_unload folds the LoRA weights into the base model and drops the adapter layers"
+source_doc_url: https://huggingface.co/docs/peft/main/en/developer_guides/lora#merge-lora-weights-into-the-base-model
+version_tested: 0.21.0
+verified: docs

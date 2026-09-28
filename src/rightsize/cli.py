@@ -50,6 +50,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--cloud", action="store_true",
         help="plan a fine-tune that does not fit on the cheapest rental GPU it fits",
     )
+    r.add_argument(
+        "--framework", default=None,
+        help="use this toolkit where it has a role: a trainer (unsloth, trl, axolotl, mlx-lm) "
+        "for the fine-tune, a server (ollama, llama.cpp) for the GGUF",
+    )
 
     ca = sub.add_parser(
         "calibrate",
@@ -461,11 +466,13 @@ def _estimate_other(args: argparse.Namespace, fx, dev) -> int:
 
 def cmd_recommend(args: argparse.Namespace) -> int:
     from rightsize._console import verdict_style
+    from rightsize.registry import get as get_recipe
     from rightsize.rules.recommend import recommend_for_model, recommend_result
 
     common = dict(
         finetune_device=args.finetune_device, mode=args.mode, ctx=args.ctx,
         allow_slow=args.allow_slow, top_k=args.top, cloud=args.cloud,
+        framework=args.framework,
     )
     if args.model:
         result = recommend_for_model(
@@ -518,7 +525,11 @@ def cmd_recommend(args: argparse.Namespace) -> int:
     if args.commands:
         con.out()
         for step in result.plans[0].render():
-            con.out("$ " + step.text)
+            if step.kind == "command":
+                con.out("$ " + step.text)
+            else:  # a config: say where it goes, then its contents
+                con.out(f"# {get_recipe(step.recipe_id).file_name()}:")
+                con.out(step.text.rstrip())
     return 0
 
 

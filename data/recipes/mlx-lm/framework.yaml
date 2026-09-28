@@ -4,7 +4,7 @@ title: MLX LM
 summary: >-
   Quantizes, fine-tunes (LoRA, and QLoRA on a model it quantized first) and serves LLMs on
   Apple silicon with Apple's MLX; the default trainer on a Mac
-stages: [quantize, finetune, serve]
+stages: [quantize, finetune, export, serve]
 families: [llm]
 formats: [mlx]
 hardware: {vendors: [apple], os: [macos]}
@@ -24,8 +24,13 @@ finetune:
       quant: {method: mlx, variant: 4bit, bits_per_weight: 4.5}
       model_from: mlx_path
   writes: adapter
+  merge: mlx-lm/fuse
   default_for: [apple]
   priority: 10
+serve:
+  recipes: [mlx-lm/server]
+  runtime: mlx-lm
+  formats: [mlx]
 defaults:
   mlx_path: "{slug}-mlx-4bit"
   bits: "4"

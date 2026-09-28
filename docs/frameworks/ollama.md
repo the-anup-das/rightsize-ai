@@ -46,7 +46,7 @@ PARAMETER num_ctx 8192
 | input | type | default | notes |
 |---|---|---|---|
 | `model_gguf` | path | required | the GGUF to import, absolute or relative to the Modelfile |
-| `num_ctx` | int | 8192 | context length the plan was sized for |
+| `ctx` | int | 8192 | context length the plan was sized for (Ollama's num_ctx) |
 
 - save as Modelfile, then run the ollama/create step
 - Ollama imports a GGUF as is; ollama create -q quantizes safetensors only

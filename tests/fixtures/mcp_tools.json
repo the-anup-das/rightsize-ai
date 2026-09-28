@@ -275,6 +275,18 @@
         "default": null,
         "title": "Finetune Device"
       },
+      "framework": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Framework"
+      },
       "mode": {
         "default": "infer",
         "title": "Mode",
@@ -322,6 +334,18 @@
         ],
         "default": null,
         "title": "Finetune Device"
+      },
+      "framework": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Framework"
       },
       "mode": {
         "default": "infer",

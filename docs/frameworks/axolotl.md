@@ -12,7 +12,27 @@ Config-driven LoRA, QLoRA and full fine-tuning on NVIDIA and AMD GPUs, one or ma
 
 | recipe | stage | families | checked | version |
 |---|---|---|---|---|
+| `axolotl/merge` | export | llm | docs | 0.19.0 |
 | `axolotl/qlora` | finetune | llm | docs | 0.19.0 |
+
+## `axolotl/merge`
+
+Export step; from the documentation; not yet run here at 0.19.0.
+
+Install: uv pip install --no-build-isolation "axolotl[deepspeed]"
+
+```bash
+axolotl merge-lora axolotl.yml --dequant
+```
+
+| input | type | default | notes |
+|---|---|---|---|
+| `config` | path | axolotl.yml | the config the training step used |
+| `merged_dir` | path | outputs/merged | where it writes: <output_dir>/merged |
+
+- writes <output_dir>/merged; --dequant makes it 16-bit, where a QLoRA base would otherwise be re-quantized to its own format, which the GGUF converter does not read
+
+Source: <https://github.com/axolotl-ai-cloud/axolotl/blob/v0.19.0/docs/cli.qmd>
 
 ## `axolotl/qlora`
 

@@ -25,12 +25,14 @@ def _defaults(plan: Any) -> dict[str, Any]:
     # first in a two-stage plan and is not a llama.cpp type
     quant = next((s.quant.variant for s in plan.steps
                   if s.quant and s.quant.method == "gguf" and s.quant.variant), "Q4_K_M")
+    name = plan.model.ref.repo.rsplit("/", 1)[-1].lower()
     values: dict[str, Any] = {"quant": quant}
     infos = framework_infos()
     for step in plan.steps:
         info = infos.get(step.framework)
         for key, template in (info.defaults if info else {}).items():
-            values.setdefault(key, template.replace("{slug}", slug).replace("{quant}", quant))
+            values.setdefault(key, template.replace("{slug}", slug).replace("{quant}", quant)
+                              .replace("{name}", name))
     return values
 
 
@@ -49,10 +51,12 @@ def _finetune_values(plan: Any, values: dict[str, Any]) -> None:
         "model": plan.model.ref.repo,
         "load_in_4bit": qlora,
         "adapter": "qlora" if qlora else "lora",
-        "output_dir": f"{slug}-finetune",
-        "merged_dir": f"{slug}-merged",
-        "adapter_dir": f"{slug}-adapters",
     })
+    # where things land; a trainer's framework.yaml can say otherwise (Axolotl merges into
+    # <output_dir>/merged)
+    values.setdefault("output_dir", f"{slug}-finetune")
+    values.setdefault("merged_dir", f"{slug}-merged")
+    values.setdefault("adapter_dir", f"{slug}-adapters")
     values["model_dir"] = values["merged_dir"]
 
 
@@ -94,8 +98,10 @@ def step_values(plan: Any, **inputs: Any) -> list[tuple[Any, Any, dict[str, Any]
         wanted = {k: _typed(recipe, k, v) for k, v in values.items() if k in recipe.inputs}
         if step.stage == "serve" and "model_gguf" in recipe.inputs:
             wanted["model_gguf"] = values.get("model_gguf_served", wanted.get("model_gguf"))
-        if step.stage == "finetune" and trains_on and trains_on in values:
-            wanted["model"] = values[trains_on]  # the model the step before produced
+        if (trains_on and trains_on in values and "model" in recipe.inputs
+                and step.stage in ("finetune", "export")):
+            # the model the step before produced: MLX trains, and fuses, on its 4-bit copy
+            wanted["model"] = values[trains_on]
         out.append((step, recipe, wanted))
     return out
 

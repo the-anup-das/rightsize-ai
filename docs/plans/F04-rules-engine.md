@@ -101,7 +101,13 @@ About 40 rules; LLM quant penalty from Unsloth KL tables; non-LLM families ranke
       comes from llama.cpp's own per-type perplexity figures instead; no licensed cross-model
       quality benchmark yet, so size (with a conservative recency term) stands in, and the trace
       says so
-- [x] Ranking (`rank.size_vs_quant.v0`), quality floor; pinned framework not yet
+- [x] Ranking (`rank.size_vs_quant.v0`), quality floor, pinned framework: `--framework NAME`
+      puts one toolkit wherever it has a role, trainer (Unsloth, TRL, Axolotl, MLX) or GGUF
+      server (llama.cpp, Ollama), from its framework.yaml; one that does not run on the
+      device is refused with the reason. Trainers that write an adapter get their merge step
+      (PEFT merge_and_unload, axolotl merge-lora --dequant, mlx_lm.fuse --dequantize), so the
+      conversion always reads a whole 16-bit model. Pinning vLLM, llm-compressor and the
+      other non-GGUF toolkits waits on plans for their formats
 - [x] `Plan.trace` population; formula ids included; `Plan.render()` gives the commands
 - [x] Golden ranking cases, as invariants over a pool that changes
 - [x] Wire `rightsize.recommend` / `recommend_for_model` and the CLI

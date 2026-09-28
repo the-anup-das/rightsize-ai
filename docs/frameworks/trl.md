@@ -12,7 +12,41 @@ Hugging Face's training library: supervised fine-tuning with LoRA or QLoRA throu
 
 | recipe | stage | families | checked | version |
 |---|---|---|---|---|
+| `trl/merge` | export | llm | docs | 0.21.0 |
 | `trl/sft` | finetune | llm | docs | 1.14.0 |
+
+## `trl/merge`
+
+Export step; from the documentation; not yet run here at 0.21.0.
+
+Install: pip install "trl[peft]"
+
+```python
+import torch
+from peft import AutoPeftModelForCausalLM
+from transformers import AutoTokenizer
+
+
+def main():
+    # loads the base named in the adapter's config at 16 bits, not the 4 bits QLoRA trained on
+    model = AutoPeftModelForCausalLM.from_pretrained("outputs", dtype=torch.bfloat16)
+    model = model.merge_and_unload()
+    model.save_pretrained("merged")
+    AutoTokenizer.from_pretrained("outputs").save_pretrained("merged")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+| input | type | default | notes |
+|---|---|---|---|
+| `output_dir` | path | outputs | where trl sft saved the adapter |
+| `merged_dir` | path | merged | the merged 16-bit model the conversion reads |
+
+- merge_and_unload folds the LoRA weights into the base model and drops the adapter layers
+
+Source: <https://huggingface.co/docs/peft/main/en/developer_guides/lora#merge-lora-weights-into-the-base-model>
 
 ## `trl/sft`
 

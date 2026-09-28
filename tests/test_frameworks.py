@@ -48,6 +48,10 @@ def test_trainer_roles_name_real_recipes_of_the_right_stage() -> None:
         assert trains.stage == "finetune" and trains.framework == info.name
         for before in role.before.values():
             assert recipes[before.recipe].stage == before.stage
+        if role.writes == "adapter":
+            merge = recipes[role.merge]  # an adapter needs folding in before conversion
+            assert merge.stage == "export" and merge.framework == info.name
+            assert "merged_dir" in merge.writes
 
 
 @pytest.mark.parametrize(("vendor", "trainer"), [

@@ -16,6 +16,11 @@ install:
   note: >-
     pinned release binaries plus the converter from the same tag; the conversion step also
     needs torch and transformers: pip install "rightsize[llamacpp]"
+serve:
+  recipes: [llama.cpp/server]
+  runtime: llama.cpp
+  formats: [gguf]
+  default: true
 defaults:
   convert_script: convert_hf_to_gguf.py
   quantize_bin: llama-quantize

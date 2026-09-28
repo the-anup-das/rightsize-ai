@@ -11,6 +11,12 @@ install:
   check: ollama
   line: curl -fsSL https://ollama.com/install.sh | sh
   note: "on Windows: irm https://ollama.com/install.ps1 | iex"
+serve:
+  recipes: [ollama/modelfile, ollama/create]
+  runtime: ollama
+  formats: [gguf]
+defaults:
+  name: "{name}"
 homepage: https://ollama.com
 source_doc_url: https://docs.ollama.com/import
 version_tested: v0.34.4

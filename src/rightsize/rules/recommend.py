@@ -67,7 +67,6 @@ _POPULARITY = 0.005
 _RECENCY_PER_YEAR = 0.35
 _EPOCH = "2023-01-01"
 _CODING_BONUS = 0.3  # a code model counts as about 1.35x its size for coding tasks
-_SERVING_RUNTIME = "llama.cpp"
 
 
 @dataclass(frozen=True)
@@ -196,15 +195,65 @@ def _serves(c: Candidate, task: str) -> bool:
     return "chat" in c.tasks
 
 
-def _trainer(dev: Device):
-    """Who fine-tunes on this hardware: the framework whose descriptor claims the vendor
-    (data/recipes/<name>/framework.yaml, finetune.default_for), so a new trainer is data."""
+def _trainer(dev: Device, pinned=None):
+    """Who fine-tunes on this hardware: the pinned framework, else the one whose descriptor
+    claims the vendor (data/recipes/<name>/framework.yaml, finetune.default_for), so a new
+    trainer is data."""
+    if pinned is not None:
+        return pinned
     from rightsize.registry import trainer_for
 
     found = trainer_for(dev.vendor)
     if found is None:
         raise ValueError(f"no framework fine-tunes on {dev.vendor} hardware")
     return found
+
+
+def _default_server():
+    """The framework that serves a GGUF unless another is pinned (serve.default)."""
+    from rightsize.registry import framework_infos
+
+    servers = [f for f in framework_infos().values()
+               if f.serve and f.serve.default and "gguf" in f.serve.formats]
+    if not servers:
+        raise ValueError("no framework.yaml declares a default GGUF server")
+    return max(servers, key=lambda f: f.name == "llama.cpp")
+
+
+def _pin(name: str | None, mode: Mode):
+    """What a pinned framework decides: (trainer, server). People use one framework at a
+    time, so pinning one puts it wherever it has a role: training when the plan fine-tunes,
+    serving when it serves GGUF. The other role keeps its default."""
+    server = _default_server()
+    if not name:
+        return None, server
+    from rightsize.errors import NotImplementedYet
+    from rightsize.registry import framework
+
+    info = framework(name)
+    trains = info.finetune is not None and mode is not Mode.infer
+    serves = info.serve is not None and "gguf" in info.serve.formats
+    if not (trains or serves):
+        if info.finetune is not None:
+            raise ValueError(f"{info.title} fine-tunes: plan a fine-tune with --mode lora or "
+                             "qlora (and --finetune-device), or pin a server")
+        raise NotImplementedYet(
+            f"Planning with {info.title}",
+            "docs/plans/F04-rules-engine.md",
+            hint="Plans quantize to GGUF and serve it with llama.cpp or Ollama for now; "
+                 f"`rightsize frameworks {info.name}` shows the commands it has.",
+        )
+    return (info if trains else None), (info if serves else server)
+
+
+def _runs_on(info, dev: Device | None) -> str | None:
+    """Why a framework cannot run on this device, going by its descriptor's vendors."""
+    if info is None or dev is None:
+        return None
+    vendors = (info.hardware or {}).get("vendors") or []
+    if not vendors or "any" in vendors or dev.vendor in vendors:
+        return None
+    return f"{info.title} runs on {', '.join(vendors)} hardware; {dev.name} is {dev.vendor}"
 
 
 def _trainer_quant(trainer, mode: Mode) -> QuantSpec | None:
@@ -260,14 +309,16 @@ def _plan(
     mode: Mode,
     ft: FitResult | None,
     ft_device: Device | None,
+    *,
+    trainer=None,
+    server=None,
 ) -> Plan:
-    from rightsize.execution.install import LLAMA_CPP_VERSION
-
+    server = server or _default_server()
     bpw = gguf_bpw(q)[0]
     quant = QuantSpec(method="gguf", variant=q, bits_per_weight=bpw)
     steps: list[PlanStep] = []
     if ft is not None and ft_device is not None:
-        trainer = _trainer(ft_device)
+        trainer = _trainer(ft_device, trainer)
         role = trainer.finetune
         before = role.before.get(mode.value)
         if before is not None:
@@ -289,6 +340,10 @@ def _plan(
                 recipe_id=role.recipe if mode.value in role.modes else None,
             )
         )
+        if role.writes == "adapter" and role.merge and mode.value in role.modes:
+            # the conversion reads a whole 16-bit model: fold the adapter in first
+            steps.append(PlanStep(stage="export", framework=trainer.name, device=ft_device,
+                                  fit=ft, recipe_id=role.merge))
     steps.append(
         PlanStep(stage="quantize", framework="llama.cpp", device=target, quant=quant, fit=fit,
                  recipe_id="llama.cpp/convert")
@@ -305,11 +360,13 @@ def _plan(
                  recipe_id="llama.cpp/quantize")
     )
     ctx = next((int(n.split()[1].rstrip(",")) for n in fit.notes if n.startswith("ctx ")), None)
-    steps.append(
-        PlanStep(stage="serve", framework="llama.cpp", device=target, quant=quant,
-                 runtime=RuntimeSpec(name=_SERVING_RUNTIME, version=LLAMA_CPP_VERSION, ctx=ctx),
-                 fit=fit, recipe_id="llama.cpp/server")
-    )
+    for recipe_id in server.serve.recipes:
+        steps.append(
+            PlanStep(stage="serve", framework=server.name, device=target, quant=quant,
+                     runtime=RuntimeSpec(name=server.serve.runtime,
+                                         version=server.version_tested, ctx=ctx),
+                     fit=fit, recipe_id=recipe_id)
+        )
     _, moe_note = effective_params_b(c.facts)
     speed = f"{fit.speed:.0f} tok/s" if fit.speed else "speed unknown: no bandwidth for this device"
     trace = [
@@ -353,7 +410,11 @@ def _evaluate_candidate(
     ft_device: Device | None,
     rejected: list[Rejection],
     carried: Outcome | None = None,
+    trainer=None,
+    server=None,
 ) -> list[tuple[float, Plan]]:
+    server = server or _default_server()
+    runtime = server.serve.runtime
     rules = tuple(r for r in load_rules() if r.id not in ignore)
     found = []
     for q in quants:
@@ -361,7 +422,7 @@ def _evaluate_candidate(
         if delta is None or delta > max_delta:
             rejected.append(Rejection(c.repo, q, f"quality: {band(delta)} ({how})"))
             continue
-        fit = estimate(c.facts, q, target, ctx=ctx)
+        fit = estimate(c.facts, q, target, ctx=ctx, runtime=runtime)
         if fit.verdict is Verdict.no_fit:
             rejected.append(Rejection(c.repo, q, f"does not fit: needs {fit.vram_gb:.1f} GB"))
             continue
@@ -369,7 +430,7 @@ def _evaluate_candidate(
             "device": _device_ctx(target),
             "model": _model_ctx(c),
             "quant": _quant_ctx(q, delta),
-            "runtime": {"name": _SERVING_RUNTIME},
+            "runtime": {"name": runtime},
             "task": task,
             "stage": "serve",
             "mode": mode.value,
@@ -383,7 +444,8 @@ def _evaluate_candidate(
             rejected.append(Rejection(c.repo, q, f"blocked: {why}"))
             continue
         score, line = _score(c, delta, outcome, task)
-        plan = _plan(c, q, delta, how, fit, target, outcome, line, score, mode, ft, ft_device)
+        plan = _plan(c, q, delta, how, fit, target, outcome, line, score, mode, ft, ft_device,
+                     trainer=trainer, server=server)
         found.append((score, plan))
     return found
 
@@ -444,14 +506,23 @@ def rank(
     one_per_model: bool = True,
     quants: tuple[str, ...] = LADDER,
     cloud_pool: list | None = None,
+    framework: str | None = None,
 ) -> Result:
     """The engine behind recommend() and recommend_for_model().
 
     ``cloud_pool`` is a list of rental offers: a fine-tune that does not fit the fine-tune
-    device is then planned on the cheapest offer it fits, instead of being rejected."""
+    device is then planned on the cheapest offer it fits, instead of being rejected.
+    ``framework`` pins the trainer, the server, or both (see _pin)."""
     max_delta = QUALITY_FLOORS[quality]
     result = Result()
     scored: list[tuple[float, Plan]] = []
+    pinned, server = _pin(framework, mode)
+    why = _runs_on(pinned, finetune_device) or (
+        _runs_on(server, target_device) if framework else None)
+    if why:
+        raise ValueError(why)  # the pin, not any one model, is what cannot run here
+    if pinned is not None and "nvidia" not in (pinned.hardware or {}).get("vendors", ["nvidia"]):
+        cloud_pool = None  # rental GPUs are NVIDIA, which the pinned trainer does not run on
     for c in candidates:
         if not _serves(c, task):
             continue
@@ -475,9 +546,9 @@ def rank(
                 {
                     "device": _device_ctx(ft_device),
                     "model": _model_ctx(c),
-                    "quant": {"method": (_trainer_quant(_trainer(ft_device), mode)
+                    "quant": {"method": (_trainer_quant(_trainer(ft_device, pinned), mode)
                                          or QuantSpec(method="none")).method},
-                    "runtime": {"name": _trainer(ft_device).name},
+                    "runtime": {"name": _trainer(ft_device, pinned).name},
                     "task": task,
                     "stage": "finetune",
                     "mode": mode.value,
@@ -491,7 +562,7 @@ def rank(
         found = _evaluate_candidate(
             c, quants, target_device, task=task, ctx=ctx, max_delta=max_delta,
             ignore=ignore_rules, mode=mode, ft=ft, ft_device=ft_device,
-            rejected=result.rejected, carried=ft_outcome,
+            rejected=result.rejected, carried=ft_outcome, trainer=pinned, server=server,
         )
         if rental and found:
             _, _, offer, fallback, job = rental
@@ -525,14 +596,17 @@ def recommend(
     allow_slow: bool = False,
     top_k: int = 5,
     cloud: bool = False,
+    framework: str | None = None,
 ) -> list[Plan]:
     """Hardware-first: the best models for this device, one plan each, best first.
 
     ``cloud=True`` plans a fine-tune that does not fit the fine-tune device on the cheapest
-    rental GPU it fits (F7), rather than leaving that model out."""
+    rental GPU it fits (F7), rather than leaving that model out. ``framework`` pins the
+    toolkit: a trainer (unsloth, trl, axolotl, mlx-lm) for the fine-tune, a server (ollama,
+    llama.cpp) for the GGUF."""
     return recommend_result(
         task, target_device, finetune_device=finetune_device, mode=mode, ctx=ctx,
-        quality=quality, allow_slow=allow_slow, top_k=top_k, cloud=cloud,
+        quality=quality, allow_slow=allow_slow, top_k=top_k, cloud=cloud, framework=framework,
     ).plans
 
 
@@ -547,6 +621,7 @@ def recommend_result(
     allow_slow: bool = False,
     top_k: int = 5,
     cloud: bool = False,
+    framework: str | None = None,
 ) -> Result:
     from rightsize.hardware import resolve
 
@@ -564,6 +639,7 @@ def recommend_result(
         ignore_rules=frozenset({"too_slow_for_interactive_use"}) if allow_slow else frozenset(),
         top_k=top_k,
         cloud_pool=_cloud_pool(cloud, mode),
+        framework=framework,
     )
 
 
@@ -589,8 +665,10 @@ def recommend_for_model(
     allow_slow: bool = False,
     top_k: int = 10,
     cloud: bool = False,
+    framework: str | None = None,
 ) -> Result:
-    """Model-first: every quantization of one model that works on this device, best first."""
+    """Model-first: every quantization of one model that works on this device, best first.
+    ``framework`` pins the toolkit, as in recommend()."""
     from rightsize.catalog import facts as hub_facts
     from rightsize.hardware import resolve
 
@@ -627,4 +705,5 @@ def recommend_for_model(
         top_k=top_k,
         one_per_model=False,
         cloud_pool=_cloud_pool(cloud, mode),
+        framework=framework,
     )

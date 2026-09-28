@@ -13,6 +13,7 @@ Quantizes, fine-tunes (LoRA, and QLoRA on a model it quantized first) and serves
 | recipe | stage | families | checked | version |
 |---|---|---|---|---|
 | `mlx-lm/convert` | quantize | llm | docs | 0.31.3 |
+| `mlx-lm/fuse` | export | llm | docs | 0.31.3 |
 | `mlx-lm/lora` | finetune | llm | docs | 0.31.3 |
 | `mlx-lm/server` | serve | llm | docs | 0.31.3 |
 
@@ -36,6 +37,26 @@ mlx_lm.convert --hf-path <model> -q --q-bits 4 --mlx-path mlx_model
 - flags checked against mlx_lm/convert.py at v0.31.3; --model is an alias of --hf-path
 
 Source: <https://github.com/ml-explore/mlx-lm/blob/main/README.md>
+
+## `mlx-lm/fuse`
+
+Export step; from the documentation; not yet run here at 0.31.3.
+
+Install: pip install mlx-lm
+
+```bash
+mlx_lm.fuse --model <model> --adapter-path adapters --save-path fused_model --dequantize
+```
+
+| input | type | default | notes |
+|---|---|---|---|
+| `model` | str | required | the model the adapter was trained on (the 4-bit MLX one for QLoRA) |
+| `adapter_dir` | path | adapters |  |
+| `merged_dir` | path | fused_model |  |
+
+- --dequantize writes 16-bit weights, which the GGUF converter reads; without it a QLoRA fuse stays 4-bit MLX
+
+Source: <https://github.com/ml-explore/mlx-lm/blob/v0.31.3/mlx_lm/fuse.py>
 
 ## `mlx-lm/lora`
 

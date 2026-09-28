@@ -13,6 +13,10 @@ install:
   needs_torch: true
   check: vllm
   line: uv pip install vllm --torch-backend=auto
+serve:
+  recipes: [vllm/serve]
+  runtime: vllm
+  formats: [compressed-tensors, fp8, awq, gptq]
 homepage: https://github.com/vllm-project/vllm
 source_doc_url: https://docs.vllm.ai/en/stable/cli/serve/
 version_tested: 0.30.0

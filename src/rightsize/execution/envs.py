@@ -120,19 +120,19 @@ def _uv() -> list[str]:
     raise ToolkitMissing("installing a toolkit needs uv: pip install uv")
 
 
-def _run(argv: list[str], log: Log, *, quiet: bool = False) -> str:
+def _run(argv: list[str], log: Log, *, quiet: bool = False, cwd: Path | None = None) -> str:
     """Run a command and return its stdout. Unless ``quiet``, its output is logged line by
     line as it comes: installing PyTorch is a few GB, and minutes of silence look like a
     hang."""
     if quiet:
         proc = subprocess.run(argv, capture_output=True, text=True, encoding="utf-8",
-                              errors="replace", check=False)
+                              errors="replace", check=False, cwd=cwd)
         out, rc = (proc.stdout or ""), proc.returncode
         tail = (proc.stdout or "") + (proc.stderr or "")
     else:
         log("$ " + " ".join(argv))
         popen = subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                 text=True, encoding="utf-8", errors="replace")
+                                 text=True, encoding="utf-8", errors="replace", cwd=cwd)
         lines = []
         assert popen.stdout is not None
         for line in popen.stdout:
@@ -172,7 +172,9 @@ def install(info, *, python: str = DEFAULT_PYTHON, log: Log = print) -> Env:
         cmd += ["--torch-backend", "auto"]
     _run(cmd, log)
     if spec.check:
-        _run([str(py), "-c", f"import {spec.check}"], log)
+        # from inside the environment's folder: importing some toolkits writes caches into
+        # the working directory (Unsloth compiles its trainers into ./unsloth_compiled_cache)
+        _run([str(py), "-c", f"import {spec.check}"], log, cwd=root)
     freeze = _run([*uv, "pip", "freeze", "--python", str(py)], log, quiet=True)
     versions = dict(line.split("==", 1) for line in freeze.splitlines() if "==" in line)
     torch = None
