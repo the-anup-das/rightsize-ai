@@ -217,6 +217,20 @@ def _size(path: Path) -> int:
     return sum(p.stat().st_size for p in path.rglob("*") if p.is_file())
 
 
+_WEIGHT_SUFFIXES = {".safetensors", ".gguf", ".onnx", ".onnx_data", ".bin", ".pt", ".pth", ".npz"}
+
+
+def _weight_size(path: Path, pattern: str | None) -> int:
+    """What a size prediction covers: the files ``pattern`` matches, else every weight file,
+    not the tokenizer and config written beside them."""
+    if path.is_file():
+        return path.stat().st_size
+    files = (path.glob(pattern) if pattern else
+             (p for p in path.rglob("*") if p.suffix in _WEIGHT_SUFFIXES
+              and "tokenizer" not in p.name))
+    return sum(p.stat().st_size for p in files if p.is_file())
+
+
 def _now() -> str:
     return _dt.datetime.now(_dt.UTC).isoformat(timespec="seconds")
 
@@ -280,7 +294,13 @@ def run_plan(
             log(f"{label}: serve step, not started: {rendered.text}")
             continue
         info = framework(recipe.framework)
-        prepared = runners[info.name].prepare(rendered, recipe, info, wanted, ctx)
+        try:
+            prepared = runners[info.name].prepare(rendered, recipe, info, wanted, ctx)
+        except ToolkitMissing as exc:
+            if not dry_run:
+                raise
+            # a dry run shows the step and what it still needs, rather than stopping
+            prepared = Prepared(argv=list(rendered.argv or []), note=f"dry run; {exc}")
         if not prepared.argv or dry_run:
             note = prepared.note or ("dry run" if dry_run else "nothing to run")
             manifest.steps.append(_skipped(recipe.id, prepared.argv, note))
@@ -309,13 +329,21 @@ def run_plan(
             if out is None or not out.exists():
                 missing.append(name)
                 continue
-            predicted = None
+            predicted, size, note = None, _size(out), f"{name}: {out.name}"
+            target = next((t for t in recipe.targets
+                           if pstep.quant and t.name == pstep.quant.method), None)
             if recipe.id == "llama.cpp/quantize":
                 from rightsize.fit import predicted_file_gb
 
                 predicted = round(predicted_file_gb(plan.model, str(wanted.get("quant"))), 3)
-            rs.measurements.append(Measurement(kind="file_size_gb", value=round(_size(out) / GB, 3),
-                                               predicted=predicted, note=f"{name}: {out.name}"))
+            elif target is not None and "file_gb" in pstep.fit.breakdown:
+                predicted = pstep.fit.breakdown["file_gb"]
+                weights = _weight_size(out, target.weights)
+                if weights != size:
+                    note += f", weights only ({size / GB:.3f} GB in all)"
+                size = weights
+            rs.measurements.append(Measurement(kind="file_size_gb", value=round(size / GB, 3),
+                                               predicted=predicted, note=note))
         manifest.steps.append(rs)
         toolchain.setdefault(info.name, prepared.version or info.version_tested or "")
         manifest.toolchain = toolchain

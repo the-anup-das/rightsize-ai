@@ -10,7 +10,7 @@ formats: [compressed-tensors]
 hardware: {vendors: [nvidia]}
 install:
   kind: pip
-  packages: [llmcompressor]
+  packages: ["llmcompressor==0.14.0"]
   needs_torch: true
   check: llmcompressor
   line: pip install llmcompressor

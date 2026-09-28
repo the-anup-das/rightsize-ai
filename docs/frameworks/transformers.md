@@ -11,11 +11,13 @@ Loads a model quantized on the fly to 4-bit NF4 (or 8-bit) with bitsandbytes, an
 
 | recipe | stage | families | checked | version |
 |---|---|---|---|---|
-| `transformers/bnb-nf4` | quantize | llm | docs | 5.17.0 |
+| `transformers/bnb-nf4` | quantize | llm | run | 5.17.0 |
 
 ## `transformers/bnb-nf4`
 
-Quantize step; from the documentation; not yet run here at 5.17.0.
+Quantize step; run end to end at 5.17.0.
+
+`rightsize quantize MODEL` runs it with `--to nf4`.
 
 Install: pip install --upgrade transformers accelerate bitsandbytes
 
@@ -29,14 +31,18 @@ bnb_config = BitsAndBytesConfig(
 model = AutoModelForCausalLM.from_pretrained(
     "<model>", quantization_config=bnb_config, device_map="auto", dtype=torch.bfloat16)
 tokenizer = AutoTokenizer.from_pretrained("<model>")
+model.save_pretrained("model-bnb-nf4")  # loads back 4-bit, quantization config included
+tokenizer.save_pretrained("model-bnb-nf4")
 ```
 
 | input | type | default | notes |
 |---|---|---|---|
 | `model` | str | required |  |
 | `double_quant` | enum | True | saves about 0.4 bits per parameter |
+| `output_dir` | path | model-bnb-nf4 | where the 4-bit checkpoint is saved |
 
-- quantizes while loading; nothing is written to disk
+- quantizes while loading, then saves the 4-bit checkpoint; from_pretrained on output_dir loads it back quantized
 - transformers 5 removed load_in_4bit= as a from_pretrained argument, and dtype= replaces torch_dtype=
+- run on Windows with an RTX 4070 Ti SUPER (rightsize quantize --to nf4): Qwen3-0.6B in 10 s, at most 1.34 GB of VRAM; 538.9 MB of weights with the embedding and the tied head left in BF16; loads back 4-bit and answers
 
 Source: <https://huggingface.co/docs/transformers/en/quantization/bitsandbytes>

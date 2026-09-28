@@ -68,6 +68,42 @@ Unsloth QLoRA adapter (fine-tune -> merged or GGUF), llama.cpp quantize adapter,
       steps on 300 FineTome examples in 37 s (loss 1.23), merge to 16-bit (1.20 GB), llama.cpp
       convert (20 s) and Q8_0 (3 s, 0.64 GB); `runs/unsloth-qwen06/manifest.json`. The
       notebook repo's `finetune.py` was not needed
+- [x] Formats other than GGUF: `rightsize quantize MODEL --to FORMAT` runs the recipe that
+      declares the format as a target, in that toolkit's environment (`--to list`, `--with`
+      to pick a toolkit, `--install`, `--set input=value`). A toolkit adds a format by adding
+      a target to its recipe; `execution/quantize_to.py` does not change. Each target ran end
+      to end on an RTX 4070 Ti SUPER (Windows, 2026-09-28), and each output was loaded back
+      and used:
+
+      | Format | Toolkit | Model | Time | Peak VRAM | Weights, predicted / measured | Loaded back with |
+      |---|---|---|---|---|---|---|
+      | fp8 | llm-compressor 0.14.0 | Qwen3-0.6B | 12 s | 1.06 GB | 0.752 / 0.752 GB | Transformers + compressed-tensors |
+      | w4a16 | llm-compressor 0.14.0 | Qwen3-0.6B | 144 s | 1.71 GB | 0.540 / 0.538 GB | Transformers + compressed-tensors |
+      | nf4 | Transformers 5.17.0, bitsandbytes 0.50.2 | Qwen3-0.6B | 10 s | 1.34 GB | 0.538 / 0.539 GB | Transformers, 4-bit |
+      | openvino-int4 | Optimum Intel 2.2.0 | Qwen3-0.6B | 43 s | CPU | 0.384 / 0.385 GB | OVModelForCausalLM, CPU |
+      | openvino-int8 | Optimum Intel 2.2.0 | Qwen3-0.6B | 32 s | CPU | 0.596 / 0.598 GB | |
+      | onnx-int8 | Sentence Transformers 5.7.0 | all-MiniLM-L6-v2 | 45 s | CPU | 0.023 / 0.023 GB | cosine 0.991-0.993 to fp32 |
+      | ct2-int8 | CTranslate2 4.8.2 | whisper-tiny | 44 s | CPU | 0.038 / 0.039 GB | CTranslate2, CPU and GPU |
+
+      Times are with the model already downloaded (the first FP8 run spent 380 s fetching
+      Qwen3-0.6B). What the runs corrected:
+      - Size was params x bits, which the first W4A16 run missed by 41%: llm-compressor and
+        bitsandbytes quantize Linear layers only, so the 155.6M-parameter embedding stays
+        BF16, and a tied head the source checkpoint stores twice is saved once. At 8 bits
+        the two errors cancelled, which is why FP8 looked right. Targets now say what bits
+        the embedding and an untied head keep, and the comparison counts weight files only
+        (Qwen3's tokenizer is 11 MB)
+      - OpenVINO's int4 is int4_asym in groups of 128 with a u4 zero point, 4.156 bits, and
+        NNCF puts embeddings and the last layer at int8: a new `int4-asym` format entry
+      - `sentence-transformers[onnx]==6.1.0` does not resolve (optimum-onnx pins transformers
+        below 4.58, sentence-transformers 6 needs 5); pinned to 5.7.0. Its output folder keeps
+        the fp32 export beside the int8 file, and avx2 writes `model_quint8_avx2.onnx`
+      - llm-compressor's example calibrates on perfectblend, 1.5 GB fetched whole for 512 rows;
+        the recipe now defaults to open_platypus, 16 MB
+      - CTranslate2's GPU path on Windows needs `cublas64_12.dll` on PATH, which its wheel does
+        not ship; the conversion itself runs on the CPU
+      - `mlx-4bit` and `mlx-8bit` need Apple silicon and have not run. The quantizer's own
+        memory is measured but not yet predicted
 - [x] llama.cpp quantize adapter: convert, imatrix, quantize, and `rightsize tools install`
       for pinned binaries plus the matching converter
 - [x] VRAM is measured as the rise over what the card held before the step started; the raw

@@ -71,6 +71,21 @@ the Python packages in `framework.yaml`'s `install.packages` and `rightsize tool
 command (binaries of its own, a download first) can register a runner under the
 `rightsize.runners` entry point; `execution/runner.py` has the protocol and llama.cpp's.
 
+A recipe that makes a weight format lists it under `targets`, and `rightsize quantize MODEL
+--to NAME` then runs it:
+
+```yaml
+targets:
+  - {name: fp8, size_from: fp8, embedding_bits: 16, head_bits: 16}
+```
+
+`size_from` names the `data/quants/formats.yaml` entry that predicts the output size;
+`inputs` sets the recipe inputs that select the format; `embedding_bits` and `head_bits`
+say what the toolkit leaves unquantized (llm-compressor and bitsandbytes skip everything but
+Linear layers); `weights` is a glob for the files the prediction covers when the output
+folder holds more than the quantized model. Run it once and compare the manifest's measured
+size with the prediction before marking the recipe `verified: run`.
+
 ## Adding a rule
 
 Rules live in `data/rules/*.yaml` and require `id`, `applies_to`, `condition`, `effect`, `source_url` and a `test`. A rule without a test fails schema validation. See `docs/plans/F04-rules-engine.md`.

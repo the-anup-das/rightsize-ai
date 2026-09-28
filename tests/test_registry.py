@@ -137,4 +137,7 @@ def test_every_toolkit_recipe_says_how_far_it_was_checked() -> None:
         assert recipe.version_tested, recipe.id
         if recipe.framework != "llama.cpp" and recipe.verified != "docs":
             ran_outside_llama_cpp.add(recipe.id)
-    assert ran_outside_llama_cpp == {"unsloth/sft"}
+    assert ran_outside_llama_cpp == {
+        "unsloth/sft", "llm-compressor/fp8-dynamic", "llm-compressor/gptq-w4a16",
+        "transformers/bnb-nf4", "optimum-intel/export-openvino", "sentence-transformers/onnx-int8",
+        "ctranslate2/convert-whisper"}

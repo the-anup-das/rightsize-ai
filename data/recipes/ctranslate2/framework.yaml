@@ -10,7 +10,7 @@ formats: [ctranslate2]
 hardware: {vendors: [nvidia, cpu]}
 install:
   kind: pip
-  packages: [ctranslate2, "transformers[torch]"]
+  packages: ["ctranslate2==4.8.2", "transformers[torch]"]
   check: ctranslate2
   line: pip install ctranslate2 "transformers[torch]"
 homepage: https://github.com/OpenNMT/CTranslate2

@@ -169,7 +169,18 @@ def build_parser() -> argparse.ArgumentParser:
 
     q = sub.add_parser("quantize", help="predict, convert, quantize, evaluate and record a model")
     q.add_argument("model", help="Hub id, e.g. Qwen/Qwen3-4B")
-    q.add_argument("--to", default="gguf", choices=["gguf"], help="output format (gguf for now)")
+    q.add_argument(
+        "--to", default="gguf",
+        help="gguf (default), or a format another toolkit produces: fp8, w4a16, nf4, "
+        "openvino-int4, openvino-int8, mlx-4bit, onnx-int8, ct2-int8; --to list shows them",
+    )
+    q.add_argument("--with", dest="with_framework", default=None,
+                   help="the toolkit to use when more than one produces the format")
+    q.add_argument("--install", action="store_true",
+                   help="install the toolkit into its own environment if it is missing")
+    q.add_argument("--set", action="append", default=[], metavar="NAME=VALUE",
+                   help="override a recipe input, e.g. --set num_samples=128")
+    q.add_argument("--workdir", default=None, help="non-GGUF formats: the run directory")
     q.add_argument("--quant", action="append", help="GGUF type, repeatable (default Q4_K_M)")
     q.add_argument("--device", default="detect")
     q.add_argument("--ctx", type=int, default=8192, help="context used for the VRAM prediction")
@@ -860,6 +871,42 @@ def cmd_frameworks(args: argparse.Namespace) -> int:
     return 0
 
 
+def _quantize_to(args: argparse.Namespace) -> int:
+    """Formats other than GGUF: one toolkit's recipe, run in its environment."""
+    from rightsize.execution.quantize_to import quantize_to, targets
+
+    con = _console(args)
+    if args.to == "list":
+        rows = [[name, ", ".join(sorted({r.framework for r, _ in pairs})),
+                 ", ".join(sorted({r.id for r, _ in pairs}))]
+                for name, pairs in sorted(targets().items())]
+        con.table(["format", "toolkit", "recipe"], [["gguf", "llama.cpp", "(pipeline)"], *rows])
+        return 0
+    con.title(f"rightsize quantize {args.model} --to {args.to}")
+    manifest = quantize_to(
+        args.model, args.to, _device(args), framework=args.with_framework,
+        workdir=args.workdir, inputs=dict(kv.split("=", 1) for kv in args.set),
+        install_missing=args.install, dry_run=args.dry_run, revision=args.revision,
+        log=con.info, echo=con.debug,
+    )
+    if args.json:
+        print(manifest.model_dump_json(indent=2))
+        return 0
+    rows = []
+    for st in manifest.steps:
+        for m in st.measurements:
+            if m.kind == "wall_s" and not st.skipped:
+                rows.append([st.recipe_id, "time", f"{m.value:.0f} s", ""])
+            elif m.kind in ("file_size_gb", "peak_vram_gb"):
+                err = (f"{(m.value - m.predicted) / m.predicted * 100:+.1f}%"
+                       if m.predicted else "")
+                rows.append([st.recipe_id, m.note or m.kind, f"{m.value:.3f} GB",
+                             f"{m.predicted:.3f} GB ({err})" if m.predicted else ""])
+    con.table(["step", "measure", "measured", "predicted"], rows)
+    con.ok(f"{manifest.status}: {manifest.id}")
+    return 0
+
+
 def cmd_tools(args: argparse.Namespace) -> int:
     from rightsize.execution import envs
     from rightsize.registry import framework, framework_infos
@@ -940,6 +987,8 @@ def cmd_quantize(args: argparse.Namespace) -> int:
     from rightsize._console import error_style
     from rightsize.execution import quantize_model
 
+    if args.to.lower() != "gguf":
+        return _quantize_to(args)
     con = _console(args)
     con.title(f"rightsize quantize {args.model}")
     manifest = quantize_model(

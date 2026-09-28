@@ -20,6 +20,35 @@ class RecipeInput(BaseModel):
     help: str | None = None
 
 
+class Target(BaseModel):
+    """A format ``rightsize quantize --to NAME`` produces with this recipe."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(description="what --to takes: fp8, w4a16, nf4, openvino-int4, ...")
+    inputs: dict[str, Any] = Field(
+        default_factory=dict, description="the recipe inputs that select this format"
+    )
+    size_from: str | None = Field(
+        default=None, description="the quants/formats.yaml entry that predicts the output size"
+    )
+    embedding_bits: float | None = Field(
+        default=None,
+        description="bits the input embedding keeps, e.g. 16 where only Linear layers are "
+        "quantized; empty means the format's own",
+    )
+    head_bits: float | None = Field(
+        default=None,
+        description="bits an output head of its own keeps (a tied head is saved once, as the "
+        "embedding); empty means the format's own",
+    )
+    weights: str | None = Field(
+        default=None,
+        description="glob, inside what the recipe writes, for the files the prediction "
+        "covers; empty means every weight file, not the tokenizer and config beside them",
+    )
+
+
 class Recipe(BaseModel):
     id: str
     framework: str
@@ -49,6 +78,10 @@ class Recipe(BaseModel):
         default_factory=list,
         description="the inputs naming what this step produces (a file or a directory), "
         "checked and measured after a run",
+    )
+    targets: list[Target] = Field(
+        default_factory=list,
+        description="formats this recipe produces for rightsize quantize --to",
     )
     notes: list[str] = Field(default_factory=list)
     source_doc_url: str

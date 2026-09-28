@@ -10,9 +10,11 @@ formats: [bnb]
 hardware: {vendors: [nvidia, amd, intel]}
 install:
   kind: pip
-  packages: [transformers, accelerate, bitsandbytes]
+  packages: ["transformers==5.17.0", "accelerate==1.15.0", "bitsandbytes==0.50.2"]
   needs_torch: true
-  check: transformers
+  # bitsandbytes, not transformers: rightsize's own environment has transformers (for the
+  # GGUF converter) on a CPU build of PyTorch, which cannot quantize to NF4
+  check: bitsandbytes
   line: pip install --upgrade transformers accelerate bitsandbytes
 homepage: https://github.com/huggingface/transformers
 source_doc_url: https://huggingface.co/docs/transformers/en/quantization/bitsandbytes

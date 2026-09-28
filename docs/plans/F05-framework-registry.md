@@ -138,7 +138,15 @@ The 14 MVP recipes above plus 4 serve recipes; docs generation; entry point disc
       environment); vLLM 0.30 moved bitsandbytes and GGUF into plugins; whisper.cpp's quantize
       binary is whisper-quantize; transformers 5 dropped `load_in_4bit=` and `torch_dtype=`;
       the diffusers docs' torchao example fails on torchao 0.18. Config recipes declare a
-      `language`, and CI parses every Python and YAML render
+      `language`, and CI parses every Python and YAML render. Since run end to end as well:
+      `unsloth/sft`, and the six recipes behind `rightsize quantize --to` (F8, 2026-09-28)
+- [x] Recipes that make a format declare it as a target: the name `--to` takes, the inputs
+      that select it, the `quants/formats.yaml` entry that sizes it, the bits the embedding
+      and an untied head keep, and which files are the weights. Nine targets over six
+      toolkits: fp8, w4a16 (llm-compressor), nf4 (transformers), openvino-int4/int8
+      (Optimum Intel), mlx-4bit/8bit (MLX LM), onnx-int8 (sentence-transformers), ct2-int8
+      (CTranslate2); the
+      framework pages name each recipe's formats
 - [ ] TensorRT Model Optimizer recipes: FP8, INT8 SmoothQuant, INT4 AWQ, NVFP4 (`mtq.quantize` + `export_hf_checkpoint`) with serve targets vLLM / SGLang / TensorRT-LLM
 - [ ] AutoQuantize recipe with `effective_bits` supplied by F3's budget-to-bits helper
 - [x] `render()` and `Plan.render()`. Two-stage plans render the fine-tune too: Unsloth on

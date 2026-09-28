@@ -11,11 +11,13 @@ Converts Whisper and other transformer models to CTranslate2, int8 or float16, t
 
 | recipe | stage | families | checked | version |
 |---|---|---|---|---|
-| `ctranslate2/convert-whisper` | convert | audio | docs | 4.8.2 |
+| `ctranslate2/convert-whisper` | convert | audio | run | 4.8.2 |
 
 ## `ctranslate2/convert-whisper`
 
-Convert step; from the documentation; not yet run here at 4.8.2.
+Convert step; run end to end at 4.8.2.
+
+`rightsize quantize MODEL` runs it with `--to ct2-int8`.
 
 Install: pip install ctranslate2 "transformers[torch]"
 
@@ -31,5 +33,7 @@ ct2-transformers-converter --model <model> --output_dir whisper-ct2 --quantizati
 
 - load it with faster_whisper.WhisperModel(output_dir); compute_type= can convert the stored type again at load
 - rightsize estimate MODEL --quant int8 --runtime faster-whisper gives the memory
+- the conversion runs on the CPU; on Windows the GPU needs cublas64_12.dll on PATH, which the ctranslate2 wheel does not ship: a CUDA 12 build of PyTorch has it in torch/lib
+- run on Windows with an RTX 4070 Ti SUPER (rightsize quantize --to ct2-int8): whisper-tiny in 44 s, a 38.9 MB model.bin; it decodes on the CPU (int8) and on the GPU (int8_float16)
 
 Source: <https://opennmt.net/CTranslate2/guides/transformers.html>

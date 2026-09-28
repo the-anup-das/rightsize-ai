@@ -9,8 +9,10 @@ formats: [openvino]
 hardware: {vendors: [intel, cpu]}
 install:
   kind: pip
+  packages: ["optimum-intel[openvino]==2.2.0"]
   check: optimum.intel
-  line: pip install -U optimum-intel
+  line: pip install -U "optimum-intel[openvino]"
+  note: the openvino extra brings NNCF, which int8 and int4 weight compression need
 homepage: https://github.com/huggingface/optimum-intel
 source_doc_url: https://huggingface.co/docs/optimum-intel/en/openvino/export
 version_tested: 2.2.0

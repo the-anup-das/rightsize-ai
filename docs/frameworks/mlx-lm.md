@@ -21,6 +21,8 @@ Quantizes, fine-tunes (LoRA, and QLoRA on a model it quantized first) and serves
 
 Quantize step; from the documentation; not yet run here at 0.31.3.
 
+`rightsize quantize MODEL` runs it with `--to mlx-4bit` or `--to mlx-8bit`.
+
 Install: pip install mlx-lm
 
 ```bash

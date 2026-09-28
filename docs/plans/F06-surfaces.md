@@ -75,6 +75,8 @@ All three surfaces over F1–F5; `data update`; README quickstart with three exa
       never extracted
 - [x] `rightsize plan render PLAN.json [--rank N] [--set input=value]` for plans saved with
       `recommend --json`
+- [x] `rightsize quantize MODEL --to FORMAT` for formats other than GGUF, run by the toolkit
+      whose recipe declares the format (`--to list` names them; F8)
 - [x] MCP server with six tools; schema snapshot test. Seven tools (`recommend_for_model` is
       the seventh), stdio via `rightsize mcp` or `rightsize-mcp`; input schemas pinned in
       `tests/fixtures/mcp_tools.json`; a slow test drives the real stdio transport. Works with

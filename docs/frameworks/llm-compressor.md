@@ -11,12 +11,14 @@ Quantizes models to the compressed-tensors checkpoints vLLM and SGLang load: FP8
 
 | recipe | stage | families | checked | version |
 |---|---|---|---|---|
-| `llm-compressor/fp8-dynamic` | quantize | llm | docs | 0.14.0 |
-| `llm-compressor/gptq-w4a16` | quantize | llm | docs | 0.14.0 |
+| `llm-compressor/fp8-dynamic` | quantize | llm | run | 0.14.0 |
+| `llm-compressor/gptq-w4a16` | quantize | llm | run | 0.14.0 |
 
 ## `llm-compressor/fp8-dynamic`
 
-Quantize step; from the documentation; not yet run here at 0.14.0.
+Quantize step; run end to end at 0.14.0.
+
+`rightsize quantize MODEL` runs it with `--to fp8`.
 
 Install: pip install llmcompressor
 
@@ -38,12 +40,15 @@ oneshot(
 
 - no calibration data: FP8 weights with dynamic per-token activation scales; serve the directory with vllm serve
 - from llmcompressor.transformers import oneshot is gone in 0.14
+- run on Windows with an RTX 4070 Ti SUPER (rightsize quantize --to fp8): Qwen3-0.6B in 12 s once downloaded (392 s with the 1.5 GB download), at most 1.06 GB of VRAM; 752.4 MB of weights, the embedding still BF16; Transformers loads it back through compressed-tensors and it answers
 
 Source: <https://docs.vllm.ai/projects/llm-compressor/en/latest/guides/entrypoints/oneshot/>
 
 ## `llm-compressor/gptq-w4a16`
 
-Quantize step; from the documentation; not yet run here at 0.14.0.
+Quantize step; run end to end at 0.14.0.
+
+`rightsize quantize MODEL` runs it with `--to w4a16`.
 
 Install: pip install llmcompressor
 
@@ -53,7 +58,7 @@ from llmcompressor.modifiers.gptq import GPTQModifier
 
 oneshot(
     model="<model>",
-    dataset="perfectblend",
+    dataset="open_platypus",
     splits="train[:512]",
     recipe=GPTQModifier(targets="Linear", scheme="W4A16", ignore=["lm_head"]),
     max_seq_length=2048,
@@ -65,13 +70,15 @@ oneshot(
 | input | type | default | notes |
 |---|---|---|---|
 | `model` | str | required |  |
-| `dataset` | str | perfectblend | a name llm-compressor registers (perfectblend, ultrachat_200k, open_platypus, wikitext, ...) |
+| `dataset` | str | open_platypus | a name llm-compressor registers (open_platypus, perfectblend, ultrachat_200k, wikitext, ...) |
 | `split` | str | train[:512] |  |
 | `num_samples` | int | 512 |  |
 | `max_seq_length` | int | 2048 |  |
 | `output_dir` | path | model-W4A16-G128 |  |
 
 - int4 weights, group 128, 16-bit activations, calibrated on the dataset; serve the directory with vllm serve
-- dataset and split follow examples/quantization_w4a16/llama3_example.py at 0.14.0; other data: pass a datasets.Dataset with a text column
+- split and sample count follow examples/quantization_w4a16/llama3_example.py at 0.14.0; other data: pass a datasets.Dataset with a text column
+- open_platypus (garage-bAInd/Open-Platypus) is a 16 MB download; the example's perfectblend is 1.5 GB and ultrachat_200k 1.6 GB, fetched whole even for a 512-row slice
+- run on Windows with an RTX 4070 Ti SUPER (rightsize quantize --to w4a16): Qwen3-0.6B on 512 Open-Platypus samples in 144 s, at most 1.71 GB of VRAM; 538.5 MB of weights, 220 MB of them the int4 layers and 311 MB the BF16 embedding; loads back and answers
 
 Source: <https://github.com/vllm-project/llm-compressor/blob/0.14.0/examples/quantization_w4a16/llama3_example.py>

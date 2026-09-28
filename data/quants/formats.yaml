@@ -81,6 +81,17 @@ formats:
       source_url: https://huggingface.co/docs/transformers/main_classes/quantization
       fetched_at: "2026-09-25"
       note: GPTQConfig group_size defaults to 128; the g_idx row index is negligible
+  - id: int4-asym
+    bpw: 4.156
+    aliases: [int4_asym, openvino-int4]
+    layout: OpenVINO int4_asym, group 128, f16 scale and u4 zero point per group = 4 + (16 + 4)/128
+    source:
+      source_url: https://github.com/openvinotoolkit/nncf/blob/v3.4.0/src/nncf/quantization/quantize_model.py
+      fetched_at: "2026-09-28"
+      note: >-
+        embeddings and the last layer go to the backup precision, int8_asym per channel.
+        Qwen3-0.6B exported with optimum-intel 2.2.0: 196 layers at int4 took 229.1 MB for
+        440.5M parameters, 4.16 bits
   - id: mlx-4bit
     bpw: 4.5
     aliases: [mlx-4, mlx4]
