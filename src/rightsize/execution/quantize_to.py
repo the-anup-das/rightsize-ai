@@ -11,12 +11,16 @@ prediction from quants/formats.yaml.
 
 from __future__ import annotations
 
+import datetime as _dt
+import json
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 from rightsize.types import (
     Device,
     FitResult,
+    Measurement,
     Mode,
     ModelFacts,
     Plan,
@@ -78,10 +82,17 @@ def output_gb(fx: ModelFacts, bpw: float, spec: Any) -> float | None:
 
 
 def plan_for(
-    model: str, target: str, device: Device, *, framework: str | None = None, revision: str = "main"
+    model: str,
+    target: str,
+    device: Device,
+    *,
+    framework: str | None = None,
+    revision: str = "main",
+    evaluate: bool = False,
 ) -> Plan:
     """A one-step plan that turns ``model`` into ``target``, with the output size predicted
-    from the target's entry in quants/formats.yaml."""
+    from the target's entry in quants/formats.yaml. ``evaluate`` adds the target's gate as a
+    second step, run in the same toolkit's environment."""
     from rightsize.catalog import facts
     from rightsize.fit.formats import lookup
 
@@ -115,10 +126,25 @@ def plan_for(
         fit=fit,
         recipe_id=recipe.id,
     )
+    steps = [step]
     trace = [f"{target} with {recipe.framework} ({recipe.id}, {recipe.verified})"]
     if size:
         trace.append(f"predicted output: {size:.2f} GB")
-    return Plan(rank=1, model=fx, mode=Mode.infer, steps=[step], score=0.0, trace=trace)
+    if evaluate:
+        if spec.gate is None:
+            raise ValueError(f"{target} has no quality gate yet: {recipe.id} names none")
+        steps.append(
+            PlanStep(
+                stage="evaluate",
+                framework=recipe.framework,
+                device=device,
+                quant=step.quant,
+                fit=fit,
+                recipe_id=spec.gate.recipe,
+            )
+        )
+        trace.append(f"gate: {spec.gate.recipe}, run in {recipe.framework}'s environment")
+    return Plan(rank=1, model=fx, mode=Mode.infer, steps=steps, score=0.0, trace=trace)
 
 
 def quantize_to(
@@ -131,26 +157,72 @@ def quantize_to(
     inputs: dict[str, Any] | None = None,
     install_missing: bool = False,
     dry_run: bool = False,
+    evaluate: bool = False,
+    eval_chunks: int = 100,
     revision: str = "main",
     log: Log = print,
     echo: Log | None = None,
 ) -> RunManifest:
-    """Run the recipe that produces ``target`` on ``model``; see run_plan for the rest."""
+    """Run the recipe that produces ``target`` on ``model``; see run_plan for the rest.
+    ``evaluate`` runs the target's gate on the output afterwards and records its verdict in
+    the manifest, as the GGUF pipeline does."""
     from rightsize.execution.runner import run_plan
 
-    plan = plan_for(model, target, device, framework=framework, revision=revision)
+    plan = plan_for(
+        model, target, device, framework=framework, revision=revision, evaluate=evaluate
+    )
     recipe, spec = choose(target, framework)
     slug = model.replace("/", "__")
+    stamp = _dt.datetime.now().strftime("%Y%m%d-%H%M%S")
+    run_dir = Path(workdir or Path("runs") / f"{slug}-{stamp}")
     values: dict[str, Any] = {"model": model, **spec.inputs}
+    out = f"{slug}-{target}"
     if recipe.writes:
-        values[recipe.writes[0]] = f"{slug}-{target}"
+        values[recipe.writes[0]] = out
+    if evaluate:
+        from rightsize.execution.quantize import wikitext
+
+        values.update(
+            {
+                "candidate": out,
+                # absolute: the script runs inside the run folder
+                "eval_file": "wiki.test.raw" if dry_run else str(wikitext(log).resolve()),
+                "chunks": eval_chunks,
+                "gate_file": "gate.json",
+                **spec.gate.inputs,
+            }
+        )
     values.update(inputs or {})
-    return run_plan(
+    manifest = run_plan(
         plan,
-        workdir=workdir,
+        workdir=run_dir,
         inputs=values,
         install_missing=install_missing,
         dry_run=dry_run,
         log=log,
         echo=echo,
     )
+    if evaluate and not dry_run:
+        record_gate(manifest, target, run_dir / str(values["gate_file"]), log)
+    return manifest
+
+
+def record_gate(manifest: RunManifest, target: str, path: Path, log: Log) -> None:
+    """Read the numbers the gate recipe wrote, judge them against quality/gate_thresholds.yaml
+    and put both into the manifest, beside the run that produced them."""
+    from rightsize.execution.llamacpp import gate, write_manifest
+
+    numbers = {
+        k: float(v)
+        for k, v in json.loads(path.read_text(encoding="utf-8")).items()
+        if isinstance(v, int | float)
+    }
+    manifest.gate[target] = gate(numbers)
+    step = manifest.steps[-1]
+    for kind in ("kld_mean", "top1_agreement", "ppl", "cosine_mean"):
+        if kind in numbers:
+            step.measurements.append(Measurement(kind=kind, value=numbers[kind], note=target))
+    write_manifest(manifest, path.parent)
+    keys = ("kld_mean", "top1_agreement", "ppl", "ppl_base", "cosine_mean", "cosine_min")
+    shown = ", ".join(f"{k} {numbers[k]:.4g}" for k in keys if k in numbers)
+    log(f"gate {manifest.gate[target]['verdict']} for {target}: {shown}")

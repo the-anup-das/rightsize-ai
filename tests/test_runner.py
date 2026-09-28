@@ -226,3 +226,15 @@ def test_vram_is_what_the_step_added_not_what_the_desktop_holds(monkeypatch) -> 
             max(p, n) for p, n in zip(sampler.peak_mib or [0], sampler._read(), strict=True)
         ]
     assert sampler.peak_gb == round(1500 * 1024**2 / 1e9, 2)
+
+
+def test_the_version_shown_is_the_frameworks_own() -> None:
+    """tools list showed Transformers as 1.15.0: accelerate's version, the first of the
+    descriptor's packages in an alphabetical freeze."""
+    from rightsize.execution.envs import own_version
+    from rightsize.registry import framework
+
+    freeze = {"accelerate": "1.15.0", "bitsandbytes": "0.50.2", "transformers": "5.17.0"}
+    assert own_version(framework("transformers"), freeze) == "5.17.0"
+    assert own_version(framework("llm-compressor"), {"llmcompressor": "0.14.0"}) == "0.14.0"
+    assert own_version(framework("transformers"), {"torch": "2.11.0"}) is None

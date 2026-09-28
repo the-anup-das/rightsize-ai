@@ -488,6 +488,12 @@ def gate(metrics: dict[str, float]) -> dict[str, object]:
         verdicts.append(
             "pass" if top1 > t["pass_above"] else "warn" if top1 > t["warn_above"] else "fail"
         )
+    cos = metrics.get("cosine_mean")
+    if cos is not None:
+        t = th["embedding_cosine"]
+        verdicts.append(
+            "pass" if cos > t["pass_above"] else "warn" if cos > t["warn_above"] else "fail"
+        )
     overall = (
         "fail"
         if "fail" in verdicts

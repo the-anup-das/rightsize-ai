@@ -20,6 +20,18 @@ class RecipeInput(BaseModel):
     help: str | None = None
 
 
+class Gate(BaseModel):
+    """How a target's output is checked: an evaluate-stage recipe, run in the environment
+    that produced the output, since that is the one that can load it."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    recipe: str = Field(description="an evaluate recipe, e.g. transformers/kld-eval")
+    inputs: dict[str, Any] = Field(
+        default_factory=dict, description="the recipe inputs that select this format's loader"
+    )
+
+
 class Target(BaseModel):
     """A format ``rightsize quantize --to NAME`` produces with this recipe."""
 
@@ -47,6 +59,7 @@ class Target(BaseModel):
         description="glob, inside what the recipe writes, for the files the prediction "
         "covers; empty means every weight file, not the tokenizer and config beside them",
     )
+    gate: Gate | None = Field(default=None, description="how to check the output; --eval runs it")
 
 
 class Recipe(BaseModel):

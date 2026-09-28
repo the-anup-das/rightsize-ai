@@ -36,5 +36,6 @@ optimum-cli export openvino --model <model> --weight-format int4 --group-size 12
 - models over 1B parameters export with int8 weights unless --weight-format says otherwise
 - --task is needed for a local model, e.g. text-generation-with-past; flags checked against optimum/commands/export/openvino.py at v2.2.0
 - run on Windows with an RTX 4070 Ti SUPER (rightsize quantize --to openvino-int4 and openvino-int8): Qwen3-0.6B, int4 in 43 s (385.1 MB: 196 layers int4_asym in groups of 128, the tied embedding int8 per channel, as NNCF does for embeddings and the last layer) and int8 in 32 s (598 MB); OVModelForCausalLM loads it and answers on the CPU
+- gate (--eval) on Qwen3-0.6B: int8 pass (KLD 0.005, top-1 0.956, perplexity 22.12 against 22.13), int4 fail (KLD 0.308, top-1 0.729): data-free int4 of every layer is the worst of the 4-bit results on a model this small; --awq --dataset wikitext2 or a --ratio below 1 are the knobs to try, and 7B-class models are what the int4 default is for
 
 Source: <https://huggingface.co/docs/optimum-intel/en/openvino/export>

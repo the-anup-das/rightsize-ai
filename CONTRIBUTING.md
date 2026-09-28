@@ -83,8 +83,11 @@ targets:
 `inputs` sets the recipe inputs that select the format; `embedding_bits` and `head_bits`
 say what the toolkit leaves unquantized (llm-compressor and bitsandbytes skip everything but
 Linear layers); `weights` is a glob for the files the prediction covers when the output
-folder holds more than the quantized model. Run it once and compare the manifest's measured
-size with the prediction before marking the recipe `verified: run`.
+folder holds more than the quantized model. `gate` names the evaluate recipe that checks the
+output (`transformers/kld-eval` for a causal LM, `sentence-transformers/cosine-eval` for an
+embedding model), with the inputs that select its loader; `--eval` runs it in the same
+environment as the quantizer. Run it once and compare the manifest's measured size with the
+prediction before marking the recipe `verified: run`.
 
 ## Adding a rule
 

@@ -27,11 +27,41 @@ def test_every_target_names_real_inputs_and_a_known_size() -> None:
             "formats"
         ]
     }
-    for recipe in all_recipes().values():
+    recipes = all_recipes()
+    for recipe in recipes.values():
         for target in recipe.targets:
             assert set(target.inputs) <= set(recipe.inputs), (recipe.id, target.name)
             assert target.size_from in formats, (recipe.id, target.size_from)
             assert recipe.writes, f"{recipe.id} must say what it writes to be a target"
+            if target.gate is None:
+                continue
+            check = recipes[target.gate.recipe]  # a gate names a recipe that exists
+            assert check.stage == "evaluate", (target.name, check.id)
+            assert set(target.gate.inputs) <= set(check.inputs), (target.name, check.id)
+            # what quantize_to hands every gate, and where record_gate reads the numbers
+            assert {"model", "candidate", "eval_file"} <= set(check.inputs), check.id
+            assert check.writes == ["gate_file"], check.id
+
+
+def test_the_gated_formats() -> None:
+    gated = {t.name for r in all_recipes().values() for t in r.targets if t.gate}
+    assert gated == {"fp8", "w4a16", "nf4", "openvino-int4", "openvino-int8", "onnx-int8"}
+
+
+def test_a_target_without_a_gate_says_so(monkeypatch) -> None:
+    import rightsize.catalog as catalog
+
+    monkeypatch.setattr(catalog, "facts", lambda *a, **k: FACTS)
+    with pytest.raises(ValueError, match="no quality gate yet"):
+        qt.plan_for("Qwen/Qwen3-4B", "ct2-int8", resolve("RTX 4090"), evaluate=True)
+
+
+def test_the_gate_judges_embeddings_by_cosine() -> None:
+    from rightsize.execution.llamacpp import gate
+
+    assert gate({"cosine_mean": 0.995})["verdict"] == "pass"
+    assert gate({"cosine_mean": 0.98})["verdict"] == "warn"
+    assert gate({"cosine_mean": 0.9, "cosine_min": 0.5})["verdict"] == "fail"
 
 
 def test_the_formats_on_offer() -> None:
@@ -53,18 +83,27 @@ def test_every_target_plans_and_renders(target, monkeypatch, tmp_path) -> None:
     import rightsize.catalog as catalog
 
     monkeypatch.setattr(catalog, "facts", lambda *a, **k: FACTS)
+    recipe, spec = qt.choose(target)
     manifest = qt.quantize_to(
         "Qwen/Qwen3-4B",
         target,
         resolve("RTX 4090"),
         dry_run=True,
+        evaluate=spec.gate is not None,
         workdir=str(tmp_path),
         log=lambda _line: None,
     )
-    (step,) = manifest.steps
-    # a config recipe has no interpreter to name where its toolkit is not installed (CI),
-    # so the dry run promises only a skipped step that says so
-    assert step.skipped and step.measurements[0].note.startswith("dry run")
+    assert len(manifest.steps) == (2 if spec.gate else 1)
+    for step in manifest.steps:
+        # a config recipe has no interpreter to name where its toolkit is not installed (CI),
+        # so the dry run promises only a skipped step that says so
+        assert step.skipped and step.measurements[0].note.startswith("dry run")
+    if spec.gate:
+        # the gate runs where the candidate loads: the quantizer's own environment
+        plan = qt.plan_for("Qwen/Qwen3-4B", target, resolve("RTX 4090"), evaluate=True)
+        assert plan.steps[1].stage == "evaluate"
+        assert plan.steps[1].framework == recipe.framework
+        assert plan.steps[1].recipe_id == spec.gate.recipe
 
 
 def test_a_format_nobody_produces_lists_the_ones_that_exist() -> None:
@@ -137,7 +176,7 @@ PLUGIN = {
 name: squash
 title: Squash
 summary: makes a file of the size the format promises, for testing
-stages: [quantize]
+stages: [quantize, evaluate]
 install: {kind: pip, packages: [squash], check: json, line: pip install squash}
 homepage: https://example.org/squash
 source_doc_url: https://example.org/squash
@@ -154,15 +193,35 @@ inputs:
   nbytes: {type: int, default: 1000}
 writes: [out]
 targets:
-  - {name: squash-int8, size_from: int8}
+  - {name: squash-int8, size_from: int8, gate: {recipe: squash/check, inputs: {kld: 0.02}}}
 template: |
   open("{{ out }}", "wb").write(b"0" * {{ nbytes }})
+source_doc_url: https://example.org/squash
+""",
+    "check.yaml": """
+id: squash/check
+framework: squash
+stage: evaluate
+kind: config
+language: python
+inputs:
+  model: {type: str, required: true}
+  candidate: {type: path, required: true}
+  eval_file: {type: path, required: true}
+  kld: {type: float, default: 0.5}
+  gate_file: {type: path, default: gate.json}
+writes: [gate_file]
+template: |
+  import json, os
+  assert os.path.exists(r"{{ candidate }}") and os.path.exists(r"{{ eval_file }}")
+  json.dump({"kld_mean": {{ kld }}, "top1_agreement": 0.95, "ppl": 9.0, "tokens": 10},
+            open(r"{{ gate_file }}", "w"))
 source_doc_url: https://example.org/squash
 """,
 }
 
 
-def test_a_plugin_format_runs_and_is_measured_against_the_prediction(tmp_path, monkeypatch):
+def _plugin(tmp_path, monkeypatch) -> None:
     import rightsize.catalog as catalog
 
     root = tmp_path / "plugin" / "squash"
@@ -171,7 +230,38 @@ def test_a_plugin_format_runs_and_is_measured_against_the_prediction(tmp_path, m
         (root / name).write_text(text.lstrip(), encoding="utf-8")
     monkeypatch.setattr(loader, "_plugin_targets", lambda: [("squash", root.parent)])
     monkeypatch.setattr(catalog, "facts", lambda *a, **k: FACTS)
+    # the evaluation text is downloaded once into the tools folder; here it is already there
+    texts = tmp_path / "texts" / "wikitext-2-raw"
+    texts.mkdir(parents=True)
+    (texts / "wiki.test.raw").write_text("a line of text\n", encoding="utf-8")
+    monkeypatch.setenv("RIGHTSIZE_TEXTS_DIR", str(texts.parent))
     loader.clear_cache()
+
+
+def test_a_plugin_gate_runs_after_its_format_and_judges_it(tmp_path, monkeypatch) -> None:
+    _plugin(tmp_path, monkeypatch)
+    try:
+        manifest = qt.quantize_to(
+            "Qwen/Qwen3-4B",
+            "squash-int8",
+            resolve("RTX 4090"),
+            workdir=str(tmp_path / "run"),
+            evaluate=True,
+            log=lambda _line: None,
+        )
+    finally:
+        loader.clear_cache()
+    assert [s.recipe_id for s in manifest.steps] == ["squash/int8", "squash/check"]
+    verdict = manifest.gate["squash-int8"]
+    assert verdict["verdict"] == "pass" and verdict["kld_mean"] == 0.02  # the target's input
+    kinds = {m.kind for m in manifest.steps[1].measurements}
+    assert {"kld_mean", "top1_agreement", "ppl"} <= kinds
+    written = json.loads((tmp_path / "run" / "manifest.json").read_text(encoding="utf-8"))
+    assert written["gate"]["squash-int8"]["verdict"] == "pass", "the manifest on disk has it too"
+
+
+def test_a_plugin_format_runs_and_is_measured_against_the_prediction(tmp_path, monkeypatch):
+    _plugin(tmp_path, monkeypatch)
     try:
         manifest = qt.quantize_to(
             "Qwen/Qwen3-4B",

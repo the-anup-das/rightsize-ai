@@ -12,7 +12,8 @@ inputs:
 file: llmcompressor_fp8.py
 writes: [output_dir]
 targets:
-  - {name: fp8, size_from: fp8, embedding_bits: 16, head_bits: 16}
+  - {name: fp8, size_from: fp8, embedding_bits: 16, head_bits: 16,
+     gate: {recipe: transformers/kld-eval}}
 template: |
   from llmcompressor import oneshot
   from llmcompressor.modifiers.quantization import QuantizationModifier
@@ -26,6 +27,7 @@ notes:
   - "no calibration data: FP8 weights with dynamic per-token activation scales; serve the directory with vllm serve"
   - "from llmcompressor.transformers import oneshot is gone in 0.14"
   - "run on Windows with an RTX 4070 Ti SUPER (rightsize quantize --to fp8): Qwen3-0.6B in 12 s once downloaded (392 s with the 1.5 GB download), at most 1.06 GB of VRAM; 752.4 MB of weights, the embedding still BF16; Transformers loads it back through compressed-tensors and it answers"
+  - "gate (--eval) on Qwen3-0.6B: pass, KLD 0.020, top-1 agreement 0.925, perplexity 22.50 against the 16-bit model's 22.15"
 source_doc_url: https://docs.vllm.ai/projects/llm-compressor/en/latest/guides/entrypoints/oneshot/
 version_tested: 0.14.0
 verified: run

@@ -60,6 +60,7 @@ rightsize tools install unsloth          # any other toolkit: its own environmen
 rightsize recommend --json > plans.json && rightsize run plans.json   # carry out the top plan here
 rightsize quantize Qwen/Qwen3-1.7B --quant Q4_K_M --imatrix --eval
 rightsize quantize Qwen/Qwen3-4B --to fp8 --install     # other formats, each made by its own toolkit (--to list)
+rightsize quantize Qwen/Qwen3-4B --to nf4 --eval        # and gated: KL divergence against the 16-bit model
 rightsize bench Qwen/Qwen3-1.7B           # measure this machine's real memory bandwidth
 rightsize calibrate                       # predicted vs measured for what Ollama / LM Studio has loaded
 rightsize data update                     # newer hardware / quant / rules data, validated before use
@@ -151,7 +152,7 @@ every verdict on that card 7% pessimistic.
 | F5 Framework registry + recipes | [F05](docs/plans/F05-framework-registry.md) | 24 recipes over 14 frameworks (fine-tune, quantize, export, serve); plans render the whole chain; generated [framework pages](docs/frameworks/README.md) |
 | F6 SDK / CLI / MCP | [F06](docs/plans/F06-surfaces.md) | SDK, CLI and MCP server (ten tools, stdio) over the same functions; Plan JSON Schema in `schema/` |
 | F7 Cloud fallback | [F07](docs/plans/F07-cloud-fallback.md) | cheapest rental GPU for a fine-tune that does not fit, from SkyPilot's open price catalog; job time and cost per 10M tokens (low confidence) |
-| F8 Execution + eval gate | [F08](docs/plans/F08-execution-eval.md) | llama.cpp adapter with a KL-divergence gate, run end to end on Qwen3-1.7B (Q4_K_M warn, Q5_K_M and Q8_0 pass); `rightsize run` carries out a plan in each toolkit's own environment (Unsloth QLoRA, merge, GGUF); `quantize --to` makes nine other formats, and the seven that run on Windows were run here, each output within 3% of its predicted size |
+| F8 Execution + eval gate | [F08](docs/plans/F08-execution-eval.md) | llama.cpp adapter with a KL-divergence gate, run end to end on Qwen3-1.7B (Q4_K_M warn, Q5_K_M and Q8_0 pass); `rightsize run` carries out a plan in each toolkit's own environment (Unsloth QLoRA, merge, GGUF); `quantize --to` makes nine other formats, and the seven that run on Windows were run here, each output within 3% of its predicted size; `--eval` gates them against the 16-bit model on llama.cpp's scale |
 | F9 Calibration loop | [F09](docs/plans/F09-calibration.md) | `rightsize calibrate` compares predictions with what Ollama or LM Studio models hold; opt-in local records; refit script for the overhead constants |
 | F10 Cloud provider connectors | [F10](docs/plans/F10-cloud-connectors.md) | phase 3 |
 

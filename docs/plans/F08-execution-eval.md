@@ -104,6 +104,32 @@ Unsloth QLoRA adapter (fine-tune -> merged or GGUF), llama.cpp quantize adapter,
         not ship; the conversion itself runs on the CPU
       - `mlx-4bit` and `mlx-8bit` need Apple silicon and have not run. The quantizer's own
         memory is measured but not yet predicted
+- [x] A quality gate for the `--to` formats, as the GGUF pipeline has: `quantize --to X --eval`
+      adds the target's `gate` recipe as an evaluate step in the same toolkit's environment,
+      since that is the one that can load the output. `transformers/kld-eval` measures mean KL
+      divergence, top-1 agreement and perplexity against the 16-bit model over the wikitext-2
+      windows llama-perplexity scores; `sentence-transformers/cosine-eval` measures cosine to
+      the original embeddings; the verdict comes from `data/quality/gate_thresholds.yaml` and
+      goes into the manifest beside the run. The scale is llama.cpp's: on Qwen3-1.7B's Q4_K_M
+      GGUF, loaded dequantized, the recipe scores KLD 0.055 / top-1 0.904 where
+      llama-perplexity gave 0.059 / 0.900. Run on Qwen3-0.6B (2026-09-28), 100 windows of
+      512 tokens, 25,600 scored:
+
+      | Format | Gate | KLD | Top-1 | PPL (16-bit: 22.15) | Gate time |
+      |---|---|---|---|---|---|
+      | openvino-int8 | pass | 0.005 | 0.956 | 22.12 | 138 s, CPU |
+      | fp8 | pass | 0.020 | 0.925 | 22.50 | 40 s |
+      | nf4 | fail | 0.193 | 0.781 | 25.25 | 32 s |
+      | w4a16 | fail | 0.228 | 0.777 | 25.59 | 30 s |
+      | openvino-int4 | fail | 0.308 | 0.729 | 26.72 | 144 s, CPU |
+      | onnx-int8 (all-MiniLM-L6-v2) | pass | cosine 0.991, worst 0.982 | | | 42 s |
+
+      Every 4-bit format fails on a 0.6B model, and so do llama.cpp's own: its Q4_K_M of the
+      same model scores KLD 0.115 (warn) and its Q4_0 0.219 (fail). Four bits is too few for
+      a model this small whichever toolkit rounds it; the recipes' defaults are for 7B-class
+      models, and the gate now says so where a file of the right size used to look fine.
+      `ct2-int8` and the MLX formats have no gate yet; a transcription comparison for Whisper
+      is the follow-up
 - [x] llama.cpp quantize adapter: convert, imatrix, quantize, and `rightsize tools install`
       for pinned binaries plus the matching converter
 - [x] VRAM is measured as the rise over what the card held before the step started; the raw

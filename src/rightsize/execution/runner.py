@@ -26,7 +26,14 @@ from typing import Any, Protocol
 
 from rightsize import __version__
 from rightsize.errors import RightsizeError
-from rightsize.execution.envs import Env, ToolkitMissing, install, resolve, tools_root
+from rightsize.execution.envs import (
+    Env,
+    ToolkitMissing,
+    install,
+    own_version,
+    resolve,
+    tools_root,
+)
 from rightsize.registry import framework, render
 from rightsize.registry.schema import FrameworkInfo, Recipe, RenderedStep
 from rightsize.types import GB, Measurement, Plan, RunManifest, RunStep
@@ -213,11 +220,7 @@ def runner_for(name: str) -> Runner:
 
 def _version(info: FrameworkInfo, env: Env) -> str | None:
     """The installed version of the framework's own package, when the environment knows it."""
-    wanted = {
-        p.split("[")[0].split("=")[0].split("<")[0].split(">")[0].lower()
-        for p in info.install.packages
-    }
-    return next((v for k, v in env.versions.items() if k.lower() in wanted), None)
+    return own_version(info, env.versions)
 
 
 def _progress(parser, stage: str, log: Log):
@@ -336,7 +339,8 @@ def run_plan(
             )
             log(f"{label}: serve step, not started: {rendered.text}")
             continue
-        info = framework(recipe.framework)
+        # the step says which toolkit runs it: a gate runs where its candidate loads
+        info = framework(pstep.framework or recipe.framework)
         try:
             prepared = runners[info.name].prepare(rendered, recipe, info, wanted, ctx)
         except ToolkitMissing as exc:

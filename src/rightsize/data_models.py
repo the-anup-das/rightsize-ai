@@ -207,6 +207,7 @@ class GateThresholdsFile(_Strict):
     provenance: Source
     kld: _KldBand
     top1_agreement: _AgreementBand
+    embedding_cosine: _AgreementBand
 
     @model_validator(mode="after")
     def _ordered(self) -> GateThresholdsFile:
