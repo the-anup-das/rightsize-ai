@@ -65,7 +65,8 @@ def build_parser() -> argparse.ArgumentParser:
         "--framework",
         default=None,
         help="use this toolkit where it has a role: a trainer (unsloth, trl, axolotl, mlx-lm) "
-        "for the fine-tune, a server (ollama, llama.cpp) for the GGUF",
+        "for the fine-tune, a server for the output: ollama or llama.cpp for GGUF, vllm for "
+        "the FP8, AWQ, W4A16 and Model Optimizer formats",
     )
 
     ca = sub.add_parser(

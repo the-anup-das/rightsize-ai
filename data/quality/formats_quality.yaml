@@ -1,0 +1,50 @@
+# What the quality gate measured for the formats outside GGUF, and the bridge that puts them
+# on llama.cpp's scale so recommend can rank them beside GGUF types (F4).
+#
+# The ranker's unit is the perplexity a GGUF type adds on Llama-3-8B, as llama-quantize
+# prints it (quality/gguf_types.yaml). No toolkit publishes that for FP8, AWQ or NF4, so it
+# is measured here: the gate (transformers/kld-eval) scores each format's output against the
+# 16-bit model by mean KL divergence over the same wikitext-2 windows llama-perplexity uses,
+# and llama-perplexity scores llama.cpp's own types on the same model, same windows. A
+# format is then worth the GGUF type with the same KL divergence on that model, interpolated
+# between the two nearest (fit/quality.py, format_delta). Two hops, both measured, and the
+# ranking says so in its trace. One model and one machine so far; rows are appended as more
+# runs come in, and a format measured on several models averages them.
+provenance:
+  source_url: https://github.com/the-anup-das/rightsize-ai/blob/main/docs/plans/F08-execution-eval.md
+  fetched_at: "2026-09-28"
+  note: >-
+    rightsize quantize --to FORMAT --eval and llama-perplexity --kl-divergence at b11177,
+    on an RTX 4070 Ti SUPER under Windows 11; 100 windows of 512 tokens of wikitext-2's
+    test split, the second half of each scored (25,600 tokens)
+
+# llama.cpp's types on the same models: the scale
+ladder:
+  - {model: Qwen/Qwen3-0.6B, type: Q8_0, kld: 0.0026, top1: 0.970, ppl: 22.11}
+  - {model: Qwen/Qwen3-0.6B, type: Q6_K, kld: 0.0135, top1: 0.935, ppl: 21.99}
+  - {model: Qwen/Qwen3-0.6B, type: Q5_K_M, kld: 0.0374, top1: 0.897, ppl: 22.88}
+  - {model: Qwen/Qwen3-0.6B, type: Q4_K_M, kld: 0.1147, top1: 0.827, ppl: 24.07}
+  - {model: Qwen/Qwen3-0.6B, type: Q4_K_S, kld: 0.1480, top1: 0.807, ppl: 24.87}
+  - {model: Qwen/Qwen3-0.6B, type: Q4_0, kld: 0.2188, top1: 0.770, ppl: 25.37}
+  - {model: Qwen/Qwen3-0.6B, type: Q3_K_M, kld: 0.4446, top1: 0.684, ppl: 31.62}
+  - {model: Qwen/Qwen3-0.6B, type: Q2_K, kld: 2.7023, top1: 0.334, ppl: 245.3}
+  - {model: Qwen/Qwen3-1.7B, type: Q8_0, kld: 0.003, top1: 0.975}
+  - {model: Qwen/Qwen3-1.7B, type: Q5_K_M, kld: 0.023, top1: 0.935}
+  - {model: Qwen/Qwen3-1.7B, type: Q4_K_M, kld: 0.059, top1: 0.900}
+  - {model: Qwen/Qwen3-1.7B, type: Q6_K, kld: 0.0129, top1: 0.949, ppl: 17.02}
+  - {model: Qwen/Qwen3-1.7B, type: Q4_K_S, kld: 0.1604, top1: 0.840, ppl: 19.51}
+  - {model: Qwen/Qwen3-1.7B, type: Q4_0, kld: 0.1956, top1: 0.823, ppl: 21.06}
+  - {model: Qwen/Qwen3-1.7B, type: Q3_K_M, kld: 0.4357, top1: 0.734, ppl: 22.14}
+
+# the formats, as --to names them; ppl_base is the 16-bit model on the same tokens
+formats:
+  - {format: fp8, model: Qwen/Qwen3-0.6B, toolkit: llm-compressor 0.14.0, kld: 0.0201, top1: 0.925, ppl: 22.50, ppl_base: 22.15}
+  - {format: w4a16, model: Qwen/Qwen3-0.6B, toolkit: llm-compressor 0.14.0, kld: 0.2281, top1: 0.777, ppl: 25.59, ppl_base: 22.15}
+  - {format: awq, model: Qwen/Qwen3-0.6B, toolkit: llm-compressor 0.14.0, kld: 0.1992, top1: 0.778, ppl: 25.26, ppl_base: 22.15}
+  - {format: awq, model: Qwen/Qwen3-1.7B, toolkit: llm-compressor 0.14.0, kld: 0.1327, top1: 0.850, ppl: 17.14, ppl_base: 17.11}
+  - {format: nf4, model: Qwen/Qwen3-0.6B, toolkit: bitsandbytes 0.50.2, kld: 0.1926, top1: 0.781, ppl: 25.25, ppl_base: 22.15}
+  - {format: openvino-int4, model: Qwen/Qwen3-0.6B, toolkit: optimum-intel 2.2.0, kld: 0.3082, top1: 0.729, ppl: 26.72, ppl_base: 22.13}
+  - {format: openvino-int8, model: Qwen/Qwen3-0.6B, toolkit: optimum-intel 2.2.0, kld: 0.0051, top1: 0.956, ppl: 22.12, ppl_base: 22.13}
+  - {format: modelopt-fp8, model: Qwen/Qwen3-0.6B, toolkit: nvidia-modelopt 0.47.0, kld: 0.0222, top1: 0.922, ppl: 22.41, ppl_base: 22.15}
+  - {format: modelopt-int4-awq, model: Qwen/Qwen3-0.6B, toolkit: nvidia-modelopt 0.47.0, kld: 0.2632, top1: 0.750, ppl: 27.90, ppl_base: 22.15}
+  - {format: modelopt-int8-sq, model: Qwen/Qwen3-0.6B, toolkit: nvidia-modelopt 0.47.0, kld: 0.3656, top1: 0.726, ppl: 30.50, ppl_base: 22.15}

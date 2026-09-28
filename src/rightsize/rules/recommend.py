@@ -176,9 +176,20 @@ def _model_ctx(c: Candidate) -> dict[str, Any]:
     }
 
 
-def _quant_ctx(q: str, delta: float | None) -> dict[str, Any]:
+def _quant_ctx(q: str, delta: float | None, spec=None) -> dict[str, Any]:
     from rightsize.execution.quantize import requires_imatrix
 
+    if spec is not None:  # a --to format: what the rules key on is its family
+        qs = _quant_spec(q, spec)
+        return {
+            "method": qs.method,
+            "type": q,
+            "bits": qs.bits_per_weight,
+            "is_iquant": False,
+            "requires_imatrix": False,
+            "ppl_delta": delta,
+            "band": band(delta),
+        }
     return {
         "method": "gguf",
         "type": q,
@@ -235,7 +246,8 @@ def _default_server():
 def _pin(name: str | None, mode: Mode):
     """What a pinned framework decides: (trainer, server). People use one framework at a
     time, so pinning one puts it wherever it has a role: training when the plan fine-tunes,
-    serving when it serves GGUF. The other role keeps its default."""
+    serving when it serves a format a recipe makes (GGUF, or one of the --to formats). The
+    other role keeps its default."""
     server = _default_server()
     if not name:
         return None, server
@@ -244,7 +256,7 @@ def _pin(name: str | None, mode: Mode):
 
     info = framework(name)
     trains = info.finetune is not None and mode is not Mode.infer
-    serves = info.serve is not None and "gguf" in info.serve.formats
+    serves = info.serve is not None and bool(_formats_for(info) or "gguf" in info.serve.formats)
     if not (trains or serves):
         if info.finetune is not None:
             raise ValueError(
@@ -258,6 +270,34 @@ def _pin(name: str | None, mode: Mode):
             f"`rightsize frameworks {info.name}` shows the commands it has.",
         )
     return (info if trains else None), (info if serves else server)
+
+
+def _formats_for(server) -> list[tuple[str, Any, Any]]:
+    """The --to formats a server loads, best quality first: (name, recipe, target). A target
+    says what its output is (serve_format); a server's descriptor says what it loads."""
+    if server is None or server.serve is None:
+        return []
+    from rightsize.execution.quantize_to import targets
+
+    found = []
+    for name, pairs in targets().items():
+        recipe, spec = pairs[0]
+        if spec.serve_format and spec.serve_format in server.serve.formats:
+            found.append((name, recipe, spec))
+    return sorted(found, key=lambda item: ppl_delta(item[0])[0] or math.inf)
+
+
+def _quant_spec(q: str, spec) -> QuantSpec:
+    """A --to format as the plan and the fit engine see it."""
+    from rightsize.fit.formats import lookup
+
+    return QuantSpec(
+        method=spec.method or spec.size_from or q,
+        variant=q,
+        bits_per_weight=lookup(spec.size_from).bpw if spec.size_from else None,
+        embedding_bits=spec.embedding_bits,
+        head_bits=spec.head_bits,
+    )
 
 
 def _runs_on(info, dev: Device | None) -> str | None:
@@ -326,10 +366,13 @@ def _plan(
     *,
     trainer=None,
     server=None,
+    fmt: tuple | None = None,
 ) -> Plan:
     server = server or _default_server()
-    bpw = gguf_bpw(q)[0]
-    quant = QuantSpec(method="gguf", variant=q, bits_per_weight=bpw)
+    if fmt is not None:
+        quant = _quant_spec(q, fmt[1])
+    else:
+        quant = QuantSpec(method="gguf", variant=q, bits_per_weight=gguf_bpw(q)[0])
     steps: list[PlanStep] = []
     if ft is not None and ft_device is not None:
         trainer = _trainer(ft_device, trainer)
@@ -370,19 +413,19 @@ def _plan(
                     recipe_id=role.merge,
                 )
             )
-    steps.append(
-        PlanStep(
-            stage="quantize",
-            framework="llama.cpp",
-            device=target,
-            quant=quant,
-            fit=fit,
-            recipe_id="llama.cpp/convert",
+    if fmt is not None:
+        # one toolkit makes the format; the server loads what it wrote
+        steps.append(
+            PlanStep(
+                stage="quantize",
+                framework=fmt[0].framework,
+                device=target,
+                quant=quant,
+                fit=fit,
+                recipe_id=fmt[0].id,
+            )
         )
-    )
-    # an imatrix when llama-quantize demands one, and for every i-quant anyway: those that
-    # run without one still quantize better with it, which is what the rule's note promises
-    if "imatrix" in outcome.requires or q.startswith(("IQ", "TQ")):
+    else:
         steps.append(
             PlanStep(
                 stage="quantize",
@@ -390,19 +433,33 @@ def _plan(
                 device=target,
                 quant=quant,
                 fit=fit,
-                recipe_id="llama.cpp/imatrix",
+                recipe_id="llama.cpp/convert",
             )
         )
-    steps.append(
-        PlanStep(
-            stage="quantize",
-            framework="llama.cpp",
-            device=target,
-            quant=quant,
-            fit=fit,
-            recipe_id="llama.cpp/quantize",
+        # an imatrix when llama-quantize demands one, and for every i-quant anyway: those
+        # that run without one still quantize better with it, which is what the rule's note
+        # promises
+        if "imatrix" in outcome.requires or q.startswith(("IQ", "TQ")):
+            steps.append(
+                PlanStep(
+                    stage="quantize",
+                    framework="llama.cpp",
+                    device=target,
+                    quant=quant,
+                    fit=fit,
+                    recipe_id="llama.cpp/imatrix",
+                )
+            )
+        steps.append(
+            PlanStep(
+                stage="quantize",
+                framework="llama.cpp",
+                device=target,
+                quant=quant,
+                fit=fit,
+                recipe_id="llama.cpp/quantize",
+            )
         )
-    )
     ctx = next((int(n.split()[1].rstrip(",")) for n in fit.notes if n.startswith("ctx ")), None)
     for recipe_id in server.serve.recipes:
         steps.append(
@@ -424,6 +481,13 @@ def _plan(
         f"model: {c.repo} - {c.publisher}, released {c.created_at}, "
         f"{c.downloads_30d:,} downloads in the last 30 days",
         f"quant: {q} adds {delta:.3f} perplexity on Llama-3-8B ({how_quality})",
+    ]
+    if fmt is not None:
+        trace.append(
+            f"format: {q} made by {fmt[0].framework} ({fmt[0].id}, {fmt[0].verified}); "
+            f"{server.title} loads it"
+        )
+    trace += [
         f"fit: {fit.verdict.value}, {fit.vram_gb:.2f} GB against "
         f"{fit.breakdown.get('usable_memory', 0):.2f} GB usable; {speed} ({fit.formula_id})",
     ]
@@ -463,19 +527,25 @@ def _evaluate_candidate(
     carried: Outcome | None = None,
     trainer=None,
     server=None,
+    formats: dict[str, tuple] | None = None,
 ) -> list[tuple[float, Plan]]:
     server = server or _default_server()
     runtime = server.serve.runtime
     rules = tuple(r for r in load_rules() if r.id not in ignore)
     found = []
     for q in quants:
+        fmt = formats.get(q) if formats else None  # (recipe, target) of a --to format
         delta, how = ppl_delta(q)
         if delta is None or delta > max_delta:
             rejected.append(Rejection(c.repo, q, f"quality: {band(delta)} ({how})"))
             continue
         # after a fine-tune the steps convert the model the trainer saved, not the base
         fit = estimate(
-            merged(c.facts) if ft is not None else c.facts, q, target, ctx=ctx, runtime=runtime
+            merged(c.facts) if ft is not None else c.facts,
+            _quant_spec(q, fmt[1]) if fmt else q,
+            target,
+            ctx=ctx,
+            runtime=runtime,
         )
         if fit.verdict is Verdict.no_fit:
             rejected.append(Rejection(c.repo, q, f"does not fit: needs {fit.vram_gb:.1f} GB"))
@@ -483,7 +553,7 @@ def _evaluate_candidate(
         rule_ctx = {
             "device": _device_ctx(target),
             "model": _model_ctx(c),
-            "quant": _quant_ctx(q, delta),
+            "quant": _quant_ctx(q, delta, fmt[1] if fmt else None),
             "runtime": {"name": runtime},
             "task": task,
             "stage": "serve",
@@ -513,6 +583,7 @@ def _evaluate_candidate(
             ft_device,
             trainer=trainer,
             server=server,
+            fmt=fmt,
         )
         found.append((score, plan))
     return found
@@ -596,6 +667,11 @@ def rank(
         raise ValueError(why)  # the pin, not any one model, is what cannot run here
     if pinned is not None and "nvidia" not in (pinned.hardware or {}).get("vendors", ["nvidia"]):
         cloud_pool = None  # rental GPUs are NVIDIA, which the pinned trainer does not run on
+    formats: dict[str, tuple] | None = None
+    if "gguf" not in server.serve.formats:
+        # a server of --to formats: its ladder is the formats it loads, best quality first
+        formats = {name: (recipe, spec) for name, recipe, spec in _formats_for(server)}
+        quants = tuple(formats)
     for c in candidates:
         if not _serves(c, task):
             continue
@@ -651,6 +727,7 @@ def rank(
             carried=ft_outcome,
             trainer=pinned,
             server=server,
+            formats=formats,
         )
         if rental and found:
             _, _, offer, fallback, job = rental

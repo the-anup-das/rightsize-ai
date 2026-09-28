@@ -16,7 +16,7 @@ inputs:
 file: llmcompressor_awq.py
 writes: [output_dir]
 targets:
-  - {name: awq, size_from: awq, embedding_bits: 16, head_bits: 16,
+  - {name: awq, method: awq, serve_format: compressed-tensors, size_from: awq, embedding_bits: 16, head_bits: 16,
      gate: {recipe: transformers/kld-eval}}
 template: |
   from llmcompressor import oneshot

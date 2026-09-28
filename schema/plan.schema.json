@@ -526,6 +526,32 @@
           "description": "Real bpw, not nominal",
           "title": "Bits Per Weight"
         },
+        "embedding_bits": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "bits the input embedding keeps, where the toolkit skips it",
+          "title": "Embedding Bits"
+        },
+        "head_bits": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "bits an output head of its own keeps, where it is skipped",
+          "title": "Head Bits"
+        },
         "method": {
           "description": "gguf, bnb, awq, gptq, fp8, mlx, torchao, ...",
           "title": "Method",

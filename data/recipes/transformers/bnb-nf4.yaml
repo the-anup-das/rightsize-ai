@@ -13,7 +13,7 @@ inputs:
 file: bnb_nf4.py
 writes: [output_dir]
 targets:
-  - {name: nf4, size_from: nf4-dq, embedding_bits: 16, head_bits: 16,
+  - {name: nf4, method: bnb, serve_format: bitsandbytes, size_from: nf4-dq, embedding_bits: 16, head_bits: 16,
      gate: {recipe: transformers/kld-eval}}
 template: |
   import torch

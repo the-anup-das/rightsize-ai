@@ -50,6 +50,8 @@ def ppl_delta(quant: str) -> tuple[float | None, str]:
     measured = _measured()
     if q in measured:
         return max(measured[q], 0.0), "measured by llama.cpp on Llama-3-8B"
+    if quant.lower() in _format_rows():
+        return format_delta(quant)
     bits = _bpw().get(q)
     if bits is None:
         return None, "unknown file type"
@@ -79,3 +81,60 @@ def band(delta: float | None) -> str:
     if delta is None:
         return "unknown"
     return next(label for limit, label in BANDS if delta <= limit)
+
+
+@lru_cache(maxsize=1)
+def _format_rows() -> dict[str, list[dict]]:
+    rows: dict[str, list[dict]] = {}
+    for r in load_yaml("quality/formats_quality.yaml")["formats"]:
+        rows.setdefault(str(r["format"]).lower(), []).append(r)
+    return rows
+
+
+@lru_cache(maxsize=1)
+def _ladders() -> dict[str, list[tuple[float, str]]]:
+    """Per model: llama.cpp's types measured on it, as (KL divergence, type), by KLD."""
+    out: dict[str, list[tuple[float, str]]] = {}
+    for r in load_yaml("quality/formats_quality.yaml")["ladder"]:
+        if str(r["type"]).upper() in _measured():
+            out.setdefault(r["model"], []).append((float(r["kld"]), str(r["type"]).upper()))
+    return {m: sorted(v) for m, v in out.items()}
+
+
+def _bridge(kld: float, ladder: list[tuple[float, str]]) -> tuple[float, str]:
+    """The perplexity cost of the GGUF type with this KL divergence on the same model,
+    log-log between the two nearest measured types; the ends are held, not extrapolated."""
+    measured = _measured()
+    if kld <= ladder[0][0]:
+        return measured[ladder[0][1]], f"at most GGUF {ladder[0][1]}"
+    if kld >= ladder[-1][0]:
+        return measured[ladder[-1][1]], f"at least GGUF {ladder[-1][1]}"
+    for (k0, t0), (k1, t1) in zip(ladder, ladder[1:], strict=False):
+        if k0 <= kld <= k1:
+            d0, d1 = max(measured[t0], 1e-4), max(measured[t1], 1e-4)
+            frac = (math.log(kld) - math.log(k0)) / (math.log(k1) - math.log(k0))
+            return math.exp(math.log(d0) + frac * (math.log(d1) - math.log(d0))), (
+                f"between GGUF {t0} and {t1}"
+            )
+    raise AssertionError("unreachable")
+
+
+def format_delta(name: str) -> tuple[float | None, str]:
+    """A format's cost on llama.cpp's scale: the GGUF type with the same measured KL
+    divergence on the same model (quality/formats_quality.yaml), averaged over the models
+    it was measured on."""
+    rows = _format_rows().get(name.lower())
+    if not rows:
+        return None, "unknown format"
+    deltas, where = [], []
+    for r in rows:
+        ladder = _ladders().get(r["model"])
+        if not ladder:
+            continue
+        delta, span = _bridge(float(r["kld"]), ladder)
+        deltas.append(delta)
+        where.append(f"{span} by KL divergence on {r['model'].split('/')[-1]}")
+    if not deltas:
+        return None, "measured, but with no llama.cpp types on the same model to compare"
+    mean = math.exp(sum(math.log(max(d, 1e-4)) for d in deltas) / len(deltas))
+    return mean, "; ".join(where) + " (measured here, see quality/formats_quality.yaml)"

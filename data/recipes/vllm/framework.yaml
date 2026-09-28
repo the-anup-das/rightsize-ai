@@ -16,7 +16,7 @@ install:
 serve:
   recipes: [vllm/serve]
   runtime: vllm
-  formats: [compressed-tensors, fp8, awq, gptq]
+  formats: [compressed-tensors, fp8, awq, gptq, modelopt]
 homepage: https://github.com/vllm-project/vllm
 source_doc_url: https://docs.vllm.ai/en/stable/cli/serve/
 version_tested: 0.30.0

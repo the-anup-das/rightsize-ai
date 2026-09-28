@@ -60,6 +60,20 @@ class Target(BaseModel):
         "covers; empty means every weight file, not the tokenizer and config beside them",
     )
     gate: Gate | None = Field(default=None, description="how to check the output; --eval runs it")
+    method: str | None = Field(
+        default=None,
+        description="the family the rules key on (quant.method): fp8, awq, gptq, nvfp4, int8, "
+        "bnb ...; empty means the size_from format",
+    )
+    serve_format: str | None = Field(
+        default=None,
+        description="what a server lists in serve.formats to load the output; empty means no "
+        "plan serves it",
+    )
+    serve_inputs: dict[str, Any] = Field(
+        default_factory=dict,
+        description="inputs the serve step needs for this output, e.g. quantization: modelopt",
+    )
 
 
 class Recipe(BaseModel):

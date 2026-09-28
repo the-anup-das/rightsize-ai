@@ -175,6 +175,12 @@ class QuantSpec(BaseModel):
     method: str = Field(description="gguf, bnb, awq, gptq, fp8, mlx, torchao, ...")
     variant: str | None = Field(default=None, description="e.g. Q4_K_M, nf4, int8")
     bits_per_weight: float | None = Field(default=None, description="Real bpw, not nominal")
+    embedding_bits: float | None = Field(
+        default=None, description="bits the input embedding keeps, where the toolkit skips it"
+    )
+    head_bits: float | None = Field(
+        default=None, description="bits an output head of its own keeps, where it is skipped"
+    )
 
 
 class RuntimeSpec(BaseModel):
