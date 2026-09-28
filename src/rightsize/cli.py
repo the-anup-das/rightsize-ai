@@ -1067,10 +1067,15 @@ def cmd_bench(args: argparse.Namespace) -> int:
         return 2
     try:
         record = measure(
-            dev, fx, args.quant.upper(), gguf,
-            tools=None if args.tools is None else __import__(
-                "rightsize.execution.llamacpp", fromlist=["find_tools"]
-            ).find_tools(args.tools),
+            dev,
+            fx,
+            args.quant.upper(),
+            gguf,
+            tools=None
+            if args.tools is None
+            else __import__("rightsize.execution.llamacpp", fromlist=["find_tools"]).find_tools(
+                args.tools
+            ),
             gpu_layers=args.gpu_layers,
             save=not args.no_save,
             log=(lambda s: None) if args.json else con.info,

@@ -96,12 +96,18 @@ def run_llama_bench(
     bound and would tell us nothing about memory bandwidth."""
     argv = [
         str(bench_bin),
-        "-m", str(model_gguf),
-        "-p", "0",
-        "-n", str(tokens),
-        "-ngl", "999" if gpu_layers == "all" else str(gpu_layers),
-        "-r", str(repeats),
-        "-o", "json",
+        "-m",
+        str(model_gguf),
+        "-p",
+        "0",
+        "-n",
+        str(tokens),
+        "-ngl",
+        "999" if gpu_layers == "all" else str(gpu_layers),
+        "-r",
+        str(repeats),
+        "-o",
+        "json",
     ]
     proc = subprocess.run(argv, capture_output=True, text=True, timeout=timeout, check=False)
     if proc.returncode != 0:

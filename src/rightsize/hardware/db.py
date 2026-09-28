@@ -94,7 +94,9 @@ def _bandwidth_entry(rec: dict, formula: str | None) -> dict:
             "how": (
                 f"{rec['bus_width_bits']:g}-bit {rec.get('memory_type', '')} at "
                 f"{rec['memory_speed_gbps']:g} Gbps"
-            ).replace("  ", " ").strip(),
+            )
+            .replace("  ", " ")
+            .strip(),
             "formula_id": formula,
             "stated_gbps": rec.get("stated_gbps"),
             "provenance": rec.get("provenance"),
