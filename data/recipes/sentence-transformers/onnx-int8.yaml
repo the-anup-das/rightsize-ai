@@ -13,7 +13,8 @@ inputs:
 file: onnx_int8.py
 writes: [output_dir]
 targets:
-  - {name: onnx-int8, size_from: int8, weights: "onnx/model_*int8_*.onnx"}
+  - {name: onnx-int8, size_from: int8, weights: "onnx/model_*int8_*.onnx",
+     gate: {recipe: sentence-transformers/cosine-eval}}
 template: |
   from sentence_transformers import SentenceTransformer, export_dynamic_quantized_onnx_model
 
@@ -27,6 +28,7 @@ notes:
   - "dynamic int8 is for CPUs and likely slower on a GPU"
   - "the [onnx] extra needs sentence-transformers 5.7 with transformers 4.57: optimum-onnx pins transformers<4.58 and sentence-transformers 6 needs 5"
   - "run on Windows with an RTX 4070 Ti SUPER (rightsize quantize --to onnx-int8): all-MiniLM-L6-v2 in 45 s, a 23.0 MB int8 file with the embedding quantized too; its embeddings are within cosine 0.991-0.993 of the fp32 export's"
+  - "gate (--eval): pass, cosine 0.991 mean and 0.982 worst over 200 lines of wikitext-2"
 source_doc_url: https://sbert.net/docs/sentence_transformer/usage/efficiency.html
 version_tested: 5.7.0
 verified: run

@@ -202,7 +202,7 @@ class FitResult(BaseModel):
 class PlanStep(BaseModel):
     """One stage of a plan: finetune, quantize, export or serve (F4, F5)."""
 
-    stage: Literal["finetune", "quantize", "export", "serve"]
+    stage: Literal["finetune", "quantize", "export", "serve", "evaluate"]
     framework: str
     device: Device
     quant: QuantSpec | None = None
@@ -289,7 +289,14 @@ class Measurement(BaseModel):
     """One predicted-vs-measured pair recorded by an execution step (F8, F9)."""
 
     kind: Literal[
-        "file_size_gb", "peak_vram_gb", "tok_per_s", "kld_mean", "top1_agreement", "ppl", "wall_s"
+        "file_size_gb",
+        "peak_vram_gb",
+        "tok_per_s",
+        "kld_mean",
+        "top1_agreement",
+        "ppl",
+        "cosine_mean",
+        "wall_s",
     ]
     value: float
     predicted: float | None = None

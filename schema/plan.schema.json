@@ -462,7 +462,8 @@
             "finetune",
             "quantize",
             "export",
-            "serve"
+            "serve",
+            "evaluate"
           ],
           "title": "Stage",
           "type": "string"

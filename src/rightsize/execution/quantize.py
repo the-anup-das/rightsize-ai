@@ -91,17 +91,27 @@ def default_texts(tools: LlamaCppTools, log: Log) -> tuple[Path, Path]:
     base = Path(os.environ.get("RIGHTSIZE_TEXTS_DIR", tools.root.parent / "data"))
     base.mkdir(parents=True, exist_ok=True)
     calib = base / "calibration_datav3.txt"
-    wiki = base / "wikitext-2-raw" / "wiki.test.raw"
     if not calib.exists():
         log(f"downloading calibration text -> {calib}")
         calib.write_bytes(httpx.get(CALIBRATION_URL, follow_redirects=True, timeout=60).content)
+    return calib, wikitext(log, base)
+
+
+def wikitext(log: Log, base: Path | None = None) -> Path:
+    """The evaluation text every gate scores: wikitext-2's test split, downloaded once into
+    the tools folder (or RIGHTSIZE_TEXTS_DIR)."""
+    from rightsize.execution.envs import tools_root
+
+    base = base or Path(os.environ.get("RIGHTSIZE_TEXTS_DIR", tools_root() / "data"))
+    base.mkdir(parents=True, exist_ok=True)
+    wiki = base / "wikitext-2-raw" / "wiki.test.raw"
     if not wiki.exists():
         log(f"downloading wikitext-2 -> {wiki.parent}")
         z = base / "wikitext-2-raw-v1.zip"
         z.write_bytes(httpx.get(WIKITEXT_URL, follow_redirects=True, timeout=120).content)
         zipfile.ZipFile(z).extractall(base)
         z.unlink()
-    return calib, wiki
+    return wiki
 
 
 def _skipped(recipe_id: str, argv: list[str], note: str) -> RunStep:

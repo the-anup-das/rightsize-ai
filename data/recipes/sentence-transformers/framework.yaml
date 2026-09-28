@@ -3,7 +3,7 @@ name: sentence-transformers
 title: Sentence Transformers
 summary: >-
   Exports embedding models to ONNX and quantizes them to int8 for fast CPU inference
-stages: [quantize]
+stages: [quantize, evaluate]
 families: [embedding]
 formats: [onnx]
 hardware: {vendors: [cpu]}

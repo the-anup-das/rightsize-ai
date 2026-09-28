@@ -85,6 +85,9 @@
   "additionalProperties": false,
   "description": "data/quality/gate_thresholds.yaml: the quantization quality gate (F8).",
   "properties": {
+    "embedding_cosine": {
+      "$ref": "#/$defs/_AgreementBand"
+    },
     "kld": {
       "$ref": "#/$defs/_KldBand"
     },
@@ -98,7 +101,8 @@
   "required": [
     "provenance",
     "kld",
-    "top1_agreement"
+    "top1_agreement",
+    "embedding_cosine"
   ],
   "title": "GateThresholdsFile",
   "type": "object"

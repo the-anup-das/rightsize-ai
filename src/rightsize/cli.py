@@ -220,7 +220,11 @@ def build_parser() -> argparse.ArgumentParser:
     q.add_argument("--device", default="detect")
     q.add_argument("--ctx", type=int, default=8192, help="context used for the VRAM prediction")
     q.add_argument("--imatrix", action="store_true", help="compute an importance matrix first")
-    q.add_argument("--eval", action="store_true", help="KL-divergence gate vs the 16-bit file")
+    q.add_argument(
+        "--eval",
+        action="store_true",
+        help="quality gate against the 16-bit model: KL divergence, or cosine for embeddings",
+    )
     q.add_argument("--eval-chunks", type=int, default=100, help="perplexity chunks (0 = all)")
     q.add_argument("--imatrix-chunks", type=int, default=None)
     q.add_argument("--outtype", default="auto", choices=["auto", "f16", "bf16", "f32"])
@@ -1083,6 +1087,8 @@ def _quantize_to(args: argparse.Namespace) -> int:
         inputs=dict(kv.split("=", 1) for kv in args.set),
         install_missing=args.install,
         dry_run=args.dry_run,
+        evaluate=args.eval,
+        eval_chunks=args.eval_chunks,
         revision=args.revision,
         log=con.info,
         echo=con.debug,
@@ -1095,7 +1101,9 @@ def _quantize_to(args: argparse.Namespace) -> int:
         for m in st.measurements:
             if m.kind == "wall_s" and not st.skipped:
                 rows.append([st.recipe_id, "time", f"{m.value:.0f} s", ""])
-            elif m.kind in ("file_size_gb", "peak_vram_gb"):
+            elif m.kind in ("file_size_gb", "peak_vram_gb") and not (m.note or "").startswith(
+                "gate_file"
+            ):
                 err = f"{(m.value - m.predicted) / m.predicted * 100:+.1f}%" if m.predicted else ""
                 rows.append(
                     [
@@ -1106,6 +1114,10 @@ def _quantize_to(args: argparse.Namespace) -> int:
                     ]
                 )
     con.table(["step", "measure", "measured", "predicted"], rows)
+    for name, g in manifest.gate.items():
+        keys = ("kld_mean", "top1_agreement", "ppl", "ppl_base", "cosine_mean", "cosine_min")
+        numbers = ", ".join(f"{k} {g[k]:.4g}" for k in keys if k in g)
+        con.info(f"gate {g['verdict']} for {name}: {numbers}")
     con.ok(f"{manifest.status}: {manifest.id}")
     return 0
 

@@ -222,6 +222,25 @@ def remove(framework: str) -> bool:
     return True
 
 
+def own_version(info, versions: dict[str, str]) -> str | None:
+    """The installed version of the framework's own package: the one named like the
+    framework where the descriptor lists one (llm-compressor's is llmcompressor), else the
+    first of its packages that is installed. accelerate sorts before transformers, so the
+    first match in an alphabetical freeze used to be the wrong package."""
+
+    def norm(name: str) -> str:
+        bare = name.split("[")[0].split("=")[0].split("<")[0].split(">")[0]
+        return bare.lower().replace("-", "").replace("_", "")
+
+    have = {norm(k): v for k, v in versions.items()}
+    names = [norm(p) for p in info.install.packages]
+    mine = norm(info.name)
+    for name in ([mine] if mine in names else []) + names:
+        if name in have:
+            return have[name]
+    return None
+
+
 def status(info) -> dict[str, str | None]:
     """Whether and where a framework is installed, for ``rightsize tools list``."""
     try:
@@ -235,11 +254,7 @@ def status(info) -> dict[str, str | None]:
             except ToolchainError:
                 pass
         return {"where": None, "path": None, "version": None}
-    names = {
-        p.split("[")[0].split("=")[0].split("<")[0].split(">")[0].lower()
-        for p in info.install.packages
-    }
-    version = next((v for k, v in env.versions.items() if k.lower() in names), None)
+    version = own_version(info, env.versions)
     path = (
         str(env.python.parent.parent)
         if env.where == "managed"

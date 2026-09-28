@@ -13,3 +13,10 @@ kld:
 top1_agreement:
   pass_above: 0.90
   warn_above: 0.80
+# Embedding models: mean cosine between the quantized model's vectors and the original's
+# over lines of the evaluation text. A hand-set starting point: all-MiniLM-L6-v2's dynamic
+# int8 ONNX export measured 0.991-0.993 (2026-09-28), and a vector that keeps cosine 0.99
+# to its original keeps its neighbours; below 0.97 the ranking starts to move.
+embedding_cosine:
+  pass_above: 0.99
+  warn_above: 0.97

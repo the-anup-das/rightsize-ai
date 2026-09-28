@@ -1,0 +1,43 @@
+id: sentence-transformers/cosine-eval
+framework: sentence-transformers
+stage: evaluate
+families: [embedding]
+hardware: { vendors: [cpu] }
+install_line: pip install "sentence-transformers[onnx]"
+kind: config
+language: python
+inputs:
+  model: { type: str, required: true, help: the model the candidate was exported from }
+  candidate: { type: path, required: true, help: the exported directory }
+  file_name: { type: str, default: onnx/model_quint8_avx2.onnx, help: the quantized ONNX file inside it }
+  eval_file: { type: path, required: true, help: "plain text; one embedding per line of it" }
+  lines: { type: int, default: 200, help: lines embedded (the first ones over 40 characters) }
+  gate_file: { type: path, default: gate.json }
+file: cosine_eval.py
+writes: [gate_file]
+template: |
+  """Cosine similarity between the quantized model's embeddings and the original's, over
+  lines of a text. An embedding model is judged by the neighbourhoods it keeps, and a
+  quantization that moves every vector a little moves its neighbours the same way, so the
+  mean and the worst cosine say how much of the original's ranking survives."""
+  import json
+
+  from sentence_transformers import SentenceTransformer
+
+  with open(r"{{ eval_file }}", encoding="utf-8") as fh:
+      texts = [line.strip() for line in fh if len(line.strip()) > 40][:{{ lines }}]
+  base = SentenceTransformer(r"{{ model }}")
+  candidate = SentenceTransformer(
+      r"{{ candidate }}", backend="onnx", model_kwargs={"file_name": r"{{ file_name }}"})
+  a = base.encode(texts, normalize_embeddings=True)
+  b = candidate.encode(texts, normalize_embeddings=True)
+  cos = (a * b).sum(axis=1)
+  result = {"cosine_mean": float(cos.mean()), "cosine_min": float(cos.min()), "texts": len(texts)}
+  json.dump(result, open(r"{{ gate_file }}", "w"), indent=1)
+  print("gate", json.dumps(result))
+notes:
+  - "thresholds in data/quality/gate_thresholds.yaml (embedding_cosine); the base model runs on the CPU through PyTorch in the same environment"
+  - "run on Windows with an RTX 4070 Ti SUPER (rightsize quantize --to onnx-int8 --eval, 2026-09-28): all-MiniLM-L6-v2's int8 export, cosine 0.991 mean and 0.982 worst over 200 lines, 42 s: pass"
+source_doc_url: https://sbert.net/docs/sentence_transformer/usage/efficiency.html
+version_tested: 5.7.0
+verified: run

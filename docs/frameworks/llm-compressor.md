@@ -41,6 +41,7 @@ oneshot(
 - no calibration data: FP8 weights with dynamic per-token activation scales; serve the directory with vllm serve
 - from llmcompressor.transformers import oneshot is gone in 0.14
 - run on Windows with an RTX 4070 Ti SUPER (rightsize quantize --to fp8): Qwen3-0.6B in 12 s once downloaded (392 s with the 1.5 GB download), at most 1.06 GB of VRAM; 752.4 MB of weights, the embedding still BF16; Transformers loads it back through compressed-tensors and it answers
+- gate (--eval) on Qwen3-0.6B: pass, KLD 0.020, top-1 agreement 0.925, perplexity 22.50 against the 16-bit model's 22.15
 
 Source: <https://docs.vllm.ai/projects/llm-compressor/en/latest/guides/entrypoints/oneshot/>
 
@@ -80,5 +81,6 @@ oneshot(
 - split and sample count follow examples/quantization_w4a16/llama3_example.py at 0.14.0; other data: pass a datasets.Dataset with a text column
 - open_platypus (garage-bAInd/Open-Platypus) is a 16 MB download; the example's perfectblend is 1.5 GB and ultrachat_200k 1.6 GB, fetched whole even for a 512-row slice
 - run on Windows with an RTX 4070 Ti SUPER (rightsize quantize --to w4a16): Qwen3-0.6B on 512 Open-Platypus samples in 144 s, at most 1.71 GB of VRAM; 538.5 MB of weights, 220 MB of them the int4 layers and 311 MB the BF16 embedding; loads back and answers
+- gate (--eval) on Qwen3-0.6B: fail, KLD 0.228, top-1 0.777, perplexity 25.59 against 22.15. llama.cpp's own Q4_K_M of the same model scores 0.115 (warn) and its Q4_0 0.219: four bits is too few for a 0.6B model whichever toolkit rounds it; these defaults are for 7B-class models, where W4A16 costs about 0.02-0.05
 
 Source: <https://github.com/vllm-project/llm-compressor/blob/0.14.0/examples/quantization_w4a16/llama3_example.py>

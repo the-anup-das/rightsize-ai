@@ -158,4 +158,6 @@ def test_every_toolkit_recipe_says_how_far_it_was_checked() -> None:
         "optimum-intel/export-openvino",
         "sentence-transformers/onnx-int8",
         "ctranslate2/convert-whisper",
+        "transformers/kld-eval",
+        "sentence-transformers/cosine-eval",
     }

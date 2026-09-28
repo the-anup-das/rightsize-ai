@@ -14,8 +14,8 @@ Each framework is a folder in `data/recipes/`: a `framework.yaml` saying what it
 | [mlx-lm](mlx-lm.md) | 4 | export, finetune, quantize, serve | apple; on macos |
 | [ollama](ollama.md) | 2 | serve | any hardware; on linux, windows, macos |
 | [optimum-intel](optimum-intel.md) | 1 | export | intel, cpu |
-| [sentence-transformers](sentence-transformers.md) | 1 | quantize | cpu |
-| [transformers](transformers.md) | 1 | quantize | nvidia, amd, intel |
+| [sentence-transformers](sentence-transformers.md) | 2 | evaluate, quantize | cpu |
+| [transformers](transformers.md) | 2 | evaluate, quantize | nvidia, amd, intel |
 | [trl](trl.md) | 2 | export, finetune | nvidia, amd, intel |
 | [unsloth](unsloth.md) | 1 | finetune | nvidia, amd, intel; on linux, windows; NVIDIA compute capability 7.0+ |
 | [vllm](vllm.md) | 1 | serve | nvidia, amd; on linux |
