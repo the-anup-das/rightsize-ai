@@ -143,8 +143,8 @@ The 14 MVP recipes above plus 4 serve recipes; docs generation; entry point disc
 - [x] Recipes that make a format declare it as a target: the name `--to` takes, the inputs
       that select it, the `quants/formats.yaml` entry that sizes it, the bits the embedding
       and an untied head keep, which files are the weights, and the `gate` recipe that
-      checks the output (`quantize --to X --eval`). Nine targets over six
-      toolkits: fp8, w4a16 (llm-compressor), nf4 (transformers), openvino-int4/int8
+      checks the output (`quantize --to X --eval`). Ten targets over six
+      toolkits: fp8, w4a16, awq (llm-compressor), nf4 (transformers), openvino-int4/int8
       (Optimum Intel), mlx-4bit/8bit (MLX LM), onnx-int8 (sentence-transformers), ct2-int8
       (CTranslate2); the
       framework pages name each recipe's formats

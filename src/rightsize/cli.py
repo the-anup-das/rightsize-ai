@@ -194,7 +194,7 @@ def build_parser() -> argparse.ArgumentParser:
     q.add_argument(
         "--to",
         default="gguf",
-        help="gguf (default), or a format another toolkit produces: fp8, w4a16, nf4, "
+        help="gguf (default), or a format another toolkit produces: fp8, w4a16, awq, nf4, "
         "openvino-int4, openvino-int8, mlx-4bit, onnx-int8, ct2-int8; --to list shows them",
     )
     q.add_argument(
