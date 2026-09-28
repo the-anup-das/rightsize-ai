@@ -106,12 +106,17 @@ def estimate(
         return FitResult(
             verdict=_verdict(vram, usable),
             vram_gb=round(vram, 2),
-            breakdown={"weights": round(weights, 3), "overhead": round(overhead, 3),
-                       "usable_memory": round(usable, 2)},
+            breakdown={
+                "weights": round(weights, 3),
+                "overhead": round(overhead, 3),
+                "usable_memory": round(usable, 2),
+            },
             confidence=min(0.3, facts.confidence),
             formula_id=GENERIC_ID,
-            notes=[f"{fmt.id} at {fmt.bpw:g} bpw: {fmt.source}",
-                   "weights plus a fixed allowance; no measurement backs this family yet"],
+            notes=[
+                f"{fmt.id} at {fmt.bpw:g} bpw: {fmt.source}",
+                "weights plus a fixed allowance; no measurement backs this family yet",
+            ],
         )
 
     rt = runtime if runtime in RUNTIMES else default_runtime(device, quant)
@@ -119,8 +124,9 @@ def estimate(
     weights = params * fmt.bpw / 8 / 1e9
     overhead, how = _overhead_gb(rt, where, params, batch)
     vram = weights + overhead
-    measured = any(r["runtime"] == rt and r["device"] == where
-                   for r in _table()["measurements"]["rows"])
+    measured = any(
+        r["runtime"] == rt and r["device"] == where for r in _table()["measurements"]["rows"]
+    )
     notes = [
         f"{rt}, {fmt.id} at {fmt.bpw:g} bpw: {fmt.source}",
         f"overhead from {how}, scaled by model size",
@@ -132,8 +138,11 @@ def estimate(
     return FitResult(
         verdict=_verdict(vram, usable),
         vram_gb=round(vram, 2),
-        breakdown={"weights": round(weights, 3), "overhead": round(overhead, 3),
-                   "usable_memory": round(usable, 2)},
+        breakdown={
+            "weights": round(weights, 3),
+            "overhead": round(overhead, 3),
+            "usable_memory": round(usable, 2),
+        },
         confidence=min(0.6 if measured else 0.4, facts.confidence),
         formula_id=FORMULA_ID,
         notes=notes,

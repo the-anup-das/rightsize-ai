@@ -15,7 +15,8 @@ class NotImplementedYet(RightsizeError):
         self.plan = plan
         self.hint = hint
         super().__init__(
-            f"{feature} is not implemented yet. " + (f"{hint} " if hint else "")
+            f"{feature} is not implemented yet. "
+            + (f"{hint} " if hint else "")
             + f"Plan and TODO: {plan}"
         )
 

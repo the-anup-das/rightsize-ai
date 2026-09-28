@@ -51,8 +51,9 @@ def _tarball(edit=None, extra: dict[str, bytes] | None = None) -> bytes:
 
 
 def _client(blob: bytes, status: int = 200) -> httpx.Client:
-    return httpx.Client(transport=httpx.MockTransport(
-        lambda request: httpx.Response(status, content=blob)))
+    return httpx.Client(
+        transport=httpx.MockTransport(lambda request: httpx.Response(status, content=blob))
+    )
 
 
 def _more_presets(rel: str, body: bytes) -> bytes:

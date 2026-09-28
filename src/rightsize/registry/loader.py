@@ -72,8 +72,10 @@ def _plugin_frameworks() -> list[tuple[dict, str]]:
     found: list[tuple[dict, str]] = []
     for name, target in _plugin_targets():
         if isinstance(target, Path):
-            found.extend((raw, f"plugin {name}: {where}")
-                         for raw, where in _yaml_files(target, descriptors=True))
+            found.extend(
+                (raw, f"plugin {name}: {where}")
+                for raw, where in _yaml_files(target, descriptors=True)
+            )
         else:
             found.extend((dict(r), f"plugin {name}") for r in target if "template" not in r)
     return found
@@ -124,11 +126,14 @@ def framework_infos() -> dict[str, FrameworkInfo]:
         if name not in out:
             first = recipes[0]
             out[name] = FrameworkInfo(
-                name=name, title=name, summary=f"recipes for {name}",
+                name=name,
+                title=name,
+                summary=f"recipes for {name}",
                 stages=sorted({r.stage for r in recipes}),
                 families=sorted({f for r in recipes for f in r.families}),
                 install=InstallSpec(kind="pip", line=first.install_line or first.source_doc_url),
-                homepage=first.source_doc_url, source_doc_url=first.source_doc_url,
+                homepage=first.source_doc_url,
+                source_doc_url=first.source_doc_url,
                 version_tested=first.version_tested,
             )
     return out

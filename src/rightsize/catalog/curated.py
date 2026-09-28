@@ -20,19 +20,34 @@ def _entries() -> list[CatalogEntry]:
     out = []
     for m in load_yaml("models/candidates.yaml")["models"]:
         f = m["facts"]
-        out.append(CatalogEntry(
-            repo=m["repo"], family=Family.llm, tasks=list(m["tasks"]), publisher=m["publisher"],
-            params_total=f["params_total"], params_active=f.get("params_active"),
-            license=m.get("license"), gated=bool(m.get("gated")),
-            created_at=m.get("created_at"), downloads_30d=m.get("downloads_30d"),
-        ))
+        out.append(
+            CatalogEntry(
+                repo=m["repo"],
+                family=Family.llm,
+                tasks=list(m["tasks"]),
+                publisher=m["publisher"],
+                params_total=f["params_total"],
+                params_active=f.get("params_active"),
+                license=m.get("license"),
+                gated=bool(m.get("gated")),
+                created_at=m.get("created_at"),
+                downloads_30d=m.get("downloads_30d"),
+            )
+        )
     for m in load_yaml("models/families.yaml")["models"]:
-        out.append(CatalogEntry(
-            repo=m["repo"], family=Family(m["family"]), tasks=list(m["tasks"]),
-            publisher=m["publisher"], params_total=m["params_total"],
-            license=m.get("license"), gated=bool(m.get("gated")),
-            created_at=m.get("created_at"), downloads_30d=m.get("downloads_30d"),
-        ))
+        out.append(
+            CatalogEntry(
+                repo=m["repo"],
+                family=Family(m["family"]),
+                tasks=list(m["tasks"]),
+                publisher=m["publisher"],
+                params_total=m["params_total"],
+                license=m.get("license"),
+                gated=bool(m.get("gated")),
+                created_at=m.get("created_at"),
+                downloads_30d=m.get("downloads_30d"),
+            )
+        )
     return out
 
 

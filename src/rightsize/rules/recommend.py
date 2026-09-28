@@ -60,7 +60,15 @@ from rightsize.types import (
 
 RANK_ID = "rank.size_vs_quant.v0"
 LADDER = (
-    "Q8_0", "Q6_K", "Q5_K_M", "Q4_K_M", "IQ4_XS", "Q3_K_L", "Q3_K_M", "IQ3_M", "Q2_K",
+    "Q8_0",
+    "Q6_K",
+    "Q5_K_M",
+    "Q4_K_M",
+    "IQ4_XS",
+    "Q3_K_L",
+    "Q3_K_M",
+    "IQ3_M",
+    "Q2_K",
 )
 QUALITY_FLOORS = {"near-lossless": 0.06, "good": 0.3, "noticeable": 0.7, "any": math.inf}
 _LAMBDA = 0.9
@@ -214,8 +222,11 @@ def _default_server():
     """The framework that serves a GGUF unless another is pinned (serve.default)."""
     from rightsize.registry import framework_infos
 
-    servers = [f for f in framework_infos().values()
-               if f.serve and f.serve.default and "gguf" in f.serve.formats]
+    servers = [
+        f
+        for f in framework_infos().values()
+        if f.serve and f.serve.default and "gguf" in f.serve.formats
+    ]
     if not servers:
         raise ValueError("no framework.yaml declares a default GGUF server")
     return max(servers, key=lambda f: f.name == "llama.cpp")
@@ -236,13 +247,15 @@ def _pin(name: str | None, mode: Mode):
     serves = info.serve is not None and "gguf" in info.serve.formats
     if not (trains or serves):
         if info.finetune is not None:
-            raise ValueError(f"{info.title} fine-tunes: plan a fine-tune with --mode lora or "
-                             "qlora (and --finetune-device), or pin a server")
+            raise ValueError(
+                f"{info.title} fine-tunes: plan a fine-tune with --mode lora or "
+                "qlora (and --finetune-device), or pin a server"
+            )
         raise NotImplementedYet(
             f"Planning with {info.title}",
             "docs/plans/F04-rules-engine.md",
             hint="Plans quantize to GGUF and serve it with llama.cpp or Ollama for now; "
-                 f"`rightsize frameworks {info.name}` shows the commands it has.",
+            f"`rightsize frameworks {info.name}` shows the commands it has.",
         )
     return (info if trains else None), (info if serves else server)
 
@@ -325,9 +338,14 @@ def _plan(
         if before is not None:
             # a step the trainer needs first: MLX trains QLoRA on a model it quantized itself
             steps.append(
-                PlanStep(stage=before.stage, framework=trainer.name, device=ft_device,
-                         quant=QuantSpec(**before.quant.model_dump()) if before.quant else None,
-                         fit=ft, recipe_id=before.recipe)
+                PlanStep(
+                    stage=before.stage,
+                    framework=trainer.name,
+                    device=ft_device,
+                    quant=QuantSpec(**before.quant.model_dump()) if before.quant else None,
+                    fit=ft,
+                    recipe_id=before.recipe,
+                )
             )
         steps.append(
             PlanStep(
@@ -343,30 +361,62 @@ def _plan(
         )
         if role.writes == "adapter" and role.merge and mode.value in role.modes:
             # the conversion reads a whole 16-bit model: fold the adapter in first
-            steps.append(PlanStep(stage="export", framework=trainer.name, device=ft_device,
-                                  fit=ft, recipe_id=role.merge))
+            steps.append(
+                PlanStep(
+                    stage="export",
+                    framework=trainer.name,
+                    device=ft_device,
+                    fit=ft,
+                    recipe_id=role.merge,
+                )
+            )
     steps.append(
-        PlanStep(stage="quantize", framework="llama.cpp", device=target, quant=quant, fit=fit,
-                 recipe_id="llama.cpp/convert")
+        PlanStep(
+            stage="quantize",
+            framework="llama.cpp",
+            device=target,
+            quant=quant,
+            fit=fit,
+            recipe_id="llama.cpp/convert",
+        )
     )
     # an imatrix when llama-quantize demands one, and for every i-quant anyway: those that
     # run without one still quantize better with it, which is what the rule's note promises
     if "imatrix" in outcome.requires or q.startswith(("IQ", "TQ")):
         steps.append(
-            PlanStep(stage="quantize", framework="llama.cpp", device=target, quant=quant,
-                     fit=fit, recipe_id="llama.cpp/imatrix")
+            PlanStep(
+                stage="quantize",
+                framework="llama.cpp",
+                device=target,
+                quant=quant,
+                fit=fit,
+                recipe_id="llama.cpp/imatrix",
+            )
         )
     steps.append(
-        PlanStep(stage="quantize", framework="llama.cpp", device=target, quant=quant, fit=fit,
-                 recipe_id="llama.cpp/quantize")
+        PlanStep(
+            stage="quantize",
+            framework="llama.cpp",
+            device=target,
+            quant=quant,
+            fit=fit,
+            recipe_id="llama.cpp/quantize",
+        )
     )
     ctx = next((int(n.split()[1].rstrip(",")) for n in fit.notes if n.startswith("ctx ")), None)
     for recipe_id in server.serve.recipes:
         steps.append(
-            PlanStep(stage="serve", framework=server.name, device=target, quant=quant,
-                     runtime=RuntimeSpec(name=server.serve.runtime,
-                                         version=server.version_tested, ctx=ctx),
-                     fit=fit, recipe_id=recipe_id)
+            PlanStep(
+                stage="serve",
+                framework=server.name,
+                device=target,
+                quant=quant,
+                runtime=RuntimeSpec(
+                    name=server.serve.runtime, version=server.version_tested, ctx=ctx
+                ),
+                fit=fit,
+                recipe_id=recipe_id,
+            )
         )
     _, moe_note = effective_params_b(c.facts)
     speed = f"{fit.speed:.0f} tok/s" if fit.speed else "speed unknown: no bandwidth for this device"
@@ -424,8 +474,9 @@ def _evaluate_candidate(
             rejected.append(Rejection(c.repo, q, f"quality: {band(delta)} ({how})"))
             continue
         # after a fine-tune the steps convert the model the trainer saved, not the base
-        fit = estimate(merged(c.facts) if ft is not None else c.facts, q, target, ctx=ctx,
-                       runtime=runtime)
+        fit = estimate(
+            merged(c.facts) if ft is not None else c.facts, q, target, ctx=ctx, runtime=runtime
+        )
         if fit.verdict is Verdict.no_fit:
             rejected.append(Rejection(c.repo, q, f"does not fit: needs {fit.vram_gb:.1f} GB"))
             continue
@@ -447,8 +498,22 @@ def _evaluate_candidate(
             rejected.append(Rejection(c.repo, q, f"blocked: {why}"))
             continue
         score, line = _score(c, delta, outcome, task)
-        plan = _plan(c, q, delta, how, fit, target, outcome, line, score, mode, ft, ft_device,
-                     trainer=trainer, server=server)
+        plan = _plan(
+            c,
+            q,
+            delta,
+            how,
+            fit,
+            target,
+            outcome,
+            line,
+            score,
+            mode,
+            ft,
+            ft_device,
+            trainer=trainer,
+            server=server,
+        )
         found.append((score, plan))
     return found
 
@@ -474,10 +539,14 @@ def _rent(c: Candidate, mode: Mode, need: FitResult, pool: list) -> tuple | None
     for offer in cheapest(need.vram_gb, pool=pool, top=50, min_compute_capability=_RENT_MIN_CC):
         base = device_for(offer.gpu, offer.vram_gib)
         dev = Device(
-            name=f"{offer.provider} {offer.gpu}", vendor="nvidia", memory_gib=offer.vram_gib,
+            name=f"{offer.provider} {offer.gpu}",
+            vendor="nvidia",
+            memory_gib=offer.vram_gib,
             compute_capability=offer.compute_capability,
             compute_arch=base.compute_arch if base else None,
-            backends=["cuda"], os="linux", usable_fraction=0.92,
+            backends=["cuda"],
+            os="linux",
+            usable_fraction=0.92,
         )
         fit = estimate_finetune(c.facts, dev, mode)
         if fit.verdict is Verdict.fits:
@@ -521,7 +590,8 @@ def rank(
     scored: list[tuple[float, Plan]] = []
     pinned, server = _pin(framework, mode)
     why = _runs_on(pinned, finetune_device) or (
-        _runs_on(server, target_device) if framework else None)
+        _runs_on(server, target_device) if framework else None
+    )
     if why:
         raise ValueError(why)  # the pin, not any one model, is what cannot run here
     if pinned is not None and "nvidia" not in (pinned.hardware or {}).get("vendors", ["nvidia"]):
@@ -549,8 +619,12 @@ def rank(
                 {
                     "device": _device_ctx(ft_device),
                     "model": _model_ctx(c),
-                    "quant": {"method": (_trainer_quant(_trainer(ft_device, pinned), mode)
-                                         or QuantSpec(method="none")).method},
+                    "quant": {
+                        "method": (
+                            _trainer_quant(_trainer(ft_device, pinned), mode)
+                            or QuantSpec(method="none")
+                        ).method
+                    },
                     "runtime": {"name": _trainer(ft_device, pinned).name},
                     "task": task,
                     "stage": "finetune",
@@ -563,18 +637,34 @@ def rank(
                 result.rejected.append(Rejection(c.repo, None, f"training blocked: {why}"))
                 continue
         found = _evaluate_candidate(
-            c, quants, target_device, task=task, ctx=ctx, max_delta=max_delta,
-            ignore=ignore_rules, mode=mode, ft=ft, ft_device=ft_device,
-            rejected=result.rejected, carried=ft_outcome, trainer=pinned, server=server,
+            c,
+            quants,
+            target_device,
+            task=task,
+            ctx=ctx,
+            max_delta=max_delta,
+            ignore=ignore_rules,
+            mode=mode,
+            ft=ft,
+            ft_device=ft_device,
+            rejected=result.rejected,
+            carried=ft_outcome,
+            trainer=pinned,
+            server=server,
         )
         if rental and found:
             _, _, offer, fallback, job = rental
-            cost = (f"about ${job.usd:,.2f} and {job.hours:g} h per 10M training tokens "
-                    f"(confidence {job.confidence})" if job.usd is not None
-                    else "no time estimate for this GPU")
-            line = (f"fine-tune: {fallback['reason']}, more than the {finetune_device.name} "
-                    f"has; rent a {offer.gpu} ({offer.vram_gib:.0f} GiB) on {offer.provider} at "
-                    f"${offer.usd_per_hour:.2f}/h, {cost} [{offer.source_url}]")
+            cost = (
+                f"about ${job.usd:,.2f} and {job.hours:g} h per 10M training tokens "
+                f"(confidence {job.confidence})"
+                if job.usd is not None
+                else "no time estimate for this GPU"
+            )
+            line = (
+                f"fine-tune: {fallback['reason']}, more than the {finetune_device.name} "
+                f"has; rent a {offer.gpu} ({offer.vram_gib:.0f} GiB) on {offer.provider} at "
+                f"${offer.usd_per_hour:.2f}/h, {cost} [{offer.source_url}]"
+            )
             found = [
                 (s, p.model_copy(update={"cloud_fallback": fallback, "trace": [*p.trace, line]}))
                 for s, p in found
@@ -608,8 +698,16 @@ def recommend(
     toolkit: a trainer (unsloth, trl, axolotl, mlx-lm) for the fine-tune, a server (ollama,
     llama.cpp) for the GGUF."""
     return recommend_result(
-        task, target_device, finetune_device=finetune_device, mode=mode, ctx=ctx,
-        quality=quality, allow_slow=allow_slow, top_k=top_k, cloud=cloud, framework=framework,
+        task,
+        target_device,
+        finetune_device=finetune_device,
+        mode=mode,
+        ctx=ctx,
+        quality=quality,
+        allow_slow=allow_slow,
+        top_k=top_k,
+        cloud=cloud,
+        framework=framework,
     ).plans
 
 
@@ -686,13 +784,19 @@ def recommend_for_model(
         if fx.base_model:
             hint += f", and `rightsize recommend --model {fx.base_model}` ranks its base model"
         raise NotImplementedYet(
-            "Model-first plans for a repo of ready-made GGUFs", "docs/plans/F04-rules-engine.md",
+            "Model-first plans for a repo of ready-made GGUFs",
+            "docs/plans/F04-rules-engine.md",
             hint=f"For now, {hint}.",
         )
     known = {c.repo: c for c in load_candidates()}
     c = known.get(fx.ref.repo) or Candidate(
-        repo=fx.ref.repo, facts=fx, tasks=(task,), publisher=fx.ref.repo.split("/")[0],
-        created_at="", downloads_30d=0, license=fx.license,
+        repo=fx.ref.repo,
+        facts=fx,
+        tasks=(task,),
+        publisher=fx.ref.repo.split("/")[0],
+        created_at="",
+        downloads_30d=0,
+        license=fx.license,
     )
     if mode is not Mode.infer and finetune_device is None:
         finetune_device = target_device

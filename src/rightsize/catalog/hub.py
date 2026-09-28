@@ -139,23 +139,40 @@ def _text_config(cfg: dict[str, Any]) -> dict[str, Any]:
 
 
 _DIFFUSION_TAGS = {
-    "text-to-image", "image-to-image", "text-to-video", "image-to-video", "video-to-video",
+    "text-to-image",
+    "image-to-image",
+    "text-to-video",
+    "image-to-video",
+    "video-to-video",
     "unconditional-image-generation",
 }
 _AUDIO_TAGS = {
-    "automatic-speech-recognition", "text-to-speech", "text-to-audio", "audio-to-audio",
-    "audio-classification", "voice-activity-detection",
+    "automatic-speech-recognition",
+    "text-to-speech",
+    "text-to-audio",
+    "audio-to-audio",
+    "audio-classification",
+    "voice-activity-detection",
 }
 _EMBEDDING_TAGS = {"feature-extraction", "sentence-similarity", "text-ranking"}
 _VISION_TAGS = {
-    "object-detection", "image-classification", "image-segmentation", "mask-generation",
-    "depth-estimation", "zero-shot-image-classification", "zero-shot-object-detection",
-    "image-feature-extraction", "keypoint-detection", "video-classification",
+    "object-detection",
+    "image-classification",
+    "image-segmentation",
+    "mask-generation",
+    "depth-estimation",
+    "zero-shot-image-classification",
+    "zero-shot-object-detection",
+    "image-feature-extraction",
+    "keypoint-detection",
+    "video-classification",
 }
 
 
 def _family(
-    cfg: dict[str, Any], pipeline_tag: str | None, library: str | None = None,
+    cfg: dict[str, Any],
+    pipeline_tag: str | None,
+    library: str | None = None,
     pipeline: bool = False,
 ) -> Family:
     mt = str(cfg.get("model_type", "")).lower()
@@ -262,9 +279,7 @@ def facts(
         if stale is not None and _unchanged(c, repo, revision, stale):
             _touch(cache)
             return ModelFacts.model_validate(stale)
-        info = c.get(
-            f"{HUB}/api/models/{repo}", params={"revision": revision, "blobs": "true"}
-        )
+        info = c.get(f"{HUB}/api/models/{repo}", params={"revision": revision, "blobs": "true"})
         info.raise_for_status()
         meta = info.json()
         sizes = {s["rfilename"]: s.get("size") for s in meta.get("siblings", [])}
@@ -295,14 +310,19 @@ def _has_weights(sizes: dict[str, int | None]) -> bool:
     """Whether a repo holds weights other than GGUF: safetensors, a diffusers pipeline,
     PyTorch files. Other .bin files (an importance matrix beside the GGUFs) do not count."""
     return any(
-        f == "model_index.json" or f.endswith((".safetensors", ".pth", ".pt", ".ckpt"))
+        f == "model_index.json"
+        or f.endswith((".safetensors", ".pth", ".pt", ".ckpt"))
         or _PYTORCH_BIN.search(f)
         for f in sizes
     )
 
 
 def _hf_facts(
-    c: httpx.Client, repo: str, revision: str, base: str, meta: dict[str, Any],
+    c: httpx.Client,
+    repo: str,
+    revision: str,
+    base: str,
+    meta: dict[str, Any],
     sizes: dict[str, int | None],
 ) -> ModelFacts:
     """Facts from config.json and the safetensors (or PyTorch) weights."""
@@ -329,8 +349,7 @@ def _hf_facts(
             for k, v in comp["params_by_dtype"].items():
                 by_dtype[k] = by_dtype.get(k, 0) + v
         counted_from = "pipeline components"
-        if any("file sizes" in comp["counted_from"]
-               for comp in pipeline["components"].values()):
+        if any("file sizes" in comp["counted_from"] for comp in pipeline["components"].values()):
             counted_from += ", from file sizes (the headers are gated)"
     elif isinstance(summary, dict) and summary:
         # The Hub already counts parameters per dtype in the response we just fetched.
@@ -346,8 +365,10 @@ def _hf_facts(
                 c, base, shards, sizes, variant_groups(root), chosen
             )
             if alternatives:
-                counted_from += (f"; one of several checkpoints in the repo ({shards[0]}), "
-                                 f"not the {len(alternatives)} other files beside it")
+                counted_from += (
+                    f"; one of several checkpoints in the repo ({shards[0]}), "
+                    f"not the {len(alternatives)} other files beside it"
+                )
         else:
             torch = torch_weights(sizes, cfg.get("torch_dtype"))
             if torch:
@@ -371,8 +392,12 @@ def _hf_facts(
 
     facts_ = ModelFacts(
         ref=ModelRef(repo=repo, revision=revision),
-        family=_family(cfg, meta.get("pipeline_tag"), meta.get("library_name"),
-                       pipeline=bool(pipeline and pipeline["components"])),
+        family=_family(
+            cfg,
+            meta.get("pipeline_tag"),
+            meta.get("library_name"),
+            pipeline=bool(pipeline and pipeline["components"]),
+        ),
         params_total=total or None,
         params_active=None,
         dtype=str(dominant).upper() if dominant else None,
@@ -426,8 +451,10 @@ def _hf_facts(
 
 
 def _gguf_table(
-    groups: dict[str, dict[str, Any]], read: str | None = None,
-    tensor_bytes: int | None = None, header_bytes: int = 0,
+    groups: dict[str, dict[str, Any]],
+    read: str | None = None,
+    tensor_bytes: int | None = None,
+    header_bytes: int = 0,
 ) -> dict[str, dict[str, Any]]:
     """Every quantization the repo has, with the bytes of weights each would load: exact for
     the file whose header was read, its size less that header for the others (the metadata
@@ -436,14 +463,24 @@ def _gguf_table(
     for q, g in groups.items():
         exact = q == read and tensor_bytes is not None
         weights = tensor_bytes if exact else max(g["bytes"] - header_bytes, 0)
-        out[q] = {"files": g["files"], "bytes": g["bytes"], "weights_bytes": weights,
-                  "exact": exact}
+        out[q] = {
+            "files": g["files"],
+            "bytes": g["bytes"],
+            "weights_bytes": weights,
+            "exact": exact,
+        }
     return out
 
 
 def _gguf_facts(
-    c: httpx.Client, repo: str, revision: str, base: str, meta: dict[str, Any],
-    sizes: dict[str, int | None], groups: dict[str, dict[str, Any]], others: list[str],
+    c: httpx.Client,
+    repo: str,
+    revision: str,
+    base: str,
+    meta: dict[str, Any],
+    sizes: dict[str, int | None],
+    groups: dict[str, dict[str, Any]],
+    others: list[str],
     file: str | None,
 ) -> ModelFacts:
     """Facts from a GGUF's own header: every tensor's type and shape, and the architecture
@@ -475,8 +512,11 @@ def _gguf_facts(
     view = gguf.config_view(head)
     arch = head.architecture
     total = summ["params_total"]
-    family = (Family.embedding if arch in gguf.ENCODER_ARCHITECTURES
-              else _family(view, meta.get("pipeline_tag"), meta.get("library_name")))
+    family = (
+        Family.embedding
+        if arch in gguf.ENCODER_ARCHITECTURES
+        else _family(view, meta.get("pipeline_tag"), meta.get("library_name"))
+    )
     dominant = next(iter(summ["params_by_type"]), None)
     how = "GGUF header" + (f" ({len(parts)} files)" if len(parts) > 1 else "")
     facts_ = ModelFacts(
@@ -488,8 +528,7 @@ def _gguf_facts(
         num_kv_heads=view["num_key_value_heads"],
         head_dim=view["head_dim"],
         context_max=view["max_position_embeddings"],
-        license=(meta.get("cardData") or {}).get("license")
-        or head.metadata.get("general.license"),
+        license=(meta.get("cardData") or {}).get("license") or head.metadata.get("general.license"),
         base_model=_base_model(meta) or gguf.base_model(head),
         confidence=1.0 if total else 0.5,
         extra={
@@ -542,8 +581,12 @@ def _gguf_facts(
 
 
 def _gated_gguf_facts(
-    repo: str, revision: str, meta: dict[str, Any], groups: dict[str, dict[str, Any]],
-    quant: str, others: list[str],
+    repo: str,
+    revision: str,
+    meta: dict[str, Any],
+    groups: dict[str, dict[str, Any]],
+    quant: str,
+    others: list[str],
 ) -> ModelFacts:
     """A gated repo lists its files but serves no header until its terms are accepted. The
     Hub's own GGUF summary still gives the parameter count and context length; the layer

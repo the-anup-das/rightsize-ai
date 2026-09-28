@@ -40,9 +40,21 @@ WHISPER_ROWS = load_yaml("runtimes/whisper/memory.yaml")["measurements"]["rows"]
 
 @pytest.mark.parametrize(
     ("name", "bpw"),
-    [("nf4", 4.5), ("nf4-dq", 4.127), ("int4", 4.25), ("awq", 4.156), ("gptq", 4.156),
-     ("mlx-4bit", 4.5), ("mlx-8bit", 8.5), ("nvfp4", 4.5), ("mxfp4", 4.25), ("fp8", 8.0),
-     ("int8", 8.0), ("bf16", 16.0), ("fp32", 32.0)],
+    [
+        ("nf4", 4.5),
+        ("nf4-dq", 4.127),
+        ("int4", 4.25),
+        ("awq", 4.156),
+        ("gptq", 4.156),
+        ("mlx-4bit", 4.5),
+        ("mlx-8bit", 8.5),
+        ("nvfp4", 4.5),
+        ("mxfp4", 4.25),
+        ("fp8", 8.0),
+        ("int8", 8.0),
+        ("bf16", 16.0),
+        ("fp32", 32.0),
+    ],
 )
 def test_format_bits_follow_their_block_layout(name: str, bpw: float) -> None:
     assert fmt.bpw(name) == pytest.approx(bpw)
@@ -74,8 +86,12 @@ def test_an_unknown_format_lists_the_known_ones() -> None:
 @pytest.mark.parametrize("row", DIFFUSION_ROWS, ids=[r["id"] for r in DIFFUSION_ROWS])
 def test_diffusion_reproduces_published_peaks(row: dict) -> None:
     r = estimate(
-        _facts(row["model"]), row["quant"] or None, H100, offload=row["offload"],
-        resolution=tuple(row["resolution"]), batch=row["batch"],
+        _facts(row["model"]),
+        row["quant"] or None,
+        H100,
+        offload=row["offload"],
+        resolution=tuple(row["resolution"]),
+        batch=row["batch"],
         vae_slicing=row.get("vae_slicing") or None,
     )
     # the published counters are torch's, which never see the CUDA context
@@ -85,8 +101,10 @@ def test_diffusion_reproduces_published_peaks(row: dict) -> None:
 
 
 PREQUANTIZED = [
-    r for r in DIFFUSION_ROWS
-    if r.get("after_loading_gib") and r["offload"] == "none"
+    r
+    for r in DIFFUSION_ROWS
+    if r.get("after_loading_gib")
+    and r["offload"] == "none"
     and all(f.upper().startswith("Q") or f == "bf16" for f in r["quant"].values())
 ]
 
@@ -114,8 +132,9 @@ def test_flux_components_from_a_gated_repo() -> None:
 def test_offloading_lowers_the_gpu_peak_and_moves_weights_to_ram() -> None:
     fx = _facts("black-forest-labs/FLUX.1-dev")
     card = Device(name="RTX 4070", vendor="nvidia", memory_gib=12, system_ram_gib=64)
-    none, model, seq = (estimate(fx, "bf16", card, offload=o)
-                        for o in ("none", "model", "sequential"))
+    none, model, seq = (
+        estimate(fx, "bf16", card, offload=o) for o in ("none", "model", "sequential")
+    )
     assert none.vram_gb > model.vram_gb > seq.vram_gb
     assert none.ram_gb == 0 and model.ram_gb == pytest.approx(none.breakdown["weights"], rel=0.01)
     assert none.verdict is Verdict.offload
@@ -131,8 +150,13 @@ def test_offloading_saves_nothing_on_unified_memory() -> None:
 
 
 def test_bitsandbytes_loads_every_quantized_component_before_offloading() -> None:
-    r = estimate(_facts("black-forest-labs/FLUX.1-dev"), "nf4", H100, offload="model",
-                 text_encoder_quant="nf4")
+    r = estimate(
+        _facts("black-forest-labs/FLUX.1-dev"),
+        "nf4",
+        H100,
+        offload="model",
+        text_encoder_quant="nf4",
+    )
     assert r.breakdown["phase.load"] == max(
         v for k, v in r.breakdown.items() if k.startswith("phase.")
     )
@@ -170,8 +194,11 @@ def test_video_counts_frames_and_says_it_is_less_sure() -> None:
 
 
 def test_diffusion_takes_a_mapping_per_component() -> None:
-    r = estimate(_facts("black-forest-labs/FLUX.1-dev"),
-                 {"transformer": "Q8_0", "text_encoder_2": "nf4"}, H100)
+    r = estimate(
+        _facts("black-forest-labs/FLUX.1-dev"),
+        {"transformer": "Q8_0", "text_encoder_2": "nf4"},
+        H100,
+    )
     assert r.breakdown["weights.transformer"] == pytest.approx(11.9e9 * 8.5 / 8 / 1e9, rel=0.01)
     assert r.breakdown["weights.text_encoder_2"] < 3.0
 
@@ -180,7 +207,8 @@ def test_diffusion_takes_a_mapping_per_component() -> None:
 
 
 @pytest.mark.parametrize(
-    "row", WHISPER_ROWS,
+    "row",
+    WHISPER_ROWS,
     ids=[f"{r['runtime']}-{r['device']}-{r['precision']}-b{r['batch']}" for r in WHISPER_ROWS],
 )
 def test_whisper_reproduces_the_benchmark(row: dict) -> None:
@@ -245,8 +273,13 @@ def test_vit_tokens_come_from_image_and_patch_size() -> None:
 def test_each_family_gets_its_estimator_and_ignores_other_arguments() -> None:
     ids = {
         repo: estimate(_facts(repo), None, H100, ctx=4096, runtime=None, offload="none").formula_id
-        for repo in ("black-forest-labs/FLUX.1-dev", "openai/whisper-small", "BAAI/bge-m3",
-                     "google/vit-base-patch16-224", "Qwen/Qwen3-4B")
+        for repo in (
+            "black-forest-labs/FLUX.1-dev",
+            "openai/whisper-small",
+            "BAAI/bge-m3",
+            "google/vit-base-patch16-224",
+            "Qwen/Qwen3-4B",
+        )
     }
     assert ids == {
         "black-forest-labs/FLUX.1-dev": "diffusion.components.v0",
@@ -267,9 +300,24 @@ def test_cli_estimate_for_a_diffusion_pipeline(monkeypatch, capsys) -> None:
     from rightsize.cli import main
 
     monkeypatch.setattr(catalog, "facts", lambda repo, rev="main", **_: _facts(repo))
-    assert main(["--json", "estimate", "black-forest-labs/FLUX.1-dev", "--device",
-                 "RTX 4070 12GB", "--quant", "nf4", "--offload", "none", "--offload",
-                 "model"]) == 0
+    assert (
+        main(
+            [
+                "--json",
+                "estimate",
+                "black-forest-labs/FLUX.1-dev",
+                "--device",
+                "RTX 4070 12GB",
+                "--quant",
+                "nf4",
+                "--offload",
+                "none",
+                "--offload",
+                "model",
+            ]
+        )
+        == 0
+    )
     out = json.loads(capsys.readouterr().out)
     assert set(out["results"]) == {"nf4/none", "nf4/model"}
     assert out["results"]["nf4/model"]["vram_gb"] < out["results"]["nf4/none"]["vram_gb"]

@@ -34,19 +34,39 @@ CATALOG_URL = (
 #: Providers read by default. AWS is left for asking by name: its file is 5 MB, and its
 #: single-GPU prices are rarely the lowest.
 PROVIDERS = (
-    "runpod", "lambda", "vast", "nebius", "hyperstack", "cudo", "fluidstack", "paperspace",
-    "shadeform", "primeintellect", "do", "azure", "gcp",
+    "runpod",
+    "lambda",
+    "vast",
+    "nebius",
+    "hyperstack",
+    "cudo",
+    "fluidstack",
+    "paperspace",
+    "shadeform",
+    "primeintellect",
+    "do",
+    "azure",
+    "gcp",
 )
 _NOT_A_GPU = re.compile(r"^(tpu-|inferentia|trainium|virtex|gaudi)", re.IGNORECASE)
 _SIZE = re.compile(r"-(\d+)GB?(?:-|$)", re.IGNORECASE)
 _FORM = re.compile(r"-(SXM\d?|PCIE|NVLINK|NVL|MEGA|WK|WS|SE)\b", re.IGNORECASE)
 #: How the catalog spells some cards, against rightsize's names.
 _SPELLING = {
-    "RTXA6000": "RTX A6000", "RTX-A6000": "RTX A6000", "A6000": "RTX A6000",
-    "RTXA5000": "RTX A5000", "A5000": "RTX A5000", "RTXA4000": "RTX A4000",
-    "RTX-A4000": "RTX A4000", "A4000": "RTX A4000", "RTXA4500": "RTX A4500",
-    "RTX6000-Ada": "RTX 6000 Ada", "RTX6000Ada": "RTX 6000 Ada",
-    "RTX4000-Ada": "RTX 4000 Ada", "RTX2000-Ada": "RTX 2000 Ada", "RTX5880-Ada": "RTX 5880 Ada",
+    "RTXA6000": "RTX A6000",
+    "RTX-A6000": "RTX A6000",
+    "A6000": "RTX A6000",
+    "RTXA5000": "RTX A5000",
+    "A5000": "RTX A5000",
+    "RTXA4000": "RTX A4000",
+    "RTX-A4000": "RTX A4000",
+    "A4000": "RTX A4000",
+    "RTXA4500": "RTX A4500",
+    "RTX6000-Ada": "RTX 6000 Ada",
+    "RTX6000Ada": "RTX 6000 Ada",
+    "RTX4000-Ada": "RTX 4000 Ada",
+    "RTX2000-Ada": "RTX 2000 Ada",
+    "RTX5880-Ada": "RTX 5880 Ada",
 }
 
 
@@ -55,8 +75,9 @@ def _cache_dir() -> Path:
     return base / "cloud"
 
 
-def fetch_csv(provider: str, *, ttl_s: float = 24 * 3600, offline: bool = False,
-              client=None) -> tuple[str, str] | None:
+def fetch_csv(
+    provider: str, *, ttl_s: float = 24 * 3600, offline: bool = False, client=None
+) -> tuple[str, str] | None:
     """(csv text, fetched date) for one provider, from the cache when it is fresh enough.
     None when there is neither a cache nor a network answer. RIGHTSIZE_OFFLINE=1 is the
     same as ``offline=True``."""
@@ -127,8 +148,9 @@ def _variants(gpu: str) -> tuple:
     from rightsize.hardware import catalog
 
     base = _base_name(gpu).lower()
-    return tuple(dev for name, dev in catalog().items()
-                 if re.sub(r"\s+\d+GB$", "", name).lower() == base)
+    return tuple(
+        dev for name, dev in catalog().items() if re.sub(r"\s+\d+GB$", "", name).lower() == base
+    )
 
 
 @functools.lru_cache(maxsize=512)
@@ -178,18 +200,31 @@ def parse(provider: str, text: str, fetched_at: str) -> list[Offer]:
                 continue
             if price <= 0:
                 continue
-            out.append(Offer(
-                provider=provider, instance_type=row.get("InstanceType") or "", gpu=gpu,
-                gpu_count=count, vram_gib=vram, usd_per_hour=price, spot=spot,
-                region=row.get("Region") or None, device=named,
-                compute_capability=dev.compute_capability if dev else None,
-                source_url=source, fetched_at=fetched_at,
-            ))
+            out.append(
+                Offer(
+                    provider=provider,
+                    instance_type=row.get("InstanceType") or "",
+                    gpu=gpu,
+                    gpu_count=count,
+                    vram_gib=vram,
+                    usd_per_hour=price,
+                    spot=spot,
+                    region=row.get("Region") or None,
+                    device=named,
+                    compute_capability=dev.compute_capability if dev else None,
+                    source_url=source,
+                    fetched_at=fetched_at,
+                )
+            )
     return out
 
 
-def offers(providers: tuple[str, ...] | list[str] | None = None, *, offline: bool = False,
-           ttl_s: float = 24 * 3600) -> tuple[list[Offer], list[str]]:
+def offers(
+    providers: tuple[str, ...] | list[str] | None = None,
+    *,
+    offline: bool = False,
+    ttl_s: float = 24 * 3600,
+) -> tuple[list[Offer], list[str]]:
     """Every offer from these providers, and the providers that could not be read."""
     found: list[Offer] = []
     missing: list[str] = []

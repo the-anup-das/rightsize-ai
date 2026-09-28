@@ -68,8 +68,14 @@ class Runner(Protocol):
     def inputs(self, plan: Plan, ctx: Context) -> dict[str, Any]:
         """Values the plan's recipes should render with on this machine (tool paths)."""
 
-    def prepare(self, step: RenderedStep, recipe: Recipe, info: FrameworkInfo,
-                values: dict[str, Any], ctx: Context) -> Prepared:
+    def prepare(
+        self,
+        step: RenderedStep,
+        recipe: Recipe,
+        info: FrameworkInfo,
+        values: dict[str, Any],
+        ctx: Context,
+    ) -> Prepared:
         """The command for one rendered step, after anything it needs is in place."""
 
 
@@ -90,8 +96,14 @@ class GenericRunner:
             ctx.log(f"installing {info.title} into {tools_root() / info.name}")
             return install(info, log=ctx.log)
 
-    def prepare(self, step: RenderedStep, recipe: Recipe, info: FrameworkInfo,
-                values: dict[str, Any], ctx: Context) -> Prepared:
+    def prepare(
+        self,
+        step: RenderedStep,
+        recipe: Recipe,
+        info: FrameworkInfo,
+        values: dict[str, Any],
+        ctx: Context,
+    ) -> Prepared:
         env = self.environment(info, ctx)
         if step.kind == "config":
             path = ctx.workdir / recipe.file_name()
@@ -102,8 +114,12 @@ class GenericRunner:
             argv = [token.replace("{file}", str(path)) for token in shlex.split(line)]
         else:
             argv = list(step.argv or [])
-        return Prepared(argv=self.resolve_program(argv, env), env=dict(_CHILD_ENV),
-                        path=env.bin_dir, version=_version(info, env))
+        return Prepared(
+            argv=self.resolve_program(argv, env),
+            env=dict(_CHILD_ENV),
+            path=env.bin_dir,
+            version=_version(info, env),
+        )
 
     @staticmethod
     def resolve_program(argv: list[str], env: Env) -> list[str]:
@@ -129,7 +145,8 @@ class LlamaCppRunner(GenericRunner):
         except ToolchainError as exc:
             if not ctx.install:
                 raise ToolkitMissing(
-                    "llama.cpp is not installed: rightsize tools install llama.cpp") from exc
+                    "llama.cpp is not installed: rightsize tools install llama.cpp"
+                ) from exc
             from rightsize.execution.install import install_llama_cpp
 
             install_llama_cpp(tools_root() / "llama.cpp", log=ctx.log)
@@ -156,8 +173,14 @@ class LlamaCppRunner(GenericRunner):
             values["calibration_file"] = str(default_texts(tools, ctx.log)[0])
         return values
 
-    def prepare(self, step: RenderedStep, recipe: Recipe, info: FrameworkInfo,
-                values: dict[str, Any], ctx: Context) -> Prepared:
+    def prepare(
+        self,
+        step: RenderedStep,
+        recipe: Recipe,
+        info: FrameworkInfo,
+        values: dict[str, Any],
+        ctx: Context,
+    ) -> Prepared:
         if recipe.id == "llama.cpp/convert":
             model_dir = Path(values["model_dir"])
             if not model_dir.is_absolute():
@@ -168,8 +191,9 @@ class LlamaCppRunner(GenericRunner):
                 ctx.log(f"downloading {ctx.plan.model.ref.repo} -> {model_dir}")
                 ensure_snapshot(ctx.plan.model.ref.repo, model_dir.parent)
         tools = self.tools(ctx)
-        return Prepared(argv=list(step.argv or []), env=dict(_CHILD_ENV), path=tools.root,
-                        version=tools.version)
+        return Prepared(
+            argv=list(step.argv or []), env=dict(_CHILD_ENV), path=tools.root, version=tools.version
+        )
 
 
 _BUILTIN: dict[str, type] = {"llama.cpp": LlamaCppRunner}
@@ -189,8 +213,10 @@ def runner_for(name: str) -> Runner:
 
 def _version(info: FrameworkInfo, env: Env) -> str | None:
     """The installed version of the framework's own package, when the environment knows it."""
-    wanted = {p.split("[")[0].split("=")[0].split("<")[0].split(">")[0].lower()
-              for p in info.install.packages}
+    wanted = {
+        p.split("[")[0].split("=")[0].split("<")[0].split(">")[0].lower()
+        for p in info.install.packages
+    }
     return next((v for k, v in env.versions.items() if k.lower() in wanted), None)
 
 
@@ -225,9 +251,13 @@ def _weight_size(path: Path, pattern: str | None) -> int:
     not the tokenizer and config written beside them."""
     if path.is_file():
         return path.stat().st_size
-    files = (path.glob(pattern) if pattern else
-             (p for p in path.rglob("*") if p.suffix in _WEIGHT_SUFFIXES
-              and "tokenizer" not in p.name))
+    files = (
+        path.glob(pattern)
+        if pattern
+        else (
+            p for p in path.rglob("*") if p.suffix in _WEIGHT_SUFFIXES and "tokenizer" not in p.name
+        )
+    )
     return sum(p.stat().st_size for p in files if p.is_file())
 
 
@@ -236,8 +266,14 @@ def _now() -> str:
 
 
 def _skipped(recipe_id: str, argv: list[str], note: str) -> RunStep:
-    return RunStep(recipe_id=recipe_id, argv=argv, started=_now(), finished=_now(),
-                   skipped=True, measurements=[Measurement(kind="wall_s", value=0.0, note=note)])
+    return RunStep(
+        recipe_id=recipe_id,
+        argv=argv,
+        started=_now(),
+        finished=_now(),
+        skipped=True,
+        measurements=[Measurement(kind="wall_s", value=0.0, note=note)],
+    )
 
 
 def run_plan(
@@ -279,18 +315,25 @@ def run_plan(
 
     device = next((s.device for s in plan.steps if s.stage == "finetune"), plan.steps[-1].device)
     manifest = RunManifest(
-        id=workdir.name, created=_now(), rightsize_version=__version__,
-        model=plan.model.ref, facts=plan.model, device=device,
-        predicted={f"{i:02d}-{s.recipe_id}": s.fit
-                   for i, s in enumerate((s for s in plan.steps if s.recipe_id), start=1)},
+        id=workdir.name,
+        created=_now(),
+        rightsize_version=__version__,
+        model=plan.model.ref,
+        facts=plan.model,
+        device=device,
+        predicted={
+            f"{i:02d}-{s.recipe_id}": s.fit
+            for i, s in enumerate((s for s in plan.steps if s.recipe_id), start=1)
+        },
     )
     toolchain: dict[str, str] = {}
     for i, (pstep, recipe, wanted) in enumerate(step_values(plan, **values), start=1):
         label = f"{i:02d}-{recipe.id.replace('/', '-')}"
         rendered = render(recipe, **wanted)
         if pstep.stage == "serve" and not include_serve:
-            manifest.steps.append(_skipped(recipe.id, rendered.argv or [],
-                                           "serve: not started; run it yourself"))
+            manifest.steps.append(
+                _skipped(recipe.id, rendered.argv or [], "serve: not started; run it yourself")
+            )
             log(f"{label}: serve step, not started: {rendered.text}")
             continue
         info = framework(recipe.framework)
@@ -309,15 +352,23 @@ def run_plan(
         log(f"{label}: {' '.join(prepared.argv)}")
         rs, _text, peak = run_step(
             rendered.model_copy(update={"argv": prepared.argv}),
-            log_path=workdir / "logs" / f"{label}.log", log=echo, cwd=workdir,
+            log_path=workdir / "logs" / f"{label}.log",
+            log=echo,
+            cwd=workdir,
             on_text=_progress(parser_for(recipe.id), recipe.stage, log),
-            extra_path=prepared.path, sample_vram=True, env_extra=prepared.env,
+            extra_path=prepared.path,
+            sample_vram=True,
+            env_extra=prepared.env,
         )
         if peak is not None:
-            rs.measurements.append(Measurement(
-                kind="peak_vram_gb", value=round(peak, 3),
-                predicted=pstep.fit.vram_gb if pstep.stage == "finetune" else None,
-                note=f"{pstep.stage} on {pstep.device.name}"))
+            rs.measurements.append(
+                Measurement(
+                    kind="peak_vram_gb",
+                    value=round(peak, 3),
+                    predicted=pstep.fit.vram_gb if pstep.stage == "finetune" else None,
+                    note=f"{pstep.stage} on {pstep.device.name}",
+                )
+            )
         missing = []
         for name in recipe.writes:
             value = wanted.get(name)
@@ -330,8 +381,9 @@ def run_plan(
                 missing.append(name)
                 continue
             predicted, size, note = None, _size(out), f"{name}: {out.name}"
-            target = next((t for t in recipe.targets
-                           if pstep.quant and t.name == pstep.quant.method), None)
+            target = next(
+                (t for t in recipe.targets if pstep.quant and t.name == pstep.quant.method), None
+            )
             if recipe.id == "llama.cpp/quantize":
                 from rightsize.fit import predicted_file_gb
                 from rightsize.fit.finetune import merged
@@ -346,16 +398,22 @@ def run_plan(
                 if weights != size:
                     note += f", weights only ({size / GB:.3f} GB in all)"
                 size = weights
-            rs.measurements.append(Measurement(kind="file_size_gb", value=round(size / GB, 3),
-                                               predicted=predicted, note=note))
+            rs.measurements.append(
+                Measurement(
+                    kind="file_size_gb", value=round(size / GB, 3), predicted=predicted, note=note
+                )
+            )
         manifest.steps.append(rs)
         toolchain.setdefault(info.name, prepared.version or info.version_tested or "")
         manifest.toolchain = toolchain
         if rs.returncode != 0 or missing:
             manifest.status = "failed"
             write_manifest(manifest, workdir)
-            why = (f"exit code {rs.returncode}" if rs.returncode
-                   else f"it did not write {', '.join(missing)}")
+            why = (
+                f"exit code {rs.returncode}"
+                if rs.returncode
+                else f"it did not write {', '.join(missing)}"
+            )
             raise RunFailed(f"{recipe.id} failed: {why}; log: {rs.log_path}")
     manifest.status = "succeeded"
     write_manifest(manifest, workdir)

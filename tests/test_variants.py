@@ -12,25 +12,49 @@ from rightsize.catalog.variants import classify, matches_base, quant_of
 
 BASE = "Qwen/Qwen3-4B"
 LISTED = [  # as /api/models?filter=base_model:quantized:Qwen/Qwen3-4B returns them
-    {"id": "unsloth/Qwen3-4B-GGUF", "downloads": 462_007, "library_name": "transformers",
-     "tags": ["transformers", "gguf", "qwen3", "unsloth", f"base_model:quantized:{BASE}"]},
-    {"id": "tuner/Qwen3-4B-Roleplay-v2-GGUF", "downloads": 424_827,
-     "library_name": "llama.cpp", "tags": ["llama.cpp", "gguf", "qlora"]},
+    {
+        "id": "unsloth/Qwen3-4B-GGUF",
+        "downloads": 462_007,
+        "library_name": "transformers",
+        "tags": ["transformers", "gguf", "qwen3", "unsloth", f"base_model:quantized:{BASE}"],
+    },
+    {
+        "id": "tuner/Qwen3-4B-Roleplay-v2-GGUF",
+        "downloads": 424_827,
+        "library_name": "llama.cpp",
+        "tags": ["llama.cpp", "gguf", "qlora"],
+    },
     {"id": "Qwen/Qwen3-4B-GGUF", "downloads": 404_833, "tags": ["gguf"]},
-    {"id": "Qwen/Qwen3-4B-AWQ", "downloads": 245_475, "library_name": "transformers",
-     "tags": ["transformers", "safetensors", "4-bit", "awq"]},
-    {"id": "unsloth/Qwen3-4B-unsloth-bnb-4bit", "downloads": 60_411,
-     "library_name": "transformers", "tags": ["4-bit", "bitsandbytes"]},
-    {"id": "lmstudio-community/Qwen3-4B-MLX-4bit", "downloads": 24_348, "library_name": "mlx",
-     "tags": ["mlx", "4-bit"]},
-    {"id": "someone/Qwen3-4B-q4f16_1-MLC", "downloads": 10, "library_name": "mlc-llm",
-     "tags": []},
+    {
+        "id": "Qwen/Qwen3-4B-AWQ",
+        "downloads": 245_475,
+        "library_name": "transformers",
+        "tags": ["transformers", "safetensors", "4-bit", "awq"],
+    },
+    {
+        "id": "unsloth/Qwen3-4B-unsloth-bnb-4bit",
+        "downloads": 60_411,
+        "library_name": "transformers",
+        "tags": ["4-bit", "bitsandbytes"],
+    },
+    {
+        "id": "lmstudio-community/Qwen3-4B-MLX-4bit",
+        "downloads": 24_348,
+        "library_name": "mlx",
+        "tags": ["mlx", "4-bit"],
+    },
+    {"id": "someone/Qwen3-4B-q4f16_1-MLC", "downloads": 10, "library_name": "mlc-llm", "tags": []},
 ]
 FILES = {
-    "unsloth/Qwen3-4B-GGUF": {"Qwen3-4B-Q4_K_M.gguf": 2_497_281_312,
-                              "Qwen3-4B-UD-Q4_K_XL.gguf": 2_550_000_000, "README.md": 1},
-    "Qwen/Qwen3-4B-GGUF": {"Qwen3-4B-Q4_K_M.gguf": 2_497_280_000,
-                           "Qwen3-4B-Q8_0.gguf": 4_280_000_000},
+    "unsloth/Qwen3-4B-GGUF": {
+        "Qwen3-4B-Q4_K_M.gguf": 2_497_281_312,
+        "Qwen3-4B-UD-Q4_K_XL.gguf": 2_550_000_000,
+        "README.md": 1,
+    },
+    "Qwen/Qwen3-4B-GGUF": {
+        "Qwen3-4B-Q4_K_M.gguf": 2_497_280_000,
+        "Qwen3-4B-Q8_0.gguf": 4_280_000_000,
+    },
     "tuner/Qwen3-4B-Roleplay-v2-GGUF": {"Qwen3-4B-Roleplay-v2-Q4_K_M.gguf": 2_500_000_000},
     "Qwen/Qwen3-4B-AWQ": {"model.safetensors": 2_670_000_000, "config.json": 1},
     "unsloth/Qwen3-4B-unsloth-bnb-4bit": {"model.safetensors": 3_550_000_000},
@@ -52,8 +76,10 @@ def _hub(seen: list[httpx.Request] | None = None) -> httpx.MockTransport:
         if repo == BASE and request.url.params.get("blobs") != "true":
             return httpx.Response(200, json={"tags": ["text-generation"]})
         if repo in FILES:
-            return httpx.Response(200, json={"siblings": [
-                {"rfilename": f, "size": n} for f, n in FILES[repo].items()]})
+            return httpx.Response(
+                200,
+                json={"siblings": [{"rfilename": f, "size": n} for f, n in FILES[repo].items()]},
+            )
         return httpx.Response(404)
 
     return httpx.MockTransport(handler)
@@ -78,11 +104,29 @@ def test_official_then_known_publishers_come_first_within_a_format() -> None:
     gguf_repos = [v.ref.repo for v in found if v.format == "gguf"]
     assert gguf_repos[0] == "Qwen/Qwen3-4B-GGUF", "official, though fewer downloads"
     assert gguf_repos.index("unsloth/Qwen3-4B-GGUF") < gguf_repos.index(
-        "tuner/Qwen3-4B-Roleplay-v2-GGUF")
+        "tuner/Qwen3-4B-Roleplay-v2-GGUF"
+    )
     assert [v.format for v in found] == sorted(
         (v.format for v in found),
-        key=["gguf", "mlx", "compressed-tensors", "modelopt", "awq", "gptq", "bnb", "nvfp4",
-             "fp8", "torchao", "exl3", "exl2", "mlc", "litert", "openvino", "onnx"].index)
+        key=[
+            "gguf",
+            "mlx",
+            "compressed-tensors",
+            "modelopt",
+            "awq",
+            "gptq",
+            "bnb",
+            "nvfp4",
+            "fp8",
+            "torchao",
+            "exl3",
+            "exl2",
+            "mlc",
+            "litert",
+            "openvino",
+            "onnx",
+        ].index,
+    )
 
 
 def test_a_fine_tune_calling_itself_a_quantization_is_flagged() -> None:
@@ -117,34 +161,53 @@ def test_variants_are_cached_and_served_offline(tmp_path, monkeypatch) -> None:
         variants("Qwen/Qwen3-8B", offline=True)
 
 
-@pytest.mark.parametrize(("repo", "tags", "library", "fmt", "quant"), [
-    ("RedHatAI/Qwen3-8B-quantized.w4a16", ["compressed-tensors"], None,
-     "compressed-tensors", "w4a16"),
-    ("RedHatAI/Qwen3-8B-FP8-dynamic", ["compressed-tensors", "fp8"], None,
-     "compressed-tensors", "FP8-dynamic"),
-    ("nvidia/Qwen3-8B-NVFP4", ["modelopt", "nvfp4"], "Model Optimizer", "modelopt", "NVFP4"),
-    ("x/Qwen3-8B-GPTQ-Int4", ["gptq"], "transformers", "gptq", "Int4"),
-    ("x/Qwen3-8B-exl3_4.0bpw", ["exl3"], None, "exl3", "4.0bpw"),
-    ("litert-community/Qwen3-8B", [], "litert-lm", "litert", None),
-    ("x/Qwen3-8B-something", [], None, None, None),
-])
+@pytest.mark.parametrize(
+    ("repo", "tags", "library", "fmt", "quant"),
+    [
+        (
+            "RedHatAI/Qwen3-8B-quantized.w4a16",
+            ["compressed-tensors"],
+            None,
+            "compressed-tensors",
+            "w4a16",
+        ),
+        (
+            "RedHatAI/Qwen3-8B-FP8-dynamic",
+            ["compressed-tensors", "fp8"],
+            None,
+            "compressed-tensors",
+            "FP8-dynamic",
+        ),
+        ("nvidia/Qwen3-8B-NVFP4", ["modelopt", "nvfp4"], "Model Optimizer", "modelopt", "NVFP4"),
+        ("x/Qwen3-8B-GPTQ-Int4", ["gptq"], "transformers", "gptq", "Int4"),
+        ("x/Qwen3-8B-exl3_4.0bpw", ["exl3"], None, "exl3", "4.0bpw"),
+        ("litert-community/Qwen3-8B", [], "litert-lm", "litert", None),
+        ("x/Qwen3-8B-something", [], None, None, None),
+    ],
+)
 def test_formats_are_told_by_tag_library_then_name(repo, tags, library, fmt, quant) -> None:
     f = classify(repo, tags, library)
     assert (f["id"] if f else None) == fmt
     assert quant_of(f, repo) == quant
 
 
-@pytest.mark.parametrize(("repo", "base", "same"), [
-    ("bartowski/Qwen_Qwen3-4B-GGUF", "Qwen/Qwen3-4B", True),
-    ("RedHatAI/Meta-Llama-3.1-8B-Instruct-quantized.w4a16",
-     "meta-llama/Llama-3.1-8B-Instruct", True),
-    ("mlc-ai/Qwen3-8B-q4f16_1-MLC", "Qwen/Qwen3-8B", True),
-    ("async0x42/Qwen3-8B-exl3_4.0bpw", "Qwen/Qwen3-8B", True),
-    ("unsloth/DeepSeek-V3-0324-GGUF", "deepseek-ai/DeepSeek-V3-0324", True),
-    ("mobilint/EAGLE3-Qwen3-8B", "Qwen/Qwen3-8B", False),
-    ("unsloth/Qwen3-8B-128K-GGUF", "Qwen/Qwen3-8B", False),
-    ("google/gemma-3-4b-it-qat-q4_0-gguf", "google/gemma-3-4b-it", False),
-])
+@pytest.mark.parametrize(
+    ("repo", "base", "same"),
+    [
+        ("bartowski/Qwen_Qwen3-4B-GGUF", "Qwen/Qwen3-4B", True),
+        (
+            "RedHatAI/Meta-Llama-3.1-8B-Instruct-quantized.w4a16",
+            "meta-llama/Llama-3.1-8B-Instruct",
+            True,
+        ),
+        ("mlc-ai/Qwen3-8B-q4f16_1-MLC", "Qwen/Qwen3-8B", True),
+        ("async0x42/Qwen3-8B-exl3_4.0bpw", "Qwen/Qwen3-8B", True),
+        ("unsloth/DeepSeek-V3-0324-GGUF", "deepseek-ai/DeepSeek-V3-0324", True),
+        ("mobilint/EAGLE3-Qwen3-8B", "Qwen/Qwen3-8B", False),
+        ("unsloth/Qwen3-8B-128K-GGUF", "Qwen/Qwen3-8B", False),
+        ("google/gemma-3-4b-it-qat-q4_0-gguf", "google/gemma-3-4b-it", False),
+    ],
+)
 def test_names_are_compared_without_their_format_words(repo, base, same) -> None:
     assert matches_base(repo, base) is same
 

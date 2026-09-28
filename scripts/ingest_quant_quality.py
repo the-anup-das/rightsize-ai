@@ -40,7 +40,9 @@ HELP_LINE = re.compile(r"^\s*\d+\s+or\s+(\S+)\s*:\s*([\d.]+)G,\s*([+-][\d.]+)\s+
 
 
 def ppl_from_help(quantize_bin: Path) -> dict[str, dict]:
-    proc = subprocess.run([str(quantize_bin), "--help"], capture_output=True, text=True, check=False)
+    proc = subprocess.run(
+        [str(quantize_bin), "--help"], capture_output=True, text=True, check=False
+    )
     rows = {}
     for line in (proc.stdout + proc.stderr).splitlines():
         m = HELP_LINE.match(line)

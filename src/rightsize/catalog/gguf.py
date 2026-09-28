@@ -39,17 +39,47 @@ _FIRST_FETCH = 1 << 20
 _MAX_FETCH = 16 << 20
 
 _STRING, _ARRAY = 8, 9
-_SCALAR = {0: "B", 1: "b", 2: "H", 3: "h", 4: "I", 5: "i", 6: "f", 7: "?", 10: "Q", 11: "q",
-           12: "d"}
-_TYPE_NAME = {0: "uint8", 1: "int8", 2: "uint16", 3: "int16", 4: "uint32", 5: "int32",
-              6: "float32", 7: "bool", 8: "string", 9: "array", 10: "uint64", 11: "int64",
-              12: "float64"}
+_SCALAR = {
+    0: "B",
+    1: "b",
+    2: "H",
+    3: "h",
+    4: "I",
+    5: "i",
+    6: "f",
+    7: "?",
+    10: "Q",
+    11: "q",
+    12: "d",
+}
+_TYPE_NAME = {
+    0: "uint8",
+    1: "int8",
+    2: "uint16",
+    3: "int16",
+    4: "uint32",
+    5: "int32",
+    6: "float32",
+    7: "bool",
+    8: "string",
+    9: "array",
+    10: "uint64",
+    11: "int64",
+    12: "float64",
+}
 
 #: llama.cpp architectures that are text encoders: their GGUFs are embedding models.
-ENCODER_ARCHITECTURES = frozenset({
-    "bert", "modern-bert", "nomic-bert", "nomic-bert-moe", "neo-bert", "jina-bert-v2",
-    "jina-bert-v3",
-})
+ENCODER_ARCHITECTURES = frozenset(
+    {
+        "bert",
+        "modern-bert",
+        "nomic-bert",
+        "nomic-bert-moe",
+        "neo-bert",
+        "jina-bert-v2",
+        "jina-bert-v3",
+    }
+)
 
 
 class GgufError(ValueError):
@@ -115,7 +145,7 @@ class _Cursor:
         end = self.pos + n
         have = self._start + len(self._buf)
         if end > have or self.pos < self._start:
-            keep = self._buf[self.pos - self._start:] if self._start <= self.pos < have else b""
+            keep = self._buf[self.pos - self._start :] if self._start <= self.pos < have else b""
             start = self.pos + len(keep)
             data = self._fetch(start, start + max(end - start, self._next))
             self.fetched += len(data)
@@ -125,7 +155,7 @@ class _Cursor:
                 raise GgufError("the file ends inside its header")
         i = self.pos - self._start
         self.pos = end
-        return self._buf[i:i + n]
+        return self._buf[i : i + n]
 
 
 class _Reader:
@@ -212,8 +242,14 @@ def parse(fetch: Callable[[int, int], bytes], *, first: int = _FIRST_FETCH) -> H
         tensors.append(Tensor(name, tuple(dims), type_id, offset))
     align = int(metadata.get("general.alignment") or DEFAULT_ALIGNMENT)
     data_offset = -(-cur.pos // align) * align
-    return Header(version, "big" if order == ">" else "little", metadata, tensors, data_offset,
-                  fetched=cur.fetched)
+    return Header(
+        version,
+        "big" if order == ">" else "little",
+        metadata,
+        tensors,
+        data_offset,
+        fetched=cur.fetched,
+    )
 
 
 def from_bytes(data: bytes) -> Header:
@@ -282,7 +318,7 @@ def tensor_bytes(h: Header, types: dict[int, tuple[str, int, int]]) -> list[int 
         data_end = h.file_size - h.data_offset if h.file_size else None
         for pos, i in enumerate(order):
             if out[i] is None:
-                nxt = (h.tensors[order[pos + 1]].offset if pos + 1 < len(order) else data_end)
+                nxt = h.tensors[order[pos + 1]].offset if pos + 1 < len(order) else data_end
                 out[i] = nxt - h.tensors[i].offset if nxt is not None else None
     return out
 
@@ -385,8 +421,13 @@ def config_view(h: Header) -> dict[str, Any]:
     hidden = g("embedding_length")
     kv_lora = g("attention.kv_lora_rank")
     tokens = h.metadata.get("tokenizer.ggml.tokens")
-    vocab = g("vocab_size") or (tokens.count if isinstance(tokens, LongArray)
-                               else len(tokens) if isinstance(tokens, list) else None)
+    vocab = g("vocab_size") or (
+        tokens.count
+        if isinstance(tokens, LongArray)
+        else len(tokens)
+        if isinstance(tokens, list)
+        else None
+    )
     view: dict[str, Any] = {
         "model_type": h.architecture,
         "num_hidden_layers": n,
@@ -416,7 +457,8 @@ def config_view(h: Header) -> dict[str, Any]:
     if kv_layers and any(v == 0 for v in kv_layers):
         view["layer_types"] = [
             ("sliding_attention" if swa_layers and swa_layers[i] else "full_attention")
-            if v else "recurrent"
+            if v
+            else "recurrent"
             for i, v in enumerate(kv_layers)
         ]
     elif swa_layers:
@@ -432,7 +474,7 @@ def base_model(h: Header) -> str | None:
     prefix = "https://huggingface.co/"
     if not url.startswith(prefix):
         return None
-    return url[len(prefix):].strip("/") or None
+    return url[len(prefix) :].strip("/") or None
 
 
 # ---------------------------------------------------------------- files in a repo
@@ -448,8 +490,21 @@ _QUANT = re.compile(
 _NOT_WEIGHTS = ("mmproj", "imatrix")
 #: The file a repo is sized at when none is named: the usual default of LM Studio and
 #: Ollama first, then the nearest alternatives.
-PREFERRED = ("Q4_K_M", "UD-Q4_K_XL", "Q4_K_S", "IQ4_XS", "Q4_0", "MXFP4", "MXFP4_MOE",
-             "Q5_K_M", "Q6_K", "Q8_0", "BF16", "F16", "F32")
+PREFERRED = (
+    "Q4_K_M",
+    "UD-Q4_K_XL",
+    "Q4_K_S",
+    "IQ4_XS",
+    "Q4_0",
+    "MXFP4",
+    "MXFP4_MOE",
+    "Q5_K_M",
+    "Q6_K",
+    "Q8_0",
+    "BF16",
+    "F16",
+    "F32",
+)
 
 
 def quant_label(path: str) -> str | None:
@@ -504,22 +559,31 @@ def weight_files(
     if not found:
         return {}, []
     wanted = re.sub(r"[-_.]gguf$", "", (repo or "").rsplit("/", 1)[-1], flags=re.I).lower()
-    main = model if model in found else wanted if wanted in found else max(
-        found, key=lambda k: (len(found[k]), sum(g["bytes"] for g in found[k].values())))
+    main = (
+        model
+        if model in found
+        else wanted
+        if wanted in found
+        else max(found, key=lambda k: (len(found[k]), sum(g["bytes"] for g in found[k].values())))
+    )
     for groups in found.values():
         for g in groups.values():
             g["files"].sort()
             del g["stem"]
-    others = sorted(f for k, groups in found.items() if k != main
-                    for g in groups.values() for f in g["files"])
+    others = sorted(
+        f for k, groups in found.items() if k != main for g in groups.values() for f in g["files"]
+    )
     return found[main], others
 
 
 def extras(sizes: dict[str, int | None], kind: str) -> dict[str, int]:
     """Side files by name, such as ``extras(sizes, "mmproj")``: the vision projector an
     image-capable GGUF needs loaded beside the weights."""
-    return {f: s or 0 for f, s in sorted(sizes.items())
-            if f.lower().endswith(".gguf") and kind in f.rsplit("/", 1)[-1].lower()}
+    return {
+        f: s or 0
+        for f, s in sorted(sizes.items())
+        if f.lower().endswith(".gguf") and kind in f.rsplit("/", 1)[-1].lower()
+    }
 
 
 def default_quant(groups: dict[str, Any]) -> str:

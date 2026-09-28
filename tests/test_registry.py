@@ -21,9 +21,22 @@ def test_bundled_recipes_load_and_have_provenance() -> None:
     for r in recipes.values():
         assert r.source_doc_url.startswith("https://")
         assert r.version_tested
-    assert {"llama.cpp", "unsloth", "trl", "axolotl", "mlx-lm", "vllm", "ollama",
-            "optimum-intel", "llm-compressor", "transformers", "diffusers", "whisper.cpp",
-            "ctranslate2", "sentence-transformers"} == set(frameworks())
+    assert {
+        "llama.cpp",
+        "unsloth",
+        "trl",
+        "axolotl",
+        "mlx-lm",
+        "vllm",
+        "ollama",
+        "optimum-intel",
+        "llm-compressor",
+        "transformers",
+        "diffusers",
+        "whisper.cpp",
+        "ctranslate2",
+        "sentence-transformers",
+    } == set(frameworks())
 
 
 def test_render_quantize_with_and_without_imatrix() -> None:
@@ -138,6 +151,11 @@ def test_every_toolkit_recipe_says_how_far_it_was_checked() -> None:
         if recipe.framework != "llama.cpp" and recipe.verified != "docs":
             ran_outside_llama_cpp.add(recipe.id)
     assert ran_outside_llama_cpp == {
-        "unsloth/sft", "llm-compressor/fp8-dynamic", "llm-compressor/gptq-w4a16",
-        "transformers/bnb-nf4", "optimum-intel/export-openvino", "sentence-transformers/onnx-int8",
-        "ctranslate2/convert-whisper"}
+        "unsloth/sft",
+        "llm-compressor/fp8-dynamic",
+        "llm-compressor/gptq-w4a16",
+        "transformers/bnb-nf4",
+        "optimum-intel/export-openvino",
+        "sentence-transformers/onnx-int8",
+        "ctranslate2/convert-whisper",
+    }

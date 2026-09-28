@@ -19,21 +19,21 @@ from rightsize.types import Mode, Offer
 HEADER = "InstanceType,AcceleratorName,AcceleratorCount,vCPUs,MemoryGiB,Region,SpotPrice,Price,AvailabilityZone,GpuInfo\n"  # noqa: E501
 
 RUNPOD = HEADER + (
-    '1x_A100-80GB_SECURE,A100-80GB,1.0,8.0,117.0,CA,1.59,1.59,CA-MTL-1,"{\'Gpus\': [{\'Name\': \'A100 PCIe\', \'Count\': 1, \'MemoryInfo\': {\'SizeInMiB\': 80}}], \'TotalGpuMemoryInMiB\': 80}"\n'  # noqa: E501
-    '1x_RTX4090_SECURE,RTX4090,1.0,16.0,62.0,CA,0.74,0.74,CA-MTL-1,"{\'Gpus\': [{\'Name\': \'RTX 4090\', \'Count\': 1}], \'TotalGpuMemoryInMiB\': 24}"\n'  # noqa: E501
-    '1x_L40S_SECURE,L40S,1.0,16.0,62.0,CA,1.09,1.09,CA-MTL-1,"{\'TotalGpuMemoryInMiB\': 48}"\n'
+    "1x_A100-80GB_SECURE,A100-80GB,1.0,8.0,117.0,CA,1.59,1.59,CA-MTL-1,\"{'Gpus': [{'Name': 'A100 PCIe', 'Count': 1, 'MemoryInfo': {'SizeInMiB': 80}}], 'TotalGpuMemoryInMiB': 80}\"\n"  # noqa: E501
+    "1x_RTX4090_SECURE,RTX4090,1.0,16.0,62.0,CA,0.74,0.74,CA-MTL-1,\"{'Gpus': [{'Name': 'RTX 4090', 'Count': 1}], 'TotalGpuMemoryInMiB': 24}\"\n"  # noqa: E501
+    "1x_L40S_SECURE,L40S,1.0,16.0,62.0,CA,1.09,1.09,CA-MTL-1,\"{'TotalGpuMemoryInMiB': 48}\"\n"
 )
 LAMBDA = HEADER + (
-    'gpu_8x_a100,A100,8.0,124.0,1800.0,us-east-1,,15.92,,"{\'TotalGpuMemoryInMiB\': 40960}"\n'
-    'gpu_1x_h100_pcie,H100,1.0,26.0,200.0,us-east-1,,3.29,,"{\'TotalGpuMemoryInMiB\': 81920}"\n'
+    "gpu_8x_a100,A100,8.0,124.0,1800.0,us-east-1,,15.92,,\"{'TotalGpuMemoryInMiB': 40960}\"\n"
+    "gpu_1x_h100_pcie,H100,1.0,26.0,200.0,us-east-1,,3.29,,\"{'TotalGpuMemoryInMiB': 81920}\"\n"
 )
 PRIMEINTELLECT = HEADER + (
-    'lambdalabs__8xH100_80GB,H100,8.0,208.0,1800.0,US,,23.92,,"{\'TotalGpuMemoryInMiB\': 5242880}"\n'  # noqa: E501
+    "lambdalabs__8xH100_80GB,H100,8.0,208.0,1800.0,US,,23.92,,\"{'TotalGpuMemoryInMiB': 5242880}\"\n"  # noqa: E501
 )
 GCP = HEADER + (
-    ',A100,1,,,us-central1,1.8563,3.10156,us-central1-a,\n'
-    ',T4,1,,,us-central1,0.2088,0.35,us-central1-a,\n'
-    ',tpu-v5litepod-1,1,,,us-west4,,1.20,us-west4-a,\n'
+    ",A100,1,,,us-central1,1.8563,3.10156,us-central1-a,\n"
+    ",T4,1,,,us-central1,0.2088,0.35,us-central1-a,\n"
+    ",tpu-v5litepod-1,1,,,us-west4,,1.20,us-west4-a,\n"
 )
 VAST = HEADER + (
     '1x-L40S-32-65536,L40S,1,32,64,"Bulgaria, BG, EU",0.00,0.60,,"{\'TotalGpuMemoryInMiB\': 46068}"\n'  # noqa: E501
@@ -42,8 +42,13 @@ VAST = HEADER + (
 
 def _pool() -> list[Offer]:
     out: list[Offer] = []
-    for provider, text in [("runpod", RUNPOD), ("lambda", LAMBDA),
-                           ("primeintellect", PRIMEINTELLECT), ("gcp", GCP), ("vast", VAST)]:
+    for provider, text in [
+        ("runpod", RUNPOD),
+        ("lambda", LAMBDA),
+        ("primeintellect", PRIMEINTELLECT),
+        ("gcp", GCP),
+        ("vast", VAST),
+    ]:
         out.extend(parse(provider, text, "2026-09-25"))
     return out
 
@@ -98,9 +103,16 @@ def test_job_estimate_arithmetic() -> None:
 
 
 def test_a_gpu_without_datasheet_throughput_gets_a_price_but_no_time() -> None:
-    offer = Offer(provider="x", instance_type="y", gpu="RTX5880-Ada", gpu_count=1,
-                  vram_gib=48, usd_per_hour=0.35, source_url="https://example.org",
-                  fetched_at="2026-09-25")
+    offer = Offer(
+        provider="x",
+        instance_type="y",
+        gpu="RTX5880-Ada",
+        gpu_count=1,
+        vram_gib=48,
+        usd_per_hour=0.35,
+        source_url="https://example.org",
+        fetched_at="2026-09-25",
+    )
     job = estimate_job(1_000_000_000, 10_000_000, offer)
     assert job.hours is None and job.usd is None and job.confidence == 0
 
@@ -130,8 +142,9 @@ def test_a_fine_tune_that_does_not_fit_is_planned_on_a_rental() -> None:
     qwen = tuple(c for c in load_candidates() if c.repo == "Qwen/Qwen3-14B")
     without = rank(qwen, resolve("RTX 4090"), finetune_device=small, mode=Mode.lora)
     assert not without.plans and "needs" in without.rejected[0].reason
-    result = rank(qwen, resolve("RTX 4090"), finetune_device=small, mode=Mode.lora,
-                  cloud_pool=_pool())
+    result = rank(
+        qwen, resolve("RTX 4090"), finetune_device=small, mode=Mode.lora, cloud_pool=_pool()
+    )
     plan = result.plans[0]
     offer = plan.cloud_fallback["offer"]
     assert plan.steps[0].device.name == f"{offer['provider']} {offer['gpu']}"

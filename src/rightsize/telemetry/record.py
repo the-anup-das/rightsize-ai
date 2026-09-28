@@ -105,8 +105,11 @@ def build(
     if predicted is not None:
         b = predicted.breakdown
         pred = RecordNumbers(
-            vram_gb=predicted.vram_gb, weights_gb=b.get("weights"), kv_gb=b.get("kv_cache"),
-            overhead_gb=b.get("overhead"), tok_s=predicted.speed,
+            vram_gb=predicted.vram_gb,
+            weights_gb=b.get("weights"),
+            kv_gb=b.get("kv_cache"),
+            overhead_gb=b.get("overhead"),
+            tok_s=predicted.speed,
             formula_id=predicted.formula_id,
         )
     return CalibrationRecord(
@@ -114,8 +117,11 @@ def build(
         recorded_on=dt.date.today().isoformat(),
         source=source,
         device=RecordDevice(
-            vendor=device.vendor, name=_device_name(device), memory_gib=device.memory_gib,
-            compute_capability=device.compute_capability, os=device.os,
+            vendor=device.vendor,
+            name=_device_name(device),
+            memory_gib=device.memory_gib,
+            compute_capability=device.compute_capability,
+            os=device.os,
         ),
         runtime=RecordRuntime(name=runtime, version=runtime_version),
         model=RecordModel(
@@ -156,9 +162,7 @@ def read(path: str | Path | None = None) -> list[CalibrationRecord]:
 def export(dest: str | Path) -> int:
     """Copy the records to a file the user can read and share. Returns how many."""
     records = read()
-    Path(dest).write_text(
-        "".join(r.model_dump_json() + "\n" for r in records), encoding="utf-8"
-    )
+    Path(dest).write_text("".join(r.model_dump_json() + "\n" for r in records), encoding="utf-8")
     return len(records)
 
 

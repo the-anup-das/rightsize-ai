@@ -25,7 +25,6 @@ from rightsize.types import Device, FitResult, Mode, ModelFacts, QuantSpec, Runt
 FORMULA_ID = "llm.gguf.analytic.v1"
 
 
-
 def overhead_constants(runtime: str) -> tuple[float, float]:
     """(fixed GB, fraction of weights) a runtime adds, from data/runtimes/overheads.yaml,
     which scripts/refit_constants.py refits from measurements. Unknown runtimes get
@@ -33,6 +32,7 @@ def overhead_constants(runtime: str) -> tuple[float, float]:
     rows = {r["name"]: r for r in load_yaml("runtimes/overheads.yaml")["runtimes"]}
     row = rows.get(runtime.lower()) or rows["llama.cpp"]
     return float(row["fixed_gb"]), float(row["fraction"])
+
 
 _HEADROOM = 0.10  # verdict "tight" inside this fraction of usable memory
 _DECODE_EFFICIENCY = 0.70  # fraction of peak bandwidth a llama.cpp decode loop reaches
@@ -92,8 +92,11 @@ def _table_weights(facts: ModelFacts, quant: str) -> tuple[float, float, str]:
         sizes = _type_sizes()
         mx, q8 = (sizes[t][1] * 8 / sizes[t][0] for t in ("MXFP4", "Q8_0"))
         bits = experts * mx + (total - experts) * q8
-        return (bits / 8 / 1e9, bits / total,
-                "MXFP4 routed experts, Q8_0 elsewhere (llama-quantize's MXFP4_MOE)")
+        return (
+            bits / 8 / 1e9,
+            bits / total,
+            "MXFP4 routed experts, Q8_0 elsewhere (llama-quantize's MXFP4_MOE)",
+        )
     bpw, source = gguf_bpw(quant)
     return total * bpw / 8 / 1e9, bpw, source
 
@@ -116,19 +119,25 @@ def weights(facts: ModelFacts, quant: str) -> tuple[float, float, str]:
     if own and own.get("weights_bytes"):
         nbytes = own["weights_bytes"]
         how = "its header" if own.get("exact") else "its file size"
-        return (nbytes / 1e9, nbytes * 8 / facts.params_total,
-                f"the repo's {quant.upper()} file ({how})")
+        return (
+            nbytes / 1e9,
+            nbytes * 8 / facts.params_total,
+            f"the repo's {quant.upper()} file ({how})",
+        )
     return _table_weights(facts, quant)
 
 
 def _type_sizes() -> dict[str, tuple[int, int]]:
     """(block size, bytes per block) for every ggml tensor type."""
-    return {t["name"]: (t["block_size"], t["type_size"])
-            for t in load_yaml("quants/ggml_types.yaml")["tensor_types"]}
+    return {
+        t["name"]: (t["block_size"], t["type_size"])
+        for t in load_yaml("quants/ggml_types.yaml")["tensor_types"]
+    }
 
 
-def embedding_type(file_type: str, hidden: int, *, tied: bool,
-                   architecture: str | None = None) -> str | None:
+def embedding_type(
+    file_type: str, hidden: int, *, tied: bool, architecture: str | None = None
+) -> str | None:
     """The tensor type llama-quantize stores ``token_embd.weight`` in for ``file_type``, from
     data/runtimes/llama.cpp/embedding.yaml; None for a name llama-quantize does not make,
     such as a publisher's own mix."""
@@ -180,16 +189,18 @@ def input_embedding(facts: ModelFacts, quant: str) -> tuple[float, bool, str] | 
     if typ is None:
         return None
     block, size = _type_sizes()[typ]
-    return (vocab * hidden * size / block / 1e9, own_head,
-            f"{typ}, the type llama-quantize gives it in {quant.upper()}")
+    return (
+        vocab * hidden * size / block / 1e9,
+        own_head,
+        f"{typ}, the type llama-quantize gives it in {quant.upper()}",
+    )
 
 
 def embedding_in_ram(runtime: str, device: Device) -> bool:
     """llama.cpp and the runtimes built on it keep the input embedding on the CPU; where GPU
     and CPU share one memory, that is no saving."""
     runtimes = load_yaml("runtimes/llama.cpp/embedding.yaml")["runtimes"]
-    return (runtime.lower() in runtimes and not device.unified_memory
-            and device.vendor != "cpu")
+    return runtime.lower() in runtimes and not device.unified_memory and device.vendor != "cpu"
 
 
 def kv_cache_gb(facts: ModelFacts, ctx: int, batch: int = 1, kv_bytes: float = 2.0) -> float:
@@ -234,8 +245,11 @@ def estimate(
     fixed, frac = overhead_constants(rname)
 
     if not (facts.num_layers and facts.num_kv_heads and facts.head_dim):
-        hint = (" The repo is gated: accept its terms on the Hub and set HF_TOKEN."
-                if (facts.extra or {}).get("gated") else "")
+        hint = (
+            " The repo is gated: accept its terms on the Hub and set HF_TOKEN."
+            if (facts.extra or {}).get("gated")
+            else ""
+        )
         raise ValueError(
             f"{facts.ref.repo}: its layer count, KV heads and head size are unknown, so the "
             f"KV cache cannot be sized.{hint}"
@@ -248,8 +262,10 @@ def estimate(
         d = load_yaml("runtimes/llama.cpp/kv_cache.yaml")["defaults"]
         batch *= max(1, d["n_batch"] // ctx)
         logits = d["n_ubatch"] * ((facts.extra or {}).get("vocab_size") or 0) * 4 / 1e9
-        notes.append(f"every token's logits kept: {batch} sequences in parallel, "
-                     f"{logits:.3f} GB of logits for a {d['n_ubatch']}-token micro-batch")
+        notes.append(
+            f"every token's logits kept: {batch} sequences in parallel, "
+            f"{logits:.3f} GB of logits for a {d['n_ubatch']}-token micro-batch"
+        )
     kv = kv_cache_gb(facts, ctx, batch, kv_bytes)
     # llama.cpp keeps the input embedding in system RAM; a tied output head is a copy of it
     # that stays on the GPU, so only a model with a head of its own sheds it from VRAM
@@ -258,8 +274,10 @@ def estimate(
     if embedding:
         ram, own_head, where = embedding
         on_gpu = ram if not own_head else 0.0
-        notes.append(f"input embedding {ram:.3f} GB in system RAM ({where})"
-                     + ("" if own_head else "; its tied copy as the output head stays in VRAM"))
+        notes.append(
+            f"input embedding {ram:.3f} GB in system RAM ({where})"
+            + ("" if own_head else "; its tied copy as the output head stays in VRAM")
+        )
     gpu_weights = weights_gb - ram + on_gpu
     overhead = fixed + frac * gpu_weights + logits
     vram = gpu_weights + kv + overhead
@@ -293,8 +311,10 @@ def estimate(
         if facts.params_active:
             # The efficiency constant was measured on a dense model. Routing tokens to
             # experts costs llama.cpp bandwidth efficiency, so for MoE this is a ceiling.
-            notes.append("mixture of experts: speed is an upper bound; expert routing is "
-                         "usually less bandwidth-efficient than the dense model it was fit on")
+            notes.append(
+                "mixture of experts: speed is an upper bound; expert routing is "
+                "usually less bandwidth-efficient than the dense model it was fit on"
+            )
     else:
         # Say so rather than showing a blank column. Some devices have no published
         # bandwidth at all - NVIDIA gives laptop GPUs a bus width but no bandwidth,

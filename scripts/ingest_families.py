@@ -33,36 +33,109 @@ KEEP = 8  # per task
 TASKS = {
     "diffusion": ["text-to-image", "image-to-image", "text-to-video", "image-to-video"],
     "audio": ["automatic-speech-recognition", "text-to-speech"],
-    "vision": ["image-classification", "object-detection", "image-segmentation",
-               "depth-estimation", "zero-shot-image-classification",
-               "zero-shot-object-detection", "mask-generation", "image-feature-extraction"],
+    "vision": [
+        "image-classification",
+        "object-detection",
+        "image-segmentation",
+        "depth-estimation",
+        "zero-shot-image-classification",
+        "zero-shot-object-detection",
+        "mask-generation",
+        "image-feature-extraction",
+    ],
     "embedding": ["sentence-similarity", "feature-extraction", "text-ranking"],
 }
 
 #: Publishers whose own models we take; a curated list, not a quality judgement on others.
 PUBLISHERS = {
     "diffusion": (
-        "black-forest-labs", "stabilityai", "stable-diffusion-v1-5", "CompVis", "Tongyi-MAI",
-        "Qwen", "Wan-AI", "Lightricks", "tencent", "hunyuanvideo-community", "HiDream-ai",
-        "zai-org", "THUDM", "Efficient-Large-Model", "nvidia", "PixArt-alpha", "playgroundai",
-        "Alpha-VLLM", "lodestones", "stepfun-ai", "genmo", "Kwai-Kolors", "kandinsky-community",
-        "OmniGen2", "briaai",
+        "black-forest-labs",
+        "stabilityai",
+        "stable-diffusion-v1-5",
+        "CompVis",
+        "Tongyi-MAI",
+        "Qwen",
+        "Wan-AI",
+        "Lightricks",
+        "tencent",
+        "hunyuanvideo-community",
+        "HiDream-ai",
+        "zai-org",
+        "THUDM",
+        "Efficient-Large-Model",
+        "nvidia",
+        "PixArt-alpha",
+        "playgroundai",
+        "Alpha-VLLM",
+        "lodestones",
+        "stepfun-ai",
+        "genmo",
+        "Kwai-Kolors",
+        "kandinsky-community",
+        "OmniGen2",
+        "briaai",
     ),
     "audio": (
-        "openai", "nvidia", "distil-whisper", "facebook", "microsoft", "hexgrad", "coqui",
-        "ResembleAI", "SWivid", "Qwen", "mistralai", "kyutai", "sesame", "canopylabs",
-        "fishaudio", "myshell-ai", "suno", "k2-fsa", "openbmb", "FunAudioLLM", "ibm-granite",
-        "UsefulSensors", "google",
+        "openai",
+        "nvidia",
+        "distil-whisper",
+        "facebook",
+        "microsoft",
+        "hexgrad",
+        "coqui",
+        "ResembleAI",
+        "SWivid",
+        "Qwen",
+        "mistralai",
+        "kyutai",
+        "sesame",
+        "canopylabs",
+        "fishaudio",
+        "myshell-ai",
+        "suno",
+        "k2-fsa",
+        "openbmb",
+        "FunAudioLLM",
+        "ibm-granite",
+        "UsefulSensors",
+        "google",
     ),
     "vision": (
-        "google", "facebook", "microsoft", "nvidia", "apple", "depth-anything", "PekingU",
-        "IDEA-Research", "openai", "laion", "timm", "hustvl", "Intel", "ZhengPeng7", "briaai",
-        "CIDAS", "shi-labs", "LiheYoung", "allenai",
+        "google",
+        "facebook",
+        "microsoft",
+        "nvidia",
+        "apple",
+        "depth-anything",
+        "PekingU",
+        "IDEA-Research",
+        "openai",
+        "laion",
+        "timm",
+        "hustvl",
+        "Intel",
+        "ZhengPeng7",
+        "briaai",
+        "CIDAS",
+        "shi-labs",
+        "LiheYoung",
+        "allenai",
     ),
     "embedding": (
-        "sentence-transformers", "BAAI", "intfloat", "nomic-ai", "Alibaba-NLP",
-        "mixedbread-ai", "jinaai", "Qwen", "Snowflake", "google", "thenlper", "nvidia",
-        "ibm-granite", "cross-encoder",
+        "sentence-transformers",
+        "BAAI",
+        "intfloat",
+        "nomic-ai",
+        "Alibaba-NLP",
+        "mixedbread-ai",
+        "jinaai",
+        "Qwen",
+        "Snowflake",
+        "google",
+        "thenlper",
+        "nvidia",
+        "ibm-granite",
+        "cross-encoder",
     ),
 }
 
@@ -75,10 +148,16 @@ SKIP = re.compile(
 
 
 def listing(client: httpx.Client, task: str) -> list[dict[str, Any]]:
-    r = client.get(LISTING, params={
-        "pipeline_tag": task, "sort": "downloads", "direction": -1, "limit": POOL,
-        "expand[]": ["downloads", "createdAt", "gated", "library_name"],
-    })
+    r = client.get(
+        LISTING,
+        params={
+            "pipeline_tag": task,
+            "sort": "downloads",
+            "direction": -1,
+            "limit": POOL,
+            "expand[]": ["downloads", "createdAt", "gated", "library_name"],
+        },
+    )
     r.raise_for_status()
     return r.json()
 
@@ -145,15 +224,17 @@ def main() -> int:
                     if got:
                         kept[row["id"]] = got
                         n += 1
-                        print(f"  {family:9s} {task:30s} {got['repo']:50s} "
-                              f"{got['params_total'] / 1e9:7.3f}B")
+                        print(
+                            f"  {family:9s} {task:30s} {got['repo']:50s} "
+                            f"{got['params_total'] / 1e9:7.3f}B"
+                        )
     models = sorted(kept.values(), key=lambda m: (m["family"], -m["downloads_30d"]))
     doc = {
         "provenance": {
             "source_url": "https://huggingface.co/models?sort=downloads",
             "fetched_at": fetched,
             "note": f"top {POOL} per Hub task by downloads, filtered as described in "
-                    "scripts/ingest_families.py",
+            "scripts/ingest_families.py",
         },
         "tasks": TASKS,
         "models": models,
@@ -164,8 +245,9 @@ def main() -> int:
         "# scripts/ingest_families.py. Do not hand edit; re-run the script to refresh it.\n"
         "# LLMs are in candidates.yaml.\n"
     )
-    OUT.write_text(header + yaml.safe_dump(doc, sort_keys=False, allow_unicode=True),
-                   encoding="utf-8")
+    OUT.write_text(
+        header + yaml.safe_dump(doc, sort_keys=False, allow_unicode=True), encoding="utf-8"
+    )
     print(f"kept {len(models)} models")
     return 0
 

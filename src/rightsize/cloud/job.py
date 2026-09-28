@@ -44,7 +44,10 @@ def estimate_job(
     known = tensor_tflops(offer.gpu)
     if known is None:
         return JobEstimate(
-            tokens=tokens, epochs=epochs, efficiency=efficiency, confidence=0.0,
+            tokens=tokens,
+            epochs=epochs,
+            efficiency=efficiency,
+            confidence=0.0,
             formula_id=FORMULA_ID,
             notes=[f"no datasheet throughput for {offer.gpu}; price only"],
         )

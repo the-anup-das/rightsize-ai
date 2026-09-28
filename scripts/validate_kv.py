@@ -29,14 +29,20 @@ MIB = 1024**2
 CASES = [
     ("gemma-3-270m-it-UD-IQ2_XXS.gguf", "unsloth/gemma-3-270m-it", "sliding window 5:1"),
     ("LFM2-350M-Q4_0.gguf", "LiquidAI/LFM2-350M", "hybrid: short conv + attention"),
-    ("granite-4.0-h-350m-Q2_K.gguf", "ibm-granite/granite-4.0-h-350m", "hybrid: Mamba2 + attention"),
+    (
+        "granite-4.0-h-350m-Q2_K.gguf",
+        "ibm-granite/granite-4.0-h-350m",
+        "hybrid: Mamba2 + attention",
+    ),
 ]
 CTX = (4096, 32768)
 
 #: One line per cache llama.cpp creates: the full and sliding KV caches of an iSWA model,
 #: the KV and recurrent halves of a hybrid. The breakdown table rounds to whole MiB, which
 #: hides a 15 MiB sliding cache's error, so these are what we add up.
-_CACHE_SIZE = re.compile(r"(?:llama_kv_cache|llama_memory_recurrent)\s*:\s*size\s*=\s*([\d.]+)\s*MiB")
+_CACHE_SIZE = re.compile(
+    r"(?:llama_kv_cache|llama_memory_recurrent)\s*:\s*size\s*=\s*([\d.]+)\s*MiB"
+)
 
 
 def llama_context_mib(fit_params: Path, gguf: Path, ctx: int) -> float:
@@ -56,10 +62,14 @@ def llama_context_mib(fit_params: Path, gguf: Path, ctx: int) -> float:
 
 def main() -> int:
     tools = find_tools()
-    fit_params = tools.root / ("llama-fit-params.exe" if sys.platform == "win32" else "llama-fit-params")
+    fit_params = tools.root / (
+        "llama-fit-params.exe" if sys.platform == "win32" else "llama-fit-params"
+    )
     root = Path("models/validation")
     worst = 0.0
-    print(f"{'model':36s} {'layout':34s} {'ctx':>6s} {'ours MiB':>9s} {'llama.cpp':>10s} {'diff':>6s}")
+    print(
+        f"{'model':36s} {'layout':34s} {'ctx':>6s} {'ours MiB':>9s} {'llama.cpp':>10s} {'diff':>6s}"
+    )
     for gguf_name, repo, what in CASES:
         gguf = root / gguf_name
         if not gguf.exists():
@@ -71,7 +81,9 @@ def main() -> int:
             theirs = llama_context_mib(fit_params, gguf, ctx)
             diff = (ours - theirs) / theirs * 100 if theirs else 0.0
             worst = max(worst, abs(diff))
-            print(f"{repo.split('/')[-1]:36s} {what:34s} {ctx:>6d} {ours:>9.1f} {theirs:>10.1f} {diff:>+5.1f}%")
+            print(
+                f"{repo.split('/')[-1]:36s} {what:34s} {ctx:>6d} {ours:>9.1f} {theirs:>10.1f} {diff:>+5.1f}%"
+            )
     print(f"worst disagreement {worst:.1f}%")
     return 0 if worst < 5 else 1
 

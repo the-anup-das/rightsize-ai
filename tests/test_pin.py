@@ -11,8 +11,11 @@ from rightsize.errors import NotImplementedYet
 from rightsize.rules.recommend import recommend_for_model
 from rightsize.types import ModelFacts
 
-FACTS = ModelFacts.model_validate(json.loads(
-    (Path(__file__).parent / "fixtures/facts/Qwen__Qwen3-4B.json").read_text(encoding="utf-8")))
+FACTS = ModelFacts.model_validate(
+    json.loads(
+        (Path(__file__).parent / "fixtures/facts/Qwen__Qwen3-4B.json").read_text(encoding="utf-8")
+    )
+)
 
 
 def _plan(device: str = "RTX 4090", **kw):
@@ -34,11 +37,14 @@ def test_pinning_ollama_serves_with_it_and_sizes_it_with_its_overheads() -> None
     assert text["ollama/create"] == "ollama create qwen3-4b -f Modelfile"
 
 
-@pytest.mark.parametrize(("framework", "chain", "converted"), [
-    ("trl", ["trl/sft", "trl/merge"], "Qwen__Qwen3-4B-merged"),
-    ("axolotl", ["axolotl/qlora", "axolotl/merge"], "Qwen__Qwen3-4B-finetune/merged"),
-    ("unsloth", ["unsloth/sft"], "Qwen__Qwen3-4B-merged"),
-])
+@pytest.mark.parametrize(
+    ("framework", "chain", "converted"),
+    [
+        ("trl", ["trl/sft", "trl/merge"], "Qwen__Qwen3-4B-merged"),
+        ("axolotl", ["axolotl/qlora", "axolotl/merge"], "Qwen__Qwen3-4B-finetune/merged"),
+        ("unsloth", ["unsloth/sft"], "Qwen__Qwen3-4B-merged"),
+    ],
+)
 def test_a_pinned_trainer_trains_and_hands_the_converter_a_whole_model(
     framework, chain, converted
 ) -> None:
@@ -59,8 +65,7 @@ def test_trl_merges_the_adapter_where_its_training_saved_it() -> None:
 
 def test_on_a_mac_mlx_quantizes_trains_and_fuses_on_its_own_4bit_copy() -> None:
     plan = _plan("M4 Max 64GB", finetune_device="M4 Max 64GB", mode="qlora")
-    assert [s.recipe_id for s in plan.steps][:3] == ["mlx-lm/convert", "mlx-lm/lora",
-                                                     "mlx-lm/fuse"]
+    assert [s.recipe_id for s in plan.steps][:3] == ["mlx-lm/convert", "mlx-lm/lora", "mlx-lm/fuse"]
     fuse = _rendered(plan)["mlx-lm/fuse"]
     assert "--model Qwen__Qwen3-4B-mlx-4bit" in fuse and fuse.endswith("--dequantize")
 

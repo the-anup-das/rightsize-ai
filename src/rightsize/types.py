@@ -112,8 +112,10 @@ class Variant(BaseModel):
     """A quantized copy of a model that someone has already published on the Hub (F1)."""
 
     ref: ModelRef = Field(description="the repo, and for GGUF the file (the first split part)")
-    format: str = Field(description="gguf, mlx, awq, gptq, bnb, fp8, compressed-tensors, ...; "
-                        "'unknown' when no convention in data/models/variants.yaml matched")
+    format: str = Field(
+        description="gguf, mlx, awq, gptq, bnb, fp8, compressed-tensors, ...; "
+        "'unknown' when no convention in data/models/variants.yaml matched"
+    )
     quant: str | None = Field(default=None, description="Q4_K_M, UD-Q4_K_XL, 4BIT, W4A16, ...")
     size_bytes: int | None = None
     bits_per_weight: float | None = Field(

@@ -41,8 +41,9 @@ def _measure_lm_studio(loaded: list[sources.Loaded], limit_gb: float) -> dict[st
     return {loaded[0].name: readings[0]} if len(readings) == 1 else {}
 
 
-def calibrate(device: Device, *, write: bool = True, lm_studio=None, ollama=None,
-              facts_for=None) -> list[Comparison]:
+def calibrate(
+    device: Device, *, write: bool = True, lm_studio=None, ollama=None, facts_for=None
+) -> list[Comparison]:
     """One comparison per loaded model. ``lm_studio``, ``ollama`` and ``facts_for`` stand
     in for the live sources in tests."""
     from rightsize.fit import estimate
@@ -69,16 +70,28 @@ def calibrate(device: Device, *, write: bool = True, lm_studio=None, ollama=None
             except KeyError as exc:
                 note = f"quant {m.quant} unknown to rightsize ({exc})"
         if got is None and not note:
-            note = ("memory not attributable: more than one model or engine process"
-                    if m.runtime == "lm studio" else "the runtime did not report its memory")
+            note = (
+                "memory not attributable: more than one model or engine process"
+                if m.runtime == "lm studio"
+                else "the runtime did not report its memory"
+            )
         record = None
         if pred is not None and got is not None:
             record = rec.build(
-                source=m.runtime, device=device, runtime=m.runtime, facts=facts,
-                quant=m.quant, ctx=m.ctx, predicted=pred, measured_vram_gb=round(got, 3),
+                source=m.runtime,
+                device=device,
+                runtime=m.runtime,
+                facts=facts,
+                quant=m.quant,
+                ctx=m.ctx,
+                predicted=pred,
+                measured_vram_gb=round(got, 3),
             )
             if write:
                 rec.append(record)
-        out.append(Comparison(m.runtime, m.name, m.quant, m.ctx,
-                              pred.vram_gb if pred else None, got, note, record))
+        out.append(
+            Comparison(
+                m.runtime, m.name, m.quant, m.ctx, pred.vram_gb if pred else None, got, note, record
+            )
+        )
     return out

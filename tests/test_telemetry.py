@@ -16,28 +16,63 @@ from rightsize.telemetry.calibrate import calibrate
 from rightsize.types import Device, ModelFacts
 
 FIXTURES = Path(__file__).parent / "fixtures" / "facts"
-RTX = Device(name="RTX 4070 Ti SUPER 16GB", vendor="nvidia", memory_gib=16,
-             compute_capability=8.9, os="windows")
+RTX = Device(
+    name="RTX 4070 Ti SUPER 16GB",
+    vendor="nvidia",
+    memory_gib=16,
+    compute_capability=8.9,
+    os="windows",
+)
 
 # LM Studio's /api/v0/models, trimmed from a live response on 2026-09-25
-LM_STUDIO_MODELS = {"data": [
-    {"id": "openai/gpt-oss-20b", "object": "model", "type": "llm", "publisher": "openai",
-     "arch": "gpt-oss", "compatibility_type": "gguf", "quantization": "MXFP4",
-     "state": "loaded", "max_context_length": 131072, "loaded_context_length": 8192},
-    {"id": "google/gemma-4-e2b", "object": "model", "type": "vlm", "quantization": "Q4_K_M",
-     "state": "not-loaded", "max_context_length": 131072},
-    {"id": "text-embedding-nomic", "object": "model", "type": "embeddings",
-     "state": "loaded"},
-]}
+LM_STUDIO_MODELS = {
+    "data": [
+        {
+            "id": "openai/gpt-oss-20b",
+            "object": "model",
+            "type": "llm",
+            "publisher": "openai",
+            "arch": "gpt-oss",
+            "compatibility_type": "gguf",
+            "quantization": "MXFP4",
+            "state": "loaded",
+            "max_context_length": 131072,
+            "loaded_context_length": 8192,
+        },
+        {
+            "id": "google/gemma-4-e2b",
+            "object": "model",
+            "type": "vlm",
+            "quantization": "Q4_K_M",
+            "state": "not-loaded",
+            "max_context_length": 131072,
+        },
+        {"id": "text-embedding-nomic", "object": "model", "type": "embeddings", "state": "loaded"},
+    ]
+}
 # Ollama's /api/ps, the documented example plus a Hub pull
-OLLAMA_PS = {"models": [
-    {"name": "mistral:latest", "size": 5137025024, "size_vram": 5137025024,
-     "details": {"format": "gguf", "family": "llama", "parameter_size": "7.2B",
-                 "quantization_level": "Q4_0"}},
-    {"name": "hf.co/Qwen/Qwen3-4B-GGUF:Q4_K_M", "size": 3_900_000_000,
-     "size_vram": 3_600_000_000, "context_length": 4096,
-     "details": {"quantization_level": "Q4_K_M"}},
-]}
+OLLAMA_PS = {
+    "models": [
+        {
+            "name": "mistral:latest",
+            "size": 5137025024,
+            "size_vram": 5137025024,
+            "details": {
+                "format": "gguf",
+                "family": "llama",
+                "parameter_size": "7.2B",
+                "quantization_level": "Q4_0",
+            },
+        },
+        {
+            "name": "hf.co/Qwen/Qwen3-4B-GGUF:Q4_K_M",
+            "size": 3_900_000_000,
+            "size_vram": 3_600_000_000,
+            "context_length": 4096,
+            "details": {"quantization_level": "Q4_K_M"},
+        },
+    ]
+}
 
 
 @pytest.fixture(autouse=True)
@@ -67,8 +102,16 @@ def test_recording_is_off_until_turned_on() -> None:
 
 
 def test_nothing_is_written_while_off() -> None:
-    record = rec.build(source="manual", device=RTX, runtime="llama.cpp", facts=None,
-                       quant="Q4_K_M", ctx=8192, predicted=None, measured_vram_gb=5.0)
+    record = rec.build(
+        source="manual",
+        device=RTX,
+        runtime="llama.cpp",
+        facts=None,
+        quant="Q4_K_M",
+        ctx=8192,
+        predicted=None,
+        measured_vram_gb=5.0,
+    )
     assert rec.append(record) is False and rec.read() == []
     telemetry.enable()
     assert rec.append(record) is True and len(rec.read()) == 1
@@ -85,11 +128,20 @@ def test_the_consent_copy_names_what_is_never_recorded() -> None:
 def test_a_record_carries_no_local_names_or_private_repos() -> None:
     """A device named after its host and a model from a private repo go in; neither comes
     out. Only fields on the allowlist can be set at all."""
-    local = Device(name=r"DESKTOP-7QK2 C:\Users\jdoe\gpu", vendor="nvidia",
-                   memory_gib=16, os="windows")
+    local = Device(
+        name=r"DESKTOP-7QK2 C:\Users\jdoe\gpu", vendor="nvidia", memory_gib=16, os="windows"
+    )
     private = _facts("Qwen__Qwen3-4B.json", private=True)
-    record = rec.build(source="manual", device=local, runtime="llama.cpp", facts=private,
-                       quant="Q4_K_M", ctx=8192, predicted=None, measured_vram_gb=3.1)
+    record = rec.build(
+        source="manual",
+        device=local,
+        runtime="llama.cpp",
+        facts=private,
+        quant="Q4_K_M",
+        ctx=8192,
+        predicted=None,
+        measured_vram_gb=3.1,
+    )
     text = record.model_dump_json()
     assert "jdoe" not in text.lower() and "desktop" not in text.lower() and "\\\\" not in text
     assert record.model.repo is None, "private repo: no id"
@@ -99,16 +151,33 @@ def test_a_record_carries_no_local_names_or_private_repos() -> None:
 
 
 def test_a_public_repo_and_a_known_card_are_kept() -> None:
-    record = rec.build(source="manual", device=RTX, runtime="llama.cpp",
-                       facts=_facts("Qwen__Qwen3-4B.json", private=False), quant="Q4_K_M",
-                       ctx=8192, predicted=None, measured_vram_gb=3.1)
+    record = rec.build(
+        source="manual",
+        device=RTX,
+        runtime="llama.cpp",
+        facts=_facts("Qwen__Qwen3-4B.json", private=False),
+        quant="Q4_K_M",
+        ctx=8192,
+        predicted=None,
+        measured_vram_gb=3.1,
+    )
     assert record.model.repo == "Qwen/Qwen3-4B" and record.device.name == RTX.name
 
 
 def test_export_writes_what_show_reads(tmp_path) -> None:
     telemetry.enable()
-    rec.append(rec.build(source="manual", device=RTX, runtime="llama.cpp", facts=None,
-                         quant=None, ctx=None, predicted=None, measured_vram_gb=1.0))
+    rec.append(
+        rec.build(
+            source="manual",
+            device=RTX,
+            runtime="llama.cpp",
+            facts=None,
+            quant=None,
+            ctx=None,
+            predicted=None,
+            measured_vram_gb=1.0,
+        )
+    )
     out = tmp_path / "mine.jsonl"
     assert rec.export(out) == 1
     assert json.loads(out.read_text(encoding="utf-8").splitlines()[0])["measured"]["vram_gb"] == 1.0
@@ -190,11 +259,19 @@ def test_refit_recovers_known_constants() -> None:
     refit = _refit()
     telemetry.enable()
     for w in (2.0, 5.0, 9.0, 14.0, 20.0):
-        record = rec.build(source="manual", device=RTX, runtime="llama.cpp", facts=None,
-                           quant="Q4_K_M", ctx=8192, predicted=None,
-                           measured_vram_gb=w + 0.3 + 0.4 + 0.05 * w)
-        record.predicted = rec.RecordNumbers(vram_gb=w + 0.3 + 0.75 + 0.02 * w,
-                                             weights_gb=w, kv_gb=0.3)
+        record = rec.build(
+            source="manual",
+            device=RTX,
+            runtime="llama.cpp",
+            facts=None,
+            quant="Q4_K_M",
+            ctx=8192,
+            predicted=None,
+            measured_vram_gb=w + 0.3 + 0.4 + 0.05 * w,
+        )
+        record.predicted = rec.RecordNumbers(
+            vram_gb=w + 0.3 + 0.75 + 0.02 * w, weights_gb=w, kv_gb=0.3
+        )
         rec.append(record)
     (proposal,) = refit.refit(rec.read(), {"llama.cpp": (0.75, 0.02)})
     assert proposal["new"] == (pytest.approx(0.4, abs=0.01), pytest.approx(0.05, abs=0.001))
@@ -205,8 +282,15 @@ def test_refit_writes_only_with_enough_records(tmp_path) -> None:
     refit = _refit()
     data = tmp_path / "overheads.yaml"
     data.write_text(Path(refit.DATA).read_text(encoding="utf-8"), encoding="utf-8")
-    few = [{"runtime": "lm studio", "records": 1, "new": (0.18, 0.02),
-            "error_before": 0.05, "error_after": 0.0}]
+    few = [
+        {
+            "runtime": "lm studio",
+            "records": 1,
+            "new": (0.18, 0.02),
+            "error_before": 0.05,
+            "error_after": 0.0,
+        }
+    ]
     assert refit.write(few, data) == []
     many = [{**few[0], "records": 6}]
     assert refit.write(many, data) == ["lm studio"]

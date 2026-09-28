@@ -69,7 +69,9 @@ def constants() -> dict[str, float]:
 
 
 def parts(
-    facts: ModelFacts, quant: str | dict[str, str] | None, text_encoder_quant: str | None,
+    facts: ModelFacts,
+    quant: str | dict[str, str] | None,
+    text_encoder_quant: str | None,
     compute_dtype: str = "bf16",
 ) -> list[Part]:
     """Every component at the format it will run in.
@@ -116,8 +118,12 @@ def _uses_cfg(facts: ModelFacts, denoiser: Part | None) -> bool:
 
 
 def activations(
-    facts: ModelFacts, ps: list[Part], resolution: tuple[int, int], batch: int,
-    frames: int | None, vae_slicing: bool,
+    facts: ModelFacts,
+    ps: list[Part],
+    resolution: tuple[int, int],
+    batch: int,
+    frames: int | None,
+    vae_slicing: bool,
 ) -> tuple[dict[str, float], list[str]]:
     """GB of activations per phase, and the assumptions behind them."""
     k = constants()
@@ -172,7 +178,9 @@ def _resident(ps: list[Part], role_set: set[str], offload: str) -> float:
 
 
 def peak(
-    ps: list[Part], acts: dict[str, float], offload: str,
+    ps: list[Part],
+    acts: dict[str, float],
+    offload: str,
 ) -> tuple[float, str, dict[str, float]]:
     """(worst phase in GB before overheads, its name, every phase)."""
     phases = {
@@ -219,11 +227,15 @@ def estimate(
         + (f", {frames} frames" if frames else ""),
     ]
     if offload != "none":
-        notes.append(f"offload={offload}: {_OFFLOAD_CALL[offload]}; the offloaded "
-                     f"weights need {ram:.1f} GB of system RAM")
+        notes.append(
+            f"offload={offload}: {_OFFLOAD_CALL[offload]}; the offloaded "
+            f"weights need {ram:.1f} GB of system RAM"
+        )
     if device.unified_memory and offload != "none":
-        notes.append("unified memory: offloading moves weights to the same memory pool, "
-                      "so it saves nothing here")
+        notes.append(
+            "unified memory: offloading moves weights to the same memory pool, "
+            "so it saves nothing here"
+        )
         vram = max(vram, total_weights + max(acts.values()) + overhead)
 
     if vram <= usable * (1 - _HEADROOM):
@@ -233,23 +245,29 @@ def estimate(
     else:
         verdict = Verdict.no_fit
         if not device.unified_memory:
-            for alt in OFFLOAD[OFFLOAD.index(offload) + 1:]:
+            for alt in OFFLOAD[OFFLOAD.index(offload) + 1 :]:
                 alt_vram, _ = _vram(peak(ps, acts, alt)[0])
                 if alt_vram <= usable:
                     verdict = Verdict.offload
-                    notes.append(f"fits with {_OFFLOAD_CALL[alt]} ({alt_vram:.1f} GB on the "
-                                 f"GPU, {total_weights:.1f} GB of system RAM)")
+                    notes.append(
+                        f"fits with {_OFFLOAD_CALL[alt]} ({alt_vram:.1f} GB on the "
+                        f"GPU, {total_weights:.1f} GB of system RAM)"
+                    )
                     break
     if batch > 1 and not vae_slicing and phase == "decode":
         notes.append("pipe.vae.enable_slicing() decodes one image at a time and lowers the peak")
     notes.append("no speed estimate for diffusion yet: denoising is compute-bound")
     if offload != "none" and any(p.fmt == "int8" for p in ps):
-        notes.append("bitsandbytes int8 weights may not leave the GPU: the diffusers blog "
-                     "measured FLUX.1-dev in bnb int8 with model offload at 23.4 GiB, about "
-                     "the same as without")
+        notes.append(
+            "bitsandbytes int8 weights may not leave the GPU: the diffusers blog "
+            "measured FLUX.1-dev in bnb int8 with model offload at 23.4 GiB, about "
+            "the same as without"
+        )
     if any(p.fmt in _QUANTIZED_ON_LOAD for p in ps):
-        notes.append("bitsandbytes and torchao quantize on the GPU while loading; their "
-                     "published rows sit 1-3.3 GiB above this in reserved memory")
+        notes.append(
+            "bitsandbytes and torchao quantize on the GPU while loading; their "
+            "published rows sit 1-3.3 GiB above this in reserved memory"
+        )
 
     confidence = 0.3 if frames and frames > 1 else 0.5
     return FitResult(

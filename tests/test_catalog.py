@@ -123,11 +123,13 @@ def test_a_tied_head_stored_twice_is_noted() -> None:
     """Qwen3-0.6B ties its output head to the input embedding and stores it anyway: 751.6M
     parameters by the Hub's count, 596M in unsloth's GGUF. llama.cpp's own converter keeps
     the copy, so the count stands; the copy is recorded so a smaller GGUF is explained."""
-    tied = _safetensors_bytes({
-        "model.embed_tokens.weight": ("BF16", [1000, 2560]),
-        "lm_head.weight": ("BF16", [1000, 2560]),
-        "model.norm.weight": ("F32", [2560]),
-    })
+    tied = _safetensors_bytes(
+        {
+            "model.embed_tokens.weight": ("BF16", [1000, 2560]),
+            "lm_head.weight": ("BF16", [1000, 2560]),
+            "model.norm.weight": ("F32", [2560]),
+        }
+    )
 
     def handler(request: httpx.Request) -> httpx.Response:
         if request.url.path == "/api/models/Qwen/Qwen3-4B":
@@ -136,7 +138,7 @@ def test_a_tied_head_stored_twice_is_noted() -> None:
             return httpx.Response(200, json=body)
         if request.url.path.endswith("/model.safetensors"):
             a, b = (int(x) for x in request.headers["Range"].split("=")[1].split("-"))
-            return httpx.Response(206, content=tied[a: b + 1])
+            return httpx.Response(206, content=tied[a : b + 1])
         return _handler(request)
 
     fx = facts("Qwen/Qwen3-4B", transport=httpx.MockTransport(handler))
@@ -199,15 +201,15 @@ def _pipeline_hub(gated: bool):
     body = _safetensors_bytes(tensors)
     sizes = {
         "model_index.json": 400,
-        "flux1-dev.safetensors": 2_000_000,          # the same transformer, single file
+        "flux1-dev.safetensors": 2_000_000,  # the same transformer, single file
         "transformer/config.json": 300,
         "transformer/diffusion_pytorch_model-00001-of-00002.safetensors": 1_000_000,
         "transformer/diffusion_pytorch_model-00002-of-00002.safetensors": 1_000_000,
-        "text_encoder/model.safetensors": 400_000,     # fp32 default ...
+        "text_encoder/model.safetensors": 400_000,  # fp32 default ...
         "text_encoder/model.fp16.safetensors": 200_000,  # ... and its fp16 variant
         "vae/diffusion_pytorch_model.safetensors": 100_000,
         "vae_1_0/diffusion_pytorch_model.safetensors": 100_000,  # a spare, not in the index
-        "unet_onnx/model.safetensors": 999_999,        # an export, not a component
+        "unet_onnx/model.safetensors": 999_999,  # an export, not a component
     }
     index = {
         "_class_name": "FluxPipeline",
@@ -221,22 +223,33 @@ def _pipeline_hub(gated: bool):
         path = request.url.path
         if path == "/api/models/org/pipe":
             assert request.url.params.get("blobs") == "true", "sizes come with blobs=true"
-            return httpx.Response(200, json={
-                "siblings": [{"rfilename": f, "size": s} for f, s in sizes.items()],
-                "pipeline_tag": "text-to-image", "library_name": "diffusers", "gated": gated,
-                # the Hub's summary counts one file set: here the root checkpoint only
-                "safetensors": {"parameters": {"BF16": 1_000_000}, "total": 1_000_000},
-            })
+            return httpx.Response(
+                200,
+                json={
+                    "siblings": [{"rfilename": f, "size": s} for f, s in sizes.items()],
+                    "pipeline_tag": "text-to-image",
+                    "library_name": "diffusers",
+                    "gated": gated,
+                    # the Hub's summary counts one file set: here the root checkpoint only
+                    "safetensors": {"parameters": {"BF16": 1_000_000}, "total": 1_000_000},
+                },
+            )
         if gated and "/resolve/" in path:
             return httpx.Response(401)
         if path.endswith("/model_index.json"):
             return httpx.Response(200, json=index)
         if path.endswith("/transformer/config.json"):
-            return httpx.Response(200, json={"_class_name": "FluxTransformer2DModel",
-                                             "num_attention_heads": 24, "attention_head_dim": 128})
+            return httpx.Response(
+                200,
+                json={
+                    "_class_name": "FluxTransformer2DModel",
+                    "num_attention_heads": 24,
+                    "attention_head_dim": 128,
+                },
+            )
         if path.endswith(".safetensors"):
             a, b = (int(x) for x in request.headers["Range"].split("=")[1].split("-"))
-            return httpx.Response(206, content=body[a: b + 1])
+            return httpx.Response(206, content=body[a : b + 1])
         return httpx.Response(404)
 
     return httpx.MockTransport(handler)
@@ -268,15 +281,24 @@ def test_a_gated_pipeline_is_counted_from_file_sizes() -> None:
 def test_a_repo_with_only_pytorch_files_is_sized_from_them() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         if request.url.path == "/api/models/org/emb":
-            files = {"config.json": 500, "pytorch_model.bin": 2_271_145_830,
-                     "colbert_linear.pt": 2_100_674}
-            return httpx.Response(200, json={
-                "siblings": [{"rfilename": f, "size": s} for f, s in files.items()],
-                "pipeline_tag": "sentence-similarity", "library_name": "sentence-transformers",
-            })
+            files = {
+                "config.json": 500,
+                "pytorch_model.bin": 2_271_145_830,
+                "colbert_linear.pt": 2_100_674,
+            }
+            return httpx.Response(
+                200,
+                json={
+                    "siblings": [{"rfilename": f, "size": s} for f, s in files.items()],
+                    "pipeline_tag": "sentence-similarity",
+                    "library_name": "sentence-transformers",
+                },
+            )
         if request.url.path.endswith("/config.json"):
-            return httpx.Response(200, json={"model_type": "xlm-roberta", "hidden_size": 1024,
-                                             "torch_dtype": "float32"})
+            return httpx.Response(
+                200,
+                json={"model_type": "xlm-roberta", "hidden_size": 1024, "torch_dtype": "float32"},
+            )
         return httpx.Response(404)
 
     fx = facts("org/emb", transport=httpx.MockTransport(handler))

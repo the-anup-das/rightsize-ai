@@ -95,7 +95,6 @@ class Recipe(BaseModel):
         ),
     )
 
-
     def file_name(self) -> str:
         """Where a config recipe is written in the run directory."""
         if self.file:

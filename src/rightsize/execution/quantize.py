@@ -276,7 +276,8 @@ def quantize_model(
             if gpu_layers != "0":
                 preflight_vram(
                     estimate(facts, "BF16", dev, ctx=EVAL_CTX, all_logits=True).vram_gb,
-                    what="imatrix", log=log,
+                    what="imatrix",
+                    log=log,
                 )
             run(st, sample_vram=True, label="imatrix")
         manifest.artifacts["imatrix"] = str(imat)

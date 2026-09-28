@@ -58,8 +58,14 @@ def test_tool_input_schemas_match_the_snapshot() -> None:
 
 def test_the_six_planned_tools_are_there() -> None:
     names = set(_tool_schemas())
-    assert {"recommend", "estimate_memory", "list_hardware", "detect_hardware",
-            "list_frameworks", "render_recipe"} <= names
+    assert {
+        "recommend",
+        "estimate_memory",
+        "list_hardware",
+        "detect_hardware",
+        "list_frameworks",
+        "render_recipe",
+    } <= names
 
 
 def test_recommend_returns_plans_with_their_commands() -> None:
@@ -77,6 +83,11 @@ def test_list_hardware_filters() -> None:
 
 
 def test_render_recipe() -> None:
-    out = _call("render_recipe", {"recipe_id": "llama.cpp/server",
-                                  "inputs": {"server_bin": "llama-server", "model_gguf": "m.gguf"}})
+    out = _call(
+        "render_recipe",
+        {
+            "recipe_id": "llama.cpp/server",
+            "inputs": {"server_bin": "llama-server", "model_gguf": "m.gguf"},
+        },
+    )
     assert out["text"].startswith("llama-server -m m.gguf")

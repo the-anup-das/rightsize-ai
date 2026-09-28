@@ -54,8 +54,21 @@ def test_a_saved_plan_renders_from_the_cli(tmp_path, capsys) -> None:
     assert main(["--json", "recommend", "--device", "RTX 4090", "--top", "2"]) == 0
     saved = tmp_path / "plans.json"
     saved.write_text(capsys.readouterr().out, encoding="utf-8")
-    assert main(["--json", "plan", "render", str(saved), "--rank", "2",
-                 "--set", "quantize_bin=/opt/llama/llama-quantize"]) == 0
+    assert (
+        main(
+            [
+                "--json",
+                "plan",
+                "render",
+                str(saved),
+                "--rank",
+                "2",
+                "--set",
+                "quantize_bin=/opt/llama/llama-quantize",
+            ]
+        )
+        == 0
+    )
     steps = json.loads(capsys.readouterr().out)
     assert any(s["argv"] and s["argv"][0] == "/opt/llama/llama-quantize" for s in steps)
     assert main(["plan", "render", str(saved), "--rank", "9"]) == 1

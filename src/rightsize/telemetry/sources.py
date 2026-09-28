@@ -54,11 +54,16 @@ def lm_studio(base: str = LM_STUDIO, client=None) -> list[Loaded]:
         if m.get("state") != "loaded" or m.get("type") not in ("llm", "vlm"):
             continue
         mid = str(m.get("id", ""))
-        out.append(Loaded(
-            runtime="lm studio", name=mid, quant=m.get("quantization"),
-            ctx=m.get("loaded_context_length"), vram_gb=None,
-            hub_repo=mid if "/" in mid else None,
-        ))
+        out.append(
+            Loaded(
+                runtime="lm studio",
+                name=mid,
+                quant=m.get("quantization"),
+                ctx=m.get("loaded_context_length"),
+                vram_gb=None,
+                hub_repo=mid if "/" in mid else None,
+            )
+        )
     return out
 
 
@@ -73,13 +78,16 @@ def ollama(base: str = OLLAMA, client=None) -> list[Loaded]:
         if name.startswith("hf.co/"):
             repo = name.removeprefix("hf.co/").split(":")[0]
         vram = m.get("size_vram")
-        out.append(Loaded(
-            runtime="ollama", name=name,
-            quant=(m.get("details") or {}).get("quantization_level"),
-            ctx=m.get("context_length"),
-            vram_gb=round(vram / 1e9, 3) if vram else None,
-            hub_repo=repo,
-        ))
+        out.append(
+            Loaded(
+                runtime="ollama",
+                name=name,
+                quant=(m.get("details") or {}).get("quantization_level"),
+                ctx=m.get("context_length"),
+                vram_gb=round(vram / 1e9, 3) if vram else None,
+                hub_repo=repo,
+            )
+        )
     return out
 
 
@@ -105,8 +113,9 @@ def parse_nvidia_smi(lines: list[str]) -> list[tuple[str, float]]:
 _COUNTER = re.compile(r"pid_(\d+)_.*?=(\d+)$")
 
 
-def parse_windows_counters(lines: list[str], names: dict[int, str],
-                           limit_gb: float | None = None) -> list[tuple[str, float]]:
+def parse_windows_counters(
+    lines: list[str], names: dict[int, str], limit_gb: float | None = None
+) -> list[tuple[str, float]]:
     """(process name, GB) from "InstanceName=bytes" lines of the GPU Process Memory counter.
 
     The counter reports impossible values for some processes (terabytes for a browser),
@@ -129,10 +138,20 @@ def _windows_processes(limit_gb: float | None) -> list[tuple[str, float]]:
         "ForEach-Object { $_.InstanceName + '=' + [int64]$_.CookedValue }"
     )
     try:
-        out = subprocess.run(["powershell", "-NoProfile", "-Command", script],
-                             capture_output=True, text=True, timeout=20, check=False)
-        tasks = subprocess.run(["tasklist", "/FO", "CSV", "/NH"],
-                               capture_output=True, text=True, timeout=10, check=False)
+        out = subprocess.run(
+            ["powershell", "-NoProfile", "-Command", script],
+            capture_output=True,
+            text=True,
+            timeout=20,
+            check=False,
+        )
+        tasks = subprocess.run(
+            ["tasklist", "/FO", "CSV", "/NH"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
     except (OSError, subprocess.TimeoutExpired):
         return []
     names: dict[int, str] = {}

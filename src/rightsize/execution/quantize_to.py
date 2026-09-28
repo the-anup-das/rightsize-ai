@@ -45,8 +45,9 @@ def choose(target: str, framework: str | None = None) -> tuple[Any, Any]:
     """The recipe that produces ``target``; ``framework`` picks among several."""
     known = targets()
     if target not in known:
-        raise KeyError(f"no toolkit produces {target!r}; formats: "
-                       f"{', '.join(['gguf', *sorted(known)])}")
+        raise KeyError(
+            f"no toolkit produces {target!r}; formats: {', '.join(['gguf', *sorted(known)])}"
+        )
     options = [(r, t) for r, t in known[target] if framework in (None, r.framework)]
     if not options:
         makers = sorted({r.framework for r, _ in known[target]})
@@ -68,13 +69,17 @@ def output_gb(fx: ModelFacts, bpw: float, spec: Any) -> float | None:
         return body * bpw / 8 / 1e9
     table = vocab * hidden
     head = table if extra.get("tie_word_embeddings") is False else 0
-    bits = ((body - table - head) * bpw + table * (spec.embedding_bits or bpw)
-            + head * (spec.head_bits or bpw))
+    bits = (
+        (body - table - head) * bpw
+        + table * (spec.embedding_bits or bpw)
+        + head * (spec.head_bits or bpw)
+    )
     return bits / 8 / 1e9
 
 
-def plan_for(model: str, target: str, device: Device, *, framework: str | None = None,
-             revision: str = "main") -> Plan:
+def plan_for(
+    model: str, target: str, device: Device, *, framework: str | None = None, revision: str = "main"
+) -> Plan:
     """A one-step plan that turns ``model`` into ``target``, with the output size predicted
     from the target's entry in quants/formats.yaml."""
     from rightsize.catalog import facts
@@ -84,20 +89,32 @@ def plan_for(model: str, target: str, device: Device, *, framework: str | None =
     fx = facts(model, revision)
     bpw = lookup(spec.size_from).bpw if spec.size_from else None
     size = output_gb(fx, bpw, spec) if bpw else None
-    notes = [f"{target}: about {bpw} bits per weight ({spec.size_from})" if bpw
-             else f"{target}: no size model"]
+    notes = [
+        f"{target}: about {bpw} bits per weight ({spec.size_from})"
+        if bpw
+        else f"{target}: no size model"
+    ]
     if spec.embedding_bits:
         notes.append(f"the input embedding stays at {spec.embedding_bits:g} bits")
     notes.append("the quantizer's own memory use is not modelled yet")
     fit = FitResult(
-        verdict=Verdict.fits, vram_gb=0.0, confidence=0.4, formula_id=FORMULA_ID,
-        breakdown={"file_gb": round(size, 3)} if size else {}, notes=notes,
+        verdict=Verdict.fits,
+        vram_gb=0.0,
+        confidence=0.4,
+        formula_id=FORMULA_ID,
+        breakdown={"file_gb": round(size, 3)} if size else {},
+        notes=notes,
     )
     # a converter that quantizes on the way (CTranslate2) is a quantize step in a plan
     stage = recipe.stage if recipe.stage == "export" else "quantize"
-    step = PlanStep(stage=stage, framework=recipe.framework, device=device,
-                    quant=QuantSpec(method=target, variant=target, bits_per_weight=bpw),
-                    fit=fit, recipe_id=recipe.id)
+    step = PlanStep(
+        stage=stage,
+        framework=recipe.framework,
+        device=device,
+        quant=QuantSpec(method=target, variant=target, bits_per_weight=bpw),
+        fit=fit,
+        recipe_id=recipe.id,
+    )
     trace = [f"{target} with {recipe.framework} ({recipe.id}, {recipe.verified})"]
     if size:
         trace.append(f"predicted output: {size:.2f} GB")
@@ -128,5 +145,12 @@ def quantize_to(
     if recipe.writes:
         values[recipe.writes[0]] = f"{slug}-{target}"
     values.update(inputs or {})
-    return run_plan(plan, workdir=workdir, inputs=values, install_missing=install_missing,
-                    dry_run=dry_run, log=log, echo=echo)
+    return run_plan(
+        plan,
+        workdir=workdir,
+        inputs=values,
+        install_missing=install_missing,
+        dry_run=dry_run,
+        log=log,
+        echo=echo,
+    )

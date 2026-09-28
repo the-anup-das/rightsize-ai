@@ -67,14 +67,20 @@ def estimate(
     else:
         verdict = Verdict.tight if vram <= usable else Verdict.no_fit
     if embedding:
-        notes.append("the index is separate: int8 output vectors store 4x smaller than "
-                     "float32 and binary ones 32x, a saving on disk and in the vector store")
+        notes.append(
+            "the index is separate: int8 output vectors store 4x smaller than "
+            "float32 and binary ones 32x, a saving on disk and in the vector store"
+        )
     notes.append("no speed estimate for encoders yet")
     return FitResult(
         verdict=verdict,
         vram_gb=round(vram, 2),
-        breakdown={"weights": round(weights, 3), "activations": round(acts, 3),
-                   "overhead": round(overhead, 3), "usable_memory": round(usable, 2)},
+        breakdown={
+            "weights": round(weights, 3),
+            "activations": round(acts, 3),
+            "overhead": round(overhead, 3),
+            "usable_memory": round(usable, 2),
+        },
         confidence=min(0.4, facts.confidence),
         formula_id=FORMULA_ID,
         notes=notes,

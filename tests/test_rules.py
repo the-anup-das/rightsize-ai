@@ -64,8 +64,14 @@ def test_anything_but_comparisons_is_refused_at_load(source: str) -> None:
 
 def test_evaluate_collects_effects() -> None:
     ctx = {
-        "quant": {"method": "gguf", "type": "IQ2_XXS", "requires_imatrix": True,
-                  "is_iquant": True, "band": "unknown", "bits": 2.38},
+        "quant": {
+            "method": "gguf",
+            "type": "IQ2_XXS",
+            "requires_imatrix": True,
+            "is_iquant": True,
+            "band": "unknown",
+            "bits": 2.38,
+        },
         "stage": "serve",
         "task": "agentic",
         "device": {"vendor": "apple", "unified_memory": True},
@@ -74,9 +80,13 @@ def test_evaluate_collects_effects() -> None:
     }
     out = evaluate(ctx)
     fired = {r.id for r in out.fired}
-    assert {"imatrix_required_by_llama_quantize", "low_bits_break_tool_calling",
-            "iquants_slow_on_apple", "unified_memory_share_is_an_assumption",
-            "tight_fit"} <= fired
+    assert {
+        "imatrix_required_by_llama_quantize",
+        "low_bits_break_tool_calling",
+        "iquants_slow_on_apple",
+        "unified_memory_share_is_an_assumption",
+        "tight_fit",
+    } <= fired
     assert out.blocked and "imatrix" in out.requires
     assert out.multiplier == pytest.approx(0.9 * 0.95)
     assert all("(https://" in line for line in out.trace())

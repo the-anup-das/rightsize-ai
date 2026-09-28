@@ -85,7 +85,7 @@ def matches_base(repo: str, base: str) -> bool:
         return True
     extra = have[: len(have) - len(want)]
     org_words = set(re.split(r"[-_. ]+", org.lower()))
-    return have[len(extra):] == want and bool(extra) and set(extra) <= org_words
+    return have[len(extra) :] == want and bool(extra) and set(extra) <= org_words
 
 
 def base_of(client: httpx.Client, repo: str) -> str:
@@ -154,12 +154,15 @@ def variants(
     table = _table()
     by_id = {f["id"]: f for f in table["formats"]}
     known = {p["name"].lower() for p in table["publishers"]}
-    with httpx.Client(headers=_headers(token), timeout=timeout, follow_redirects=True,
-                      transport=transport) as c:
+    with httpx.Client(
+        headers=_headers(token), timeout=timeout, follow_redirects=True, transport=transport
+    ) as c:
         base = base_of(c, repo)
         params: list[tuple[str, str]] = [
-            ("filter", f"base_model:quantized:{base}"), ("sort", "downloads"),
-            ("direction", "-1"), ("limit", str(limit)),
+            ("filter", f"base_model:quantized:{base}"),
+            ("sort", "downloads"),
+            ("direction", "-1"),
+            ("limit", str(limit)),
             *(("expand[]", e) for e in _EXPAND),
         ]
         if formats and len(formats) == 1 and (by_id.get(formats[0]) or {}).get("tags"):
@@ -167,8 +170,11 @@ def variants(
         r = c.get(f"{HUB}/api/models", params=params)
         r.raise_for_status()
         rows = r.json()
-        total = base_params if base_params is not None else (
-            _params(base) if files and transport is None else None)
+        total = (
+            base_params
+            if base_params is not None
+            else (_params(base) if files and transport is None else None)
+        )
         out: list[Variant] = []
         for row in rows:
             rid = row["id"]
@@ -195,26 +201,42 @@ def variants(
             if common["format"] == "gguf":
                 groups, _ = gguf.weight_files(sizes, rid)
                 for q, g in groups.items():
-                    out.append(Variant(
-                        ref=ModelRef(repo=rid, file=g["files"][0]), quant=q,
-                        size_bytes=g["bytes"], bits_per_weight=_bpw(g["bytes"], total),
-                        files=g["files"], **common,
-                    ))
+                    out.append(
+                        Variant(
+                            ref=ModelRef(repo=rid, file=g["files"][0]),
+                            quant=q,
+                            size_bytes=g["bytes"],
+                            bits_per_weight=_bpw(g["bytes"], total),
+                            files=g["files"],
+                            **common,
+                        )
+                    )
                 continue
             nbytes = sum(s or 0 for f, s in sizes.items() if f.endswith(".safetensors")) or None
-            out.append(Variant(
-                ref=ModelRef(repo=rid), quant=quant_of(fmt, rid), size_bytes=nbytes,
-                bits_per_weight=_bpw(nbytes, total), **common,
-            ))
+            out.append(
+                Variant(
+                    ref=ModelRef(repo=rid),
+                    quant=quant_of(fmt, rid),
+                    size_bytes=nbytes,
+                    bits_per_weight=_bpw(nbytes, total),
+                    **common,
+                )
+            )
     order = {f["id"]: i for i, f in enumerate(table["formats"])}
-    out.sort(key=lambda v: (order.get(v.format, len(order)), not v.official,
-                            not v.known_publisher, -(v.downloads or 0), v.ref.repo,
-                            v.size_bytes or 0))
+    out.sort(
+        key=lambda v: (
+            order.get(v.format, len(order)),
+            not v.official,
+            not v.known_publisher,
+            -(v.downloads or 0),
+            v.ref.repo,
+            v.size_bytes or 0,
+        )
+    )
     if use_cache:
         try:
             path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(json.dumps([v.model_dump(mode="json") for v in out]),
-                            encoding="utf-8")
+            path.write_text(json.dumps([v.model_dump(mode="json") for v in out]), encoding="utf-8")
         except OSError:
             pass
     return out

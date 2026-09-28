@@ -34,8 +34,9 @@ def _config_dir() -> Path:
 
 
 def data_home() -> Path:
-    return Path(os.environ.get("RIGHTSIZE_DATA_HOME",
-                               Path.home() / ".local" / "share" / "rightsize"))
+    return Path(
+        os.environ.get("RIGHTSIZE_DATA_HOME", Path.home() / ".local" / "share" / "rightsize")
+    )
 
 
 def store_path() -> Path:

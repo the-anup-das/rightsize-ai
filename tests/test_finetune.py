@@ -29,9 +29,12 @@ def _sized(params_b: float) -> ModelFacts:
         num_layers=80 if params_b > 30 else 32,
         num_kv_heads=8,
         head_dim=128,
-        extra={"hidden_size": 8192 if params_b > 30 else 4096, "vocab_size": 128256,
-               "num_attention_heads": 64 if params_b > 30 else 32,
-               "intermediate_size": 28672 if params_b > 30 else 14336},
+        extra={
+            "hidden_size": 8192 if params_b > 30 else 4096,
+            "vocab_size": 128256,
+            "num_attention_heads": 64 if params_b > 30 else 32,
+            "intermediate_size": 28672 if params_b > 30 else 14336,
+        },
     )
 
 
@@ -110,10 +113,13 @@ def test_below_every_measured_type_is_not_guessed() -> None:
     assert band(delta) == "unknown"
 
 
-@pytest.mark.parametrize("name, allocated_gb", [
-    ("Qwen__Qwen3-0.6B", 1.798),
-    ("Qwen__Qwen3-1.7B", 2.758),
-])
+@pytest.mark.parametrize(
+    "name, allocated_gb",
+    [
+        ("Qwen__Qwen3-0.6B", 1.798),
+        ("Qwen__Qwen3-1.7B", 2.758),
+    ],
+)
 def test_qlora_tensors_match_what_unsloth_allocated(name: str, allocated_gb: float) -> None:
     """Unsloth 2026.9.11 QLoRA, batch 2, 2048 tokens, 30 steps on an RTX 4070 Ti SUPER
     (2026-09-28): torch.cuda.max_memory_allocated() for the training step alone. Without the

@@ -153,8 +153,9 @@ def pick_copy(
     return sorted(best), variant, others
 
 
-def _bytes_per_param(groups: dict[str | None, list[str]], chosen: str | None,
-                     sizes: dict[str, int | None]) -> tuple[float, str]:
+def _bytes_per_param(
+    groups: dict[str | None, list[str]], chosen: str | None, sizes: dict[str, int | None]
+) -> tuple[float, str]:
     """Bytes per parameter for a set of files whose headers cannot be read."""
     if chosen in _VARIANT_BYTES:
         return _VARIANT_BYTES[chosen], f"the {chosen} variant"
@@ -211,7 +212,8 @@ def stored_head(
     try:
         if "model.safetensors.index.json" in sizes:
             weight_map = (_get_json(client, f"{base}/model.safetensors.index.json") or {}).get(
-                "weight_map") or {}
+                "weight_map"
+            ) or {}
             names = [k for k in weight_map if _HEAD.search(k)]
             if not names:
                 return 0, None
@@ -267,8 +269,9 @@ def pipeline_components(
     OpenVINO exports) are left out. When the index is gated, folders with the usual
     component names stand in for it."""
     index = _get_json(client, f"{base}/model_index.json")
-    folders = sorted({f.split("/")[0] for f in sizes if f.count("/") == 1
-                      and f.endswith(".safetensors")})
+    folders = sorted(
+        {f.split("/")[0] for f in sizes if f.count("/") == 1 and f.endswith(".safetensors")}
+    )
     if index:
         names = [k for k in folders if isinstance(index.get(k), list)]
         classes = {k: index[k][1] for k in names if len(index[k]) == 2}
@@ -277,8 +280,11 @@ def pipeline_components(
         classes = {}
     components: dict[str, Any] = {}
     for name in names:
-        files = [f for f in sizes if f.startswith(name + "/") and f.count("/") == 1
-                 and f.endswith(".safetensors")]
+        files = [
+            f
+            for f in sizes
+            if f.startswith(name + "/") and f.count("/") == 1 and f.endswith(".safetensors")
+        ]
         groups = variant_groups(files)
         chosen_files, chosen, _ = pick_copy(files, sizes)
         params, by_dtype, how = count_files(client, base, chosen_files, sizes, groups, chosen)

@@ -138,8 +138,11 @@ def status() -> dict:
 
     cur = current_dir()
     marker = json.loads((cur / MARKER).read_text(encoding="utf-8")) if cur else None
-    return {"in_use": str(data_dir()), "updated": marker,
-            "override": os.environ.get("RIGHTSIZE_DATA_DIR")}
+    return {
+        "in_use": str(data_dir()),
+        "updated": marker,
+        "override": os.environ.get("RIGHTSIZE_DATA_DIR"),
+    }
 
 
 def reset() -> bool:

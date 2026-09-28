@@ -91,8 +91,15 @@ def build_server():
 
         return _result_payload(
             recommend_result(
-                task, device, finetune_device=finetune_device, mode=mode, ctx=ctx,
-                quality=quality, allow_slow=allow_slow, top_k=top_k, cloud=cloud,
+                task,
+                device,
+                finetune_device=finetune_device,
+                mode=mode,
+                ctx=ctx,
+                quality=quality,
+                allow_slow=allow_slow,
+                top_k=top_k,
+                cloud=cloud,
                 framework=framework,
             )
         )
@@ -113,8 +120,16 @@ def build_server():
         from rightsize.rules.recommend import recommend_for_model as _for_model
 
         return _result_payload(
-            _for_model(model, device, finetune_device=finetune_device, mode=mode, ctx=ctx,
-                       quality=quality, top_k=top_k, framework=framework)
+            _for_model(
+                model,
+                device,
+                finetune_device=finetune_device,
+                mode=mode,
+                ctx=ctx,
+                quality=quality,
+                top_k=top_k,
+                framework=framework,
+            )
         )
 
     @server.tool(
@@ -144,9 +159,18 @@ def build_server():
         import rightsize
 
         r = rightsize.estimate(
-            model, quant, device, ctx=ctx, mode=mode, bandwidth_gbps=bandwidth_gbps,
-            runtime=runtime, batch=batch, offload=offload, resolution=resolution,
-            frames=frames, text_encoder_quant=text_encoder_quant,
+            model,
+            quant,
+            device,
+            ctx=ctx,
+            mode=mode,
+            bandwidth_gbps=bandwidth_gbps,
+            runtime=runtime,
+            batch=batch,
+            offload=offload,
+            resolution=resolution,
+            frames=frames,
+            text_encoder_quant=text_encoder_quant,
         )
         return r.model_dump(mode="json")
 
@@ -185,8 +209,12 @@ def build_server():
         return {
             "need_gb": need,
             "offers": [
-                {**o.model_dump(mode="json"),
-                 "job": estimate_job(params, tokens, o).model_dump(mode="json") if params else None}
+                {
+                    **o.model_dump(mode="json"),
+                    "job": estimate_job(params, tokens, o).model_dump(mode="json")
+                    if params
+                    else None,
+                }
                 for o in found
             ],
         }
@@ -204,8 +232,9 @@ def build_server():
         from rightsize.catalog import variants
 
         found = variants(model, formats=[format] if format else None, limit=limit)
-        return [v.model_dump(mode="json") for v in found
-                if include_unmatched or v.name_matches_base]
+        return [
+            v.model_dump(mode="json") for v in found if include_unmatched or v.name_matches_base
+        ]
 
     @server.tool(
         description="Models on rightsize's curated lists, by family, task and size: LLMs "
@@ -227,10 +256,13 @@ def build_server():
         from rightsize.catalog import search
 
         found = search(
-            family, task,
+            family,
+            task,
             max_params=max_params_b * 1e9 if max_params_b is not None else None,
             min_params=min_params_b * 1e9 if min_params_b is not None else None,
-            license=license, include_gated=include_gated, limit=limit,
+            license=license,
+            include_gated=include_gated,
+            limit=limit,
         )
         return [e.model_dump(mode="json") for e in found]
 
@@ -244,14 +276,16 @@ def build_server():
             for name, dev in table.items():
                 if q in name.lower() and name not in seen:
                     seen.add(name)
-                    out.append({
-                        "name": name,
-                        "vendor": dev.vendor,
-                        "memory_gib": dev.memory_gib,
-                        "bandwidth_gbps": dev.bandwidth_gbps,
-                        "compute_capability": dev.compute_capability,
-                        "unified_memory": dev.unified_memory,
-                    })
+                    out.append(
+                        {
+                            "name": name,
+                            "vendor": dev.vendor,
+                            "memory_gib": dev.memory_gib,
+                            "bandwidth_gbps": dev.bandwidth_gbps,
+                            "compute_capability": dev.compute_capability,
+                            "unified_memory": dev.unified_memory,
+                        }
+                    )
         return out[:limit]
 
     @server.tool(description="The machine this server runs on, as a device.")
@@ -270,14 +304,26 @@ def build_server():
 
         recipes = all_recipes().values()
         return [
-            {"name": info.name, "summary": info.summary, "stages": info.stages,
-             "hardware": info.hardware, "install": info.install.line,
-             "default_trainer_on": info.finetune.default_for if info.finetune else [],
-             "recipes": [
-                 {"id": r.id, "stage": r.stage, "families": r.families, "verified": r.verified,
-                  "version": r.version_tested, "source": r.source_doc_url}
-                 for r in recipes if r.framework == info.name
-             ]}
+            {
+                "name": info.name,
+                "summary": info.summary,
+                "stages": info.stages,
+                "hardware": info.hardware,
+                "install": info.install.line,
+                "default_trainer_on": info.finetune.default_for if info.finetune else [],
+                "recipes": [
+                    {
+                        "id": r.id,
+                        "stage": r.stage,
+                        "families": r.families,
+                        "verified": r.verified,
+                        "version": r.version_tested,
+                        "source": r.source_doc_url,
+                    }
+                    for r in recipes
+                    if r.framework == info.name
+                ],
+            }
             for info in framework_infos().values()
             if not framework or info.name == framework
         ]

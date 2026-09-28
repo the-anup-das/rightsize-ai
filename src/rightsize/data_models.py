@@ -431,8 +431,11 @@ class _Sliding(_Strict):
 
 class _Hybrid(_Strict):
     rule: Literal[
-        "full_attention_interval", "attn_layer_period", "hybrid_override_pattern",
-        "layer_types", "parallel",
+        "full_attention_interval",
+        "attn_layer_period",
+        "hybrid_override_pattern",
+        "layer_types",
+        "parallel",
     ]
     interval_default: int | None = None
 
@@ -515,9 +518,16 @@ class EmbeddingFile(_Strict):
         from rightsize._data import load_yaml
 
         known = {t["name"] for t in load_yaml("quants/ggml_types.yaml")["tensor_types"]}
-        named = {*self.default_type.values(), self.tied.uneven_rows, self.tied.default,
-                 *self.tied.keep, *self.tied.file_types.values(), *self.own.file_types.values(),
-                 *self.fallback, *self.fallback.values()}
+        named = {
+            *self.default_type.values(),
+            self.tied.uneven_rows,
+            self.tied.default,
+            *self.tied.keep,
+            *self.tied.file_types.values(),
+            *self.own.file_types.values(),
+            *self.fallback,
+            *self.fallback.values(),
+        }
         unknown = sorted(named - known)
         if unknown:
             raise ValueError(f"not ggml tensor types: {unknown}")

@@ -59,21 +59,28 @@ def refit(records: list, current: dict[str, tuple[float, float]]) -> list[dict]:
     out = []
     for name, rows in sorted(by_runtime.items()):
         old_fixed, old_frac = current.get(name, current.get("llama.cpp", (0.75, 0.02)))
-        points = [(r.predicted.weights_gb, r.measured.vram_gb - r.predicted.weights_gb
-                   - r.predicted.kv_gb) for r in rows]
+        points = [
+            (
+                r.predicted.weights_gb,
+                r.measured.vram_gb - r.predicted.weights_gb - r.predicted.kv_gb,
+            )
+            for r in rows
+        ]
         fixed, frac = fit(points, old_frac)
 
         def predict(r, f=fixed, k=frac):
             return r.predicted.weights_gb + r.predicted.kv_gb + f + k * r.predicted.weights_gb
 
-        out.append({
-            "runtime": name,
-            "records": len(rows),
-            "old": (old_fixed, old_frac),
-            "new": (fixed, frac),
-            "error_before": _mae([(r.predicted.vram_gb, r.measured.vram_gb) for r in rows]),
-            "error_after": _mae([(predict(r), r.measured.vram_gb) for r in rows]),
-        })
+        out.append(
+            {
+                "runtime": name,
+                "records": len(rows),
+                "old": (old_fixed, old_frac),
+                "new": (fixed, frac),
+                "error_before": _mae([(r.predicted.vram_gb, r.measured.vram_gb) for r in rows]),
+                "error_after": _mae([(predict(r), r.measured.vram_gb) for r in rows]),
+            }
+        )
     return out
 
 
@@ -89,11 +96,17 @@ def write(proposals: list[dict], path: Path = DATA) -> list[str]:
             r"(  - name: " + re.escape(p["runtime"]) + r"\n    fixed_gb: )[\d.]+"
             r"(\n    fraction: )[\d.]+(\n(?: {4,}.*\n)*? {6}hand: )\w+(\n {6}note: ).*"
         )
-        note = (f"refit from {p['records']} records on {today}: error "
-                f"{p['error_before']:.1%} -> {p['error_after']:.1%}")
+        note = (
+            f"refit from {p['records']} records on {today}: error "
+            f"{p['error_before']:.1%} -> {p['error_after']:.1%}"
+        )
         text, n = block.subn(
-            lambda m, p=p, note=note: f"{m.group(1)}{p['new'][0]}{m.group(2)}{p['new'][1]}"
-            f"{m.group(3)}false{m.group(4)}{note}", text)
+            lambda m, p=p, note=note: (
+                f"{m.group(1)}{p['new'][0]}{m.group(2)}{p['new'][1]}"
+                f"{m.group(3)}false{m.group(4)}{note}"
+            ),
+            text,
+        )
         if n:
             changed.append(p["runtime"])
     path.write_text(text, encoding="utf-8")
@@ -117,11 +130,16 @@ def main(argv: list[str] | None = None) -> int:
     runtimes = {r.runtime.name for r in records}
     proposals = refit(records, {n: overhead_constants(n) for n in runtimes})
     for p in proposals:
-        caution = "" if p["records"] >= MIN_RECORDS else (
-            f"   (only {p['records']}; {MIN_RECORDS} needed to change the constant)")
-        print(f"{p['runtime']:10s} fixed {p['old'][0]} -> {p['new'][0]} GB, fraction "
-              f"{p['old'][1]} -> {p['new'][1]}; error {p['error_before']:.1%} -> "
-              f"{p['error_after']:.1%} over {p['records']} records{caution}")
+        caution = (
+            ""
+            if p["records"] >= MIN_RECORDS
+            else (f"   (only {p['records']}; {MIN_RECORDS} needed to change the constant)")
+        )
+        print(
+            f"{p['runtime']:10s} fixed {p['old'][0]} -> {p['new'][0]} GB, fraction "
+            f"{p['old'][1]} -> {p['new'][1]}; error {p['error_before']:.1%} -> "
+            f"{p['error_after']:.1%} over {p['records']} records{caution}"
+        )
     if args.write:
         changed = write(proposals)
         print("updated: " + (", ".join(changed) if changed else "nothing (too few records)"))

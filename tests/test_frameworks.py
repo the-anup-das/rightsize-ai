@@ -54,10 +54,17 @@ def test_trainer_roles_name_real_recipes_of_the_right_stage() -> None:
             assert "merged_dir" in merge.writes
 
 
-@pytest.mark.parametrize(("vendor", "trainer"), [
-    ("nvidia", "unsloth"), ("intel", "unsloth"), ("apple", "mlx-lm"), ("amd", "axolotl"),
-    ("cpu", "unsloth"), ("qualcomm", "unsloth"),
-])
+@pytest.mark.parametrize(
+    ("vendor", "trainer"),
+    [
+        ("nvidia", "unsloth"),
+        ("intel", "unsloth"),
+        ("apple", "mlx-lm"),
+        ("amd", "axolotl"),
+        ("cpu", "unsloth"),
+        ("qualcomm", "unsloth"),
+    ],
+)
 def test_the_default_trainer_per_vendor_comes_from_the_descriptors(vendor, trainer) -> None:
     assert trainer_for(vendor).name == trainer
 
@@ -126,8 +133,9 @@ def test_a_plugin_trainer_takes_over_without_touching_rightsize(tmp_path, monkey
     assert trainer_for("nvidia").name == "zoomtune"
     assert trainer_for("apple").name == "mlx-lm", "other vendors keep their defaults"
 
-    result = recommend_for_model(_facts(), "RTX 4090", finetune_device="RTX 4090",
-                                 mode="qlora", top_k=1)
+    result = recommend_for_model(
+        _facts(), "RTX 4090", finetune_device="RTX 4090", mode="qlora", top_k=1
+    )
     plan = result.plans[0]
     ft = next(s for s in plan.steps if s.stage == "finetune")
     assert (ft.framework, ft.recipe_id, ft.quant.variant) == ("zoomtune", "zoomtune/train", "nf4")
@@ -138,8 +146,9 @@ def test_a_plugin_trainer_takes_over_without_touching_rightsize(tmp_path, monkey
 
 
 def test_a_plugin_cannot_replace_a_bundled_framework(tmp_path, monkeypatch, fresh) -> None:
-    clash = {"framework.yaml": ZOOMTUNE["framework.yaml"].replace("name: zoomtune",
-                                                                  "name: unsloth")}
+    clash = {
+        "framework.yaml": ZOOMTUNE["framework.yaml"].replace("name: zoomtune", "name: unsloth")
+    }
     root = _plugin(tmp_path, clash, name="unsloth2")
     monkeypatch.setattr(loader, "_plugin_targets", lambda: [("evil", root)])
     with pytest.raises(ValueError, match="duplicate framework unsloth"):
@@ -168,8 +177,9 @@ def test_mlx_qlora_records_mlx_4bit_not_bitsandbytes() -> None:
     """MLX trains QLoRA on a model it quantized itself; the plan says so on both steps."""
     from rightsize.rules.recommend import recommend_for_model
 
-    plan = recommend_for_model(_facts(), "M4 Max 64GB", finetune_device="M4 Max 64GB",
-                               mode="qlora", top_k=1).plans[0]
+    plan = recommend_for_model(
+        _facts(), "M4 Max 64GB", finetune_device="M4 Max 64GB", mode="qlora", top_k=1
+    ).plans[0]
     first, ft = plan.steps[0], plan.steps[1]
     assert (first.recipe_id, first.quant.method) == ("mlx-lm/convert", "mlx")
     assert (ft.recipe_id, ft.quant.method, ft.quant.variant) == ("mlx-lm/lora", "mlx", "4bit")

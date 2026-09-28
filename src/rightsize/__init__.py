@@ -147,9 +147,18 @@ def estimate(
     if bandwidth_gbps:
         dev = dev.model_copy(update={"bandwidth_gbps": bandwidth_gbps})
     return _estimate(
-        fx, quant, dev, runtime=runtime, ctx=ctx, mode=Mode(mode), batch=batch,
-        offload=offload, resolution=_resolution(resolution), frames=frames,
-        text_encoder_quant=text_encoder_quant, vae_slicing=vae_slicing or None,
+        fx,
+        quant,
+        dev,
+        runtime=runtime,
+        ctx=ctx,
+        mode=Mode(mode),
+        batch=batch,
+        offload=offload,
+        resolution=_resolution(resolution),
+        frames=frames,
+        text_encoder_quant=text_encoder_quant,
+        vae_slicing=vae_slicing or None,
         seq_len=seq_len,
     )
 

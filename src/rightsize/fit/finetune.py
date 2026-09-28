@@ -82,11 +82,13 @@ def merged(facts: ModelFacts) -> ModelFacts:
     stored = int((facts.extra or {}).get("tied_head_stored") or 0)
     if not stored or not facts.params_total:
         return facts
-    return facts.model_copy(update={
-        "params_total": facts.params_total - stored,
-        "params_active": facts.params_active - stored if facts.params_active else None,
-        "extra": {**facts.extra, "tied_head_stored": None},
-    })
+    return facts.model_copy(
+        update={
+            "params_total": facts.params_total - stored,
+            "params_active": facts.params_active - stored if facts.params_active else None,
+            "extra": {**facts.extra, "tied_head_stored": None},
+        }
+    )
 
 
 def embedding_params(facts: ModelFacts) -> int:

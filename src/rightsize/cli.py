@@ -27,31 +27,43 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("-v", "--verbose", action="store_true", help="echo tool output as it runs")
     p.add_argument("-q", "--quiet", action="store_true", help="only failures and final tables")
     p.add_argument(
-        "--offline", dest="offline_all", action="store_true",
+        "--offline",
+        dest="offline_all",
+        action="store_true",
         help="no network: model facts and prices from the cache only (also RIGHTSIZE_OFFLINE=1)",
     )
     sub = p.add_subparsers(dest="command")
 
     r = sub.add_parser("recommend", help="rank the models that fit your hardware, with plans")
     r.add_argument("--task", default="chat", choices=["chat", "coding", "agentic"])
-    r.add_argument("--target-device", "--device", dest="target_device", default="detect",
-                   help="where it will run: preset or catalogue name, @hf-user, or detect")
+    r.add_argument(
+        "--target-device",
+        "--device",
+        dest="target_device",
+        default="detect",
+        help="where it will run: preset or catalogue name, @hf-user, or detect",
+    )
     r.add_argument("--finetune-device", default=None, help="where it is fine-tuned, if at all")
     r.add_argument("--mode", default="infer", choices=["infer", "lora", "qlora", "full"])
     r.add_argument("--model", default=None, help="model-first: every quantization of this model")
-    r.add_argument("--quality", default=None,
-                   choices=["near-lossless", "good", "noticeable", "any"],
-                   help="quantization loss to accept (default noticeable; any with --model)")
+    r.add_argument(
+        "--quality",
+        default=None,
+        choices=["near-lossless", "good", "noticeable", "any"],
+        help="quantization loss to accept (default noticeable; any with --model)",
+    )
     r.add_argument("--ctx", type=int, default=8192)
     r.add_argument("--top", type=int, default=5)
     r.add_argument("--allow-slow", action="store_true", help="include plans under 5 tok/s")
     r.add_argument("--commands", action="store_true", help="print the top plan's commands")
     r.add_argument(
-        "--cloud", action="store_true",
+        "--cloud",
+        action="store_true",
         help="plan a fine-tune that does not fit on the cheapest rental GPU it fits",
     )
     r.add_argument(
-        "--framework", default=None,
+        "--framework",
+        default=None,
         help="use this toolkit where it has a role: a trainer (unsloth, trl, axolotl, mlx-lm) "
         "for the fine-tune, a server (ollama, llama.cpp) for the GGUF",
     )
@@ -86,7 +98,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     e.add_argument("model", help="Hub id, e.g. Qwen/Qwen3-4B or black-forest-labs/FLUX.1-dev")
     e.add_argument(
-        "--file", default=None,
+        "--file",
+        default=None,
         help="one GGUF in the repo; a GGUF repo is otherwise sized at its Q4_K_M, or the "
         "nearest file it has",
     )
@@ -109,11 +122,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="infer (default), or the memory to fine-tune it",
     )
     e.add_argument(
-        "--seq-len", type=int, default=None,
+        "--seq-len",
+        type=int,
+        default=None,
         help="training sequence length (default 2048), or embedding input length (512)",
     )
     e.add_argument(
-        "--batch", type=int, default=None,
+        "--batch",
+        type=int,
+        default=None,
         help="training batch (default 1), images per prompt, or embedding batch (32)",
     )
     e.add_argument(
@@ -146,15 +163,20 @@ def build_parser() -> argparse.ArgumentParser:
     va.add_argument("--format", action="append", help="only this format (gguf, mlx, awq, ...)")
     va.add_argument("--limit", type=int, default=20, help="repos to list (default 20)")
     va.add_argument("--no-files", action="store_true", help="one line per repo, no sizes")
-    va.add_argument("--all", action="store_true",
-                    help="include repos whose name is not the base model's (fine-tunes, drafts)")
+    va.add_argument(
+        "--all",
+        action="store_true",
+        help="include repos whose name is not the base model's (fine-tunes, drafts)",
+    )
 
     se = sub.add_parser(
         "search", help="curated models by family, task and size: LLM, diffusion, audio, ..."
     )
     se.add_argument("--family", choices=["llm", "diffusion", "audio", "vision", "embedding"])
-    se.add_argument("--task", help="chat, coding, text-to-image, text-to-speech, ...; "
-                    "'--task list' shows them all")
+    se.add_argument(
+        "--task",
+        help="chat, coding, text-to-image, text-to-speech, ...; '--task list' shows them all",
+    )
     se.add_argument("--max-b", type=float, default=None, help="at most this many billion params")
     se.add_argument("--min-b", type=float, default=None, help="at least this many billion params")
     se.add_argument("--publisher", default=None)
@@ -170,16 +192,29 @@ def build_parser() -> argparse.ArgumentParser:
     q = sub.add_parser("quantize", help="predict, convert, quantize, evaluate and record a model")
     q.add_argument("model", help="Hub id, e.g. Qwen/Qwen3-4B")
     q.add_argument(
-        "--to", default="gguf",
+        "--to",
+        default="gguf",
         help="gguf (default), or a format another toolkit produces: fp8, w4a16, nf4, "
         "openvino-int4, openvino-int8, mlx-4bit, onnx-int8, ct2-int8; --to list shows them",
     )
-    q.add_argument("--with", dest="with_framework", default=None,
-                   help="the toolkit to use when more than one produces the format")
-    q.add_argument("--install", action="store_true",
-                   help="install the toolkit into its own environment if it is missing")
-    q.add_argument("--set", action="append", default=[], metavar="NAME=VALUE",
-                   help="override a recipe input, e.g. --set num_samples=128")
+    q.add_argument(
+        "--with",
+        dest="with_framework",
+        default=None,
+        help="the toolkit to use when more than one produces the format",
+    )
+    q.add_argument(
+        "--install",
+        action="store_true",
+        help="install the toolkit into its own environment if it is missing",
+    )
+    q.add_argument(
+        "--set",
+        action="append",
+        default=[],
+        metavar="NAME=VALUE",
+        help="override a recipe input, e.g. --set num_samples=128",
+    )
     q.add_argument("--workdir", default=None, help="non-GGUF formats: the run directory")
     q.add_argument("--quant", action="append", help="GGUF type, repeatable (default Q4_K_M)")
     q.add_argument("--device", default="detect")
@@ -215,7 +250,8 @@ def build_parser() -> argparse.ArgumentParser:
     t = sub.add_parser("tools", help="install, list and remove toolkits (one per framework)")
     t_sub = t.add_subparsers(dest="tools_command")
     ti = t_sub.add_parser(
-        "install", help="llama.cpp's binaries, or a Python toolkit in its own environment")
+        "install", help="llama.cpp's binaries, or a Python toolkit in its own environment"
+    )
     ti.add_argument("name", help="a framework: llama.cpp, unsloth, llm-compressor, ...")
     ti.add_argument(
         "--backend",
@@ -223,7 +259,9 @@ def build_parser() -> argparse.ArgumentParser:
         help="llama.cpp: cuda-12.4, cuda-13.4, cpu, vulkan, rocm-10.0, sycl (default: auto)",
     )
     ti.add_argument(
-        "--version", dest="tool_version", default=None,
+        "--version",
+        dest="tool_version",
+        default=None,
         help="llama.cpp: release tag (default: pinned)",
     )
     ti.add_argument("--dest", default=None, help="llama.cpp: where (default .tools/llama.cpp)")
@@ -235,12 +273,18 @@ def build_parser() -> argparse.ArgumentParser:
     ru = sub.add_parser("run", help="carry out a saved plan on this machine, step by step")
     ru.add_argument("plan_file", help="a Plan as JSON, or a list of them (recommend --json)")
     ru.add_argument("--rank", type=int, default=1, help="which plan of a list (default 1)")
-    ru.add_argument("--set", action="append", default=[], metavar="NAME=VALUE",
-                    help="override a recipe input, e.g. --set max_steps=30")
+    ru.add_argument(
+        "--set",
+        action="append",
+        default=[],
+        metavar="NAME=VALUE",
+        help="override a recipe input, e.g. --set max_steps=30",
+    )
     ru.add_argument("--workdir", default=None, help="run directory (default runs/<model>-<time>)")
     ru.add_argument("--models-dir", default="models", help="where Hub snapshots are downloaded")
-    ru.add_argument("--install", action="store_true",
-                    help="install a toolkit the plan needs when it is missing")
+    ru.add_argument(
+        "--install", action="store_true", help="install a toolkit the plan needs when it is missing"
+    )
     ru.add_argument("--serve", action="store_true", help="also start the serve step")
     ru.add_argument("--dry-run", action="store_true", help="prepare every step, run none")
 
@@ -251,8 +295,13 @@ def build_parser() -> argparse.ArgumentParser:
     pr = pl_sub.add_parser("render", help="the commands of a saved plan")
     pr.add_argument("plan_file", help="a Plan as JSON, or a list of them (recommend --json)")
     pr.add_argument("--rank", type=int, default=1, help="which plan of a list (default 1)")
-    pr.add_argument("--set", action="append", default=[], metavar="NAME=VALUE",
-                    help="override a recipe input, e.g. --set quantize_bin=/opt/llama-quantize")
+    pr.add_argument(
+        "--set",
+        action="append",
+        default=[],
+        metavar="NAME=VALUE",
+        help="override a recipe input, e.g. --set quantize_bin=/opt/llama-quantize",
+    )
 
     d = sub.add_parser("data", help="newer hardware, quantization, rules and recipe data")
     d_sub = d.add_subparsers(dest="data_command")
@@ -328,9 +377,13 @@ def cmd_estimate(args: argparse.Namespace) -> int:
     )
     files = (fx.extra or {}).get("gguf_files") or {}
     if own:
-        con.info(f"read from {fx.ref.file}; the repo has " + ", ".join(
-            f"{q} {g['bytes'] / 1e9:.2f} GB" for q, g in sorted(
-                files.items(), key=lambda kv: kv[1]["bytes"])))
+        con.info(
+            f"read from {fx.ref.file}; the repo has "
+            + ", ".join(
+                f"{q} {g['bytes'] / 1e9:.2f} GB"
+                for q, g in sorted(files.items(), key=lambda kv: kv[1]["bytes"])
+            )
+        )
     rows, styles = [], []
     for q, r in results.items():
         mine = repo_file(fx, q)
@@ -405,8 +458,16 @@ def _estimate_training(args: argparse.Namespace, fx, dev) -> int:
         )
         styles.append(verdict_style(r.verdict.value))
     con.table(
-        ["mode", "weights", "trainable", "activations", "logits", "published min", "vram GB",
-         "verdict"],
+        [
+            "mode",
+            "weights",
+            "trainable",
+            "activations",
+            "logits",
+            "published min",
+            "vram GB",
+            "verdict",
+        ],
         rows,
         styles=styles,
     )
@@ -423,8 +484,11 @@ def _estimate_other(args: argparse.Namespace, fx, dev) -> int:
     from rightsize.fit import estimate
 
     if args.mode != "infer":
-        print(f"rightsize estimate: fine-tuning memory for {fx.family.value} models is not "
-              "modelled yet (docs/plans/F03-fit-engine.md)", file=sys.stderr)
+        print(
+            f"rightsize estimate: fine-tuning memory for {fx.family.value} models is not "
+            "modelled yet (docs/plans/F03-fit-engine.md)",
+            file=sys.stderr,
+        )
         return 1
     diffusion = fx.family.value == "diffusion"
     offloads = args.offload or ["none"] if diffusion else [None]
@@ -433,9 +497,16 @@ def _estimate_other(args: argparse.Namespace, fx, dev) -> int:
     for q in quants:
         for off in offloads:
             r = estimate(
-                fx, q, dev, runtime=args.runtime, batch=args.batch, offload=off,
-                resolution=_resolution(args.resolution), frames=args.frames,
-                text_encoder_quant=args.te_quant, vae_slicing=args.vae_slicing or None,
+                fx,
+                q,
+                dev,
+                runtime=args.runtime,
+                batch=args.batch,
+                offload=off,
+                resolution=_resolution(args.resolution),
+                frames=args.frames,
+                text_encoder_quant=args.te_quant,
+                vae_slicing=args.vae_slicing or None,
                 seq_len=args.seq_len,
             )
             label = (q or "default") + (f"/{off}" if diffusion else "")
@@ -458,17 +529,34 @@ def _estimate_other(args: argparse.Namespace, fx, dev) -> int:
     for label, r in results.items():
         b = r.breakdown
         if diffusion:
-            rows.append([label, f"{b['weights']:.2f}", f"{b['activations']:.2f}",
-                         f"{r.vram_gb:.2f}", f"{r.ram_gb:.1f}", r.verdict.value,
-                         f"{r.confidence:.1f}"])
+            rows.append(
+                [
+                    label,
+                    f"{b['weights']:.2f}",
+                    f"{b['activations']:.2f}",
+                    f"{r.vram_gb:.2f}",
+                    f"{r.ram_gb:.1f}",
+                    r.verdict.value,
+                    f"{r.confidence:.1f}",
+                ]
+            )
         else:
-            rows.append([label, f"{b['weights']:.2f}",
-                         f"{b.get('activations', b.get('overhead', 0)):.2f}",
-                         f"{r.vram_gb:.2f}", r.verdict.value, f"{r.confidence:.1f}"])
+            rows.append(
+                [
+                    label,
+                    f"{b['weights']:.2f}",
+                    f"{b.get('activations', b.get('overhead', 0)):.2f}",
+                    f"{r.vram_gb:.2f}",
+                    r.verdict.value,
+                    f"{r.confidence:.1f}",
+                ]
+            )
         styles.append(verdict_style(r.verdict.value))
-    headers = (["quant/offload", "weights", "activations", "vram GB", "ram GB", "verdict",
-                "conf"] if diffusion else
-               ["quant", "weights", "overhead", "vram GB", "verdict", "conf"])
+    headers = (
+        ["quant/offload", "weights", "activations", "vram GB", "ram GB", "verdict", "conf"]
+        if diffusion
+        else ["quant", "weights", "overhead", "vram GB", "verdict", "conf"]
+    )
     con.table(headers, rows, styles=styles)
     first = next(iter(results.values()))
     con.debug(f"formula {first.formula_id}")
@@ -484,13 +572,20 @@ def cmd_recommend(args: argparse.Namespace) -> int:
     from rightsize.rules.recommend import recommend_for_model, recommend_result
 
     common = dict(
-        finetune_device=args.finetune_device, mode=args.mode, ctx=args.ctx,
-        allow_slow=args.allow_slow, top_k=args.top, cloud=args.cloud,
+        finetune_device=args.finetune_device,
+        mode=args.mode,
+        ctx=args.ctx,
+        allow_slow=args.allow_slow,
+        top_k=args.top,
+        cloud=args.cloud,
         framework=args.framework,
     )
     if args.model:
         result = recommend_for_model(
-            args.model, args.target_device, task=args.task, quality=args.quality or "any",
+            args.model,
+            args.target_device,
+            task=args.task,
+            quality=args.quality or "any",
             **common,
         )
     else:
@@ -512,24 +607,29 @@ def cmd_recommend(args: argparse.Namespace) -> int:
     for p in result.plans:
         serve = p.steps[-1]
         f = serve.fit
-        rows.append([
-            str(p.rank),
-            p.model.ref.repo,
-            serve.quant.variant if serve.quant else "",
-            f"{f.vram_gb:.2f}",
-            f"{f.speed:.0f}" if f.speed else "?",
-            f.verdict.value,
-            f"{p.quality_penalty:.3f}" if p.quality_penalty is not None else "",
-            f"{p.score:.2f}",
-        ])
+        rows.append(
+            [
+                str(p.rank),
+                p.model.ref.repo,
+                serve.quant.variant if serve.quant else "",
+                f"{f.vram_gb:.2f}",
+                f"{f.speed:.0f}" if f.speed else "?",
+                f.verdict.value,
+                f"{p.quality_penalty:.3f}" if p.quality_penalty is not None else "",
+                f"{p.score:.2f}",
+            ]
+        )
         styles.append(verdict_style(f.verdict.value))
     headers = ["#", "model", "quant", "vram GB", "tok/s", "verdict", "+ppl", "score"]
     if args.mode != "infer":
         headers.append("fine-tune on")
         for row, p in zip(rows, result.plans, strict=True):
             fb = p.cloud_fallback
-            row.append(f"rent {fb['offer']['gpu']} ${fb['offer']['usd_per_hour']:.2f}/h" if fb
-                       else p.steps[0].device.name)
+            row.append(
+                f"rent {fb['offer']['gpu']} ${fb['offer']['usd_per_hour']:.2f}/h"
+                if fb
+                else p.steps[0].device.name
+            )
     con.table(headers, rows, styles=styles)
     for line in result.plans[0].trace:
         con.debug(line)
@@ -592,12 +692,22 @@ def cmd_cloud(args: argparse.Namespace) -> int:
     if params:
         jobs = {id(o): estimate_job(params, tokens, o, epochs=args.epochs) for o in found}
     if args.json:
-        print(json.dumps({
-            "need_gb": need, "missing_providers": missing,
-            "offers": [{**o.model_dump(mode="json"),
-                        "job": jobs[id(o)].model_dump(mode="json") if params else None}
-                       for o in found],
-        }, indent=2))
+        print(
+            json.dumps(
+                {
+                    "need_gb": need,
+                    "missing_providers": missing,
+                    "offers": [
+                        {
+                            **o.model_dump(mode="json"),
+                            "job": jobs[id(o)].model_dump(mode="json") if params else None,
+                        }
+                        for o in found
+                    ],
+                },
+                indent=2,
+            )
+        )
         return 0 if found else 1
     con = _console(args)
     what = f"{args.model} ({args.mode})" if args.model else "a job"
@@ -612,23 +722,31 @@ def cmd_cloud(args: argparse.Namespace) -> int:
         row = [o.provider, o.gpu, f"{o.vram_gib:.0f}", f"{o.usd_per_hour:.2f}", o.region or ""]
         if params:
             j = jobs[id(o)]
-            row += [f"{j.hours:g}" if j.hours is not None else "?",
-                    f"{j.usd:,.2f}" if j.usd is not None else "?"]
+            row += [
+                f"{j.hours:g}" if j.hours is not None else "?",
+                f"{j.usd:,.2f}" if j.usd is not None else "?",
+            ]
         rows.append(row)
     headers = ["provider", "gpu", "GiB", "$/h", "region"]
     if params:
         headers += ["hours", f"$ for {args.tokens} tok"]
     con.table(headers, rows)
     if params and not any(jobs[id(o)].usd is not None for o in found):
-        timed = [(estimate_job(params, tokens, o, epochs=args.epochs), o)
-                 for o in cheapest(need, pool=pool, spot=args.spot, top=200)]
+        timed = [
+            (estimate_job(params, tokens, o, epochs=args.epochs), o)
+            for o in cheapest(need, pool=pool, spot=args.spot, top=200)
+        ]
         timed = [(j, o) for j, o in timed if j.usd is not None]
         if timed:
             j, o = min(timed, key=lambda t: t[0].usd)
-            con.info(f"cheapest with a time estimate: {o.gpu} on {o.provider} at "
-                     f"${o.usd_per_hour:.2f}/h, about {j.hours:g} h and ${j.usd:,.2f}")
-    con.info("prices: SkyPilot's open catalog (github.com/skypilot-org/skypilot-catalog), "
-             "cached for a day; job time assumes 35% of datasheet throughput, confidence 0.3")
+            con.info(
+                f"cheapest with a time estimate: {o.gpu} on {o.provider} at "
+                f"${o.usd_per_hour:.2f}/h, about {j.hours:g} h and ${j.usd:,.2f}"
+            )
+    con.info(
+        "prices: SkyPilot's open catalog (github.com/skypilot-org/skypilot-catalog), "
+        "cached for a day; job time assumes 35% of datasheet throughput, confidence 0.3"
+    )
     return 0
 
 
@@ -640,11 +758,24 @@ def cmd_calibrate(args: argparse.Namespace) -> int:
     dev = resolve(args.device)
     rows = calibrate(dev, write=not args.no_record)
     if args.json:
-        print(json.dumps([{
-            "runtime": c.runtime, "model": c.model, "quant": c.quant, "ctx": c.ctx,
-            "predicted_gb": c.predicted_gb, "measured_gb": c.measured_gb, "error": c.error,
-            "note": c.note,
-        } for c in rows], indent=2))
+        print(
+            json.dumps(
+                [
+                    {
+                        "runtime": c.runtime,
+                        "model": c.model,
+                        "quant": c.quant,
+                        "ctx": c.ctx,
+                        "predicted_gb": c.predicted_gb,
+                        "measured_gb": c.measured_gb,
+                        "error": c.error,
+                        "note": c.note,
+                    }
+                    for c in rows
+                ],
+                indent=2,
+            )
+        )
         return 0 if rows else 1
     con = _console(args)
     con.title(f"predicted vs measured on {dev.name}")
@@ -653,17 +784,28 @@ def cmd_calibrate(args: argparse.Namespace) -> int:
         return 1
     con.table(
         ["runtime", "model", "quant", "ctx", "predicted GB", "measured GB", "error", "note"],
-        [[c.runtime, c.model, c.quant or "", str(c.ctx or ""),
-          f"{c.predicted_gb:.2f}" if c.predicted_gb else "?",
-          f"{c.measured_gb:.2f}" if c.measured_gb else "?",
-          f"{c.error:+.1%}" if c.error is not None else "", c.note] for c in rows],
+        [
+            [
+                c.runtime,
+                c.model,
+                c.quant or "",
+                str(c.ctx or ""),
+                f"{c.predicted_gb:.2f}" if c.predicted_gb else "?",
+                f"{c.measured_gb:.2f}" if c.measured_gb else "?",
+                f"{c.error:+.1%}" if c.error is not None else "",
+                c.note,
+            ]
+            for c in rows
+        ],
     )
     recorded = sum(1 for c in rows if c.record)
     if enabled() and not args.no_record:
         con.info(f"recorded {recorded} comparison(s) locally (rightsize telemetry show)")
     elif recorded:
-        con.info("not recorded: 'rightsize telemetry on' keeps these, locally, to refit the "
-                 "constants; nothing is sent")
+        con.info(
+            "not recorded: 'rightsize telemetry on' keeps these, locally, to refit the "
+            "constants; nothing is sent"
+        )
     return 0
 
 
@@ -726,8 +868,10 @@ def cmd_data(args: argparse.Namespace) -> int:
         if args.json:
             print(json.dumps(marker, indent=2))
         else:
-            print(f"data updated to {marker['repo']}@{marker['ref']} "
-                  f"({marker['files']} files, validated); 'rightsize data reset' undoes it")
+            print(
+                f"data updated to {marker['repo']}@{marker['ref']} "
+                f"({marker['files']} files, validated); 'rightsize data reset' undoes it"
+            )
         return 0
     if args.data_command == "reset":
         removed = data_update.reset()
@@ -790,19 +934,31 @@ def cmd_search(args: argparse.Namespace) -> int:
                 print(f"{family:10s} {', '.join(names)}")
         return 0
     found = search(
-        args.family, args.task,
+        args.family,
+        args.task,
         max_params=args.max_b * 1e9 if args.max_b is not None else None,
         min_params=args.min_b * 1e9 if args.min_b is not None else None,
-        publisher=args.publisher, license=args.license, include_gated=not args.no_gated,
+        publisher=args.publisher,
+        license=args.license,
+        include_gated=not args.no_gated,
         limit=args.limit,
     )
     if args.json:
         print(json.dumps([e.model_dump(mode="json") for e in found], indent=2))
         return 0
     con = _console(args)
-    rows = [[e.family.value, e.repo, ", ".join(e.tasks), f"{e.params_total / 1e9:.2f}",
-             str(e.license or "?"), "yes" if e.gated else "", f"{e.downloads_30d or 0:,}"]
-            for e in found]
+    rows = [
+        [
+            e.family.value,
+            e.repo,
+            ", ".join(e.tasks),
+            f"{e.params_total / 1e9:.2f}",
+            str(e.license or "?"),
+            "yes" if e.gated else "",
+            f"{e.downloads_30d or 0:,}",
+        ]
+        for e in found
+    ]
     con.table(["family", "repo", "tasks", "B params", "license", "gated", "downloads"], rows)
     if not found:
         con.info("nothing on the curated lists matches; any Hub id can still be estimated")
@@ -823,17 +979,24 @@ def cmd_variants(args: argparse.Namespace) -> int:
     rows = []
     for v in shown:
         who = "official" if v.official else ("known" if v.known_publisher else "")
-        rows.append([
-            v.format, v.ref.repo, v.quant or "",
-            f"{v.size_bytes / 1e9:.2f}" if v.size_bytes else "?",
-            f"{v.bits_per_weight:.2f}" if v.bits_per_weight else "?",
-            f"{v.downloads:,}" if v.downloads is not None else "?", who,
-        ])
+        rows.append(
+            [
+                v.format,
+                v.ref.repo,
+                v.quant or "",
+                f"{v.size_bytes / 1e9:.2f}" if v.size_bytes else "?",
+                f"{v.bits_per_weight:.2f}" if v.bits_per_weight else "?",
+                f"{v.downloads:,}" if v.downloads is not None else "?",
+                who,
+            ]
+        )
     con.table(["format", "repo", "quant", "GB", "bpw", "downloads", "publisher"], rows)
     if hidden and not args.all:
         repos = sorted({v.ref.repo for v in hidden})
-        con.info(f"{len(repos)} more whose names are not the base model's (fine-tunes or "
-                 f"drafts published as quants): {', '.join(repos)}; --all shows them")
+        con.info(
+            f"{len(repos)} more whose names are not the base model's (fine-tunes or "
+            f"drafts published as quants): {', '.join(repos)}; --all shows them"
+        )
     return 0
 
 
@@ -846,12 +1009,22 @@ def cmd_frameworks(args: argparse.Namespace) -> int:
         infos = {args.name: framework(args.name)}
     recipes = all_recipes()
     if args.json:
-        print(json.dumps({
-            name: {**info.model_dump(mode="json"),
-                   "recipes": {k: r.model_dump(mode="json") for k, r in recipes.items()
-                               if r.framework == name}}
-            for name, info in infos.items()
-        }, indent=2))
+        print(
+            json.dumps(
+                {
+                    name: {
+                        **info.model_dump(mode="json"),
+                        "recipes": {
+                            k: r.model_dump(mode="json")
+                            for k, r in recipes.items()
+                            if r.framework == name
+                        },
+                    }
+                    for name, info in infos.items()
+                },
+                indent=2,
+            )
+        )
         return 0
     con = _console(args)
     if args.name:
@@ -859,8 +1032,11 @@ def cmd_frameworks(args: argparse.Namespace) -> int:
         con.title(info.title)
         con.info(info.summary)
         con.info(f"runs on {_runs_on(info)}; install: {info.install.line}")
-        rows = [[r.stage, r.id, r.verified, r.version_tested or "", ", ".join(r.families)]
-                for r in recipes.values() if r.framework == args.name]
+        rows = [
+            [r.stage, r.id, r.verified, r.version_tested or "", ", ".join(r.families)]
+            for r in recipes.values()
+            if r.framework == args.name
+        ]
         con.table(["stage", "recipe", "checked", "tested", "families"], rows)
         return 0
     rows = []
@@ -868,8 +1044,15 @@ def cmd_frameworks(args: argparse.Namespace) -> int:
         trains = ""
         if info.finetune and info.finetune.default_for:
             trains = ", ".join(v if v != "*" else "others" for v in info.finetune.default_for)
-        rows.append([name, ", ".join(info.stages), _runs_on(info), trains,
-                     str(sum(r.framework == name for r in recipes.values()))])
+        rows.append(
+            [
+                name,
+                ", ".join(info.stages),
+                _runs_on(info),
+                trains,
+                str(sum(r.framework == name for r in recipes.values())),
+            ]
+        )
     con.table(["framework", "stages", "runs on", "default trainer on", "recipes"], rows)
     return 0
 
@@ -880,17 +1063,29 @@ def _quantize_to(args: argparse.Namespace) -> int:
 
     con = _console(args)
     if args.to == "list":
-        rows = [[name, ", ".join(sorted({r.framework for r, _ in pairs})),
-                 ", ".join(sorted({r.id for r, _ in pairs}))]
-                for name, pairs in sorted(targets().items())]
+        rows = [
+            [
+                name,
+                ", ".join(sorted({r.framework for r, _ in pairs})),
+                ", ".join(sorted({r.id for r, _ in pairs})),
+            ]
+            for name, pairs in sorted(targets().items())
+        ]
         con.table(["format", "toolkit", "recipe"], [["gguf", "llama.cpp", "(pipeline)"], *rows])
         return 0
     con.title(f"rightsize quantize {args.model} --to {args.to}")
     manifest = quantize_to(
-        args.model, args.to, _device(args), framework=args.with_framework,
-        workdir=args.workdir, inputs=dict(kv.split("=", 1) for kv in args.set),
-        install_missing=args.install, dry_run=args.dry_run, revision=args.revision,
-        log=con.info, echo=con.debug,
+        args.model,
+        args.to,
+        _device(args),
+        framework=args.with_framework,
+        workdir=args.workdir,
+        inputs=dict(kv.split("=", 1) for kv in args.set),
+        install_missing=args.install,
+        dry_run=args.dry_run,
+        revision=args.revision,
+        log=con.info,
+        echo=con.debug,
     )
     if args.json:
         print(manifest.model_dump_json(indent=2))
@@ -901,10 +1096,15 @@ def _quantize_to(args: argparse.Namespace) -> int:
             if m.kind == "wall_s" and not st.skipped:
                 rows.append([st.recipe_id, "time", f"{m.value:.0f} s", ""])
             elif m.kind in ("file_size_gb", "peak_vram_gb"):
-                err = (f"{(m.value - m.predicted) / m.predicted * 100:+.1f}%"
-                       if m.predicted else "")
-                rows.append([st.recipe_id, m.note or m.kind, f"{m.value:.3f} GB",
-                             f"{m.predicted:.3f} GB ({err})" if m.predicted else ""])
+                err = f"{(m.value - m.predicted) / m.predicted * 100:+.1f}%" if m.predicted else ""
+                rows.append(
+                    [
+                        st.recipe_id,
+                        m.note or m.kind,
+                        f"{m.value:.3f} GB",
+                        f"{m.predicted:.3f} GB ({err})" if m.predicted else "",
+                    ]
+                )
     con.table(["step", "measure", "measured", "predicted"], rows)
     con.ok(f"{manifest.status}: {manifest.id}")
     return 0
@@ -919,11 +1119,25 @@ def cmd_tools(args: argparse.Namespace) -> int:
         rows = []
         for name, info in sorted(framework_infos().items()):
             st = envs.status(info)
-            rows.append([name, info.install.kind, st["where"] or "not installed",
-                         st["version"] or "", st["path"] or info.install.line])
+            rows.append(
+                [
+                    name,
+                    info.install.kind,
+                    st["where"] or "not installed",
+                    st["version"] or "",
+                    st["path"] or info.install.line,
+                ]
+            )
         if args.json:
-            print(json.dumps({r[0]: dict(zip(["kind", "where", "version", "path"], r[1:],
-                                             strict=True)) for r in rows}, indent=2))
+            print(
+                json.dumps(
+                    {
+                        r[0]: dict(zip(["kind", "where", "version", "path"], r[1:], strict=True))
+                        for r in rows
+                    },
+                    indent=2,
+                )
+            )
             return 0
         con.table(["framework", "kind", "installed", "version", "where / how"], rows)
         return 0
@@ -965,9 +1179,15 @@ def cmd_run(args: argparse.Namespace) -> int:
         raise KeyError(f"no plan with rank {args.rank} in {args.plan_file}")
     con = _console(args)
     manifest = run_plan(
-        plan, workdir=args.workdir, inputs=dict(kv.split("=", 1) for kv in args.set),
-        models_dir=args.models_dir, install_missing=args.install, include_serve=args.serve,
-        dry_run=args.dry_run, log=con.info, echo=con.debug,
+        plan,
+        workdir=args.workdir,
+        inputs=dict(kv.split("=", 1) for kv in args.set),
+        models_dir=args.models_dir,
+        install_missing=args.install,
+        include_serve=args.serve,
+        dry_run=args.dry_run,
+        log=con.info,
+        echo=con.debug,
     )
     if args.json:
         print(manifest.model_dump_json(indent=2))
@@ -976,10 +1196,16 @@ def cmd_run(args: argparse.Namespace) -> int:
     for st in manifest.steps:
         wall = next((m.value for m in st.measurements if m.kind == "wall_s"), None)
         vram = next((m.value for m in st.measurements if m.kind == "peak_vram_gb"), None)
-        sizes = ", ".join(f"{m.value:.2f} GB" for m in st.measurements
-                          if m.kind == "file_size_gb")
-        rows.append([st.recipe_id, "skipped" if st.skipped else f"exit {st.returncode}",
-                     f"{wall:.0f} s" if wall else "", f"{vram:.2f}" if vram else "", sizes])
+        sizes = ", ".join(f"{m.value:.2f} GB" for m in st.measurements if m.kind == "file_size_gb")
+        rows.append(
+            [
+                st.recipe_id,
+                "skipped" if st.skipped else f"exit {st.returncode}",
+                f"{wall:.0f} s" if wall else "",
+                f"{vram:.2f}" if vram else "",
+                sizes,
+            ]
+        )
     con.table(["step", "result", "time", "VRAM used GB", "wrote"], rows)
     where = Path(args.workdir) if args.workdir else Path("runs") / manifest.id
     con.ok(f"{manifest.status}: {where}")
@@ -1150,8 +1376,10 @@ def main(argv: list[str] | None = None) -> int:
 
 #: The Hub answers 401 for a repo that does not exist as well as for a private one, so as
 #: not to say which private repos exist.
-_UNAUTHORIZED = (" (no such repo, or a private or gated one: check the name, or accept its "
-                 "terms on the Hub and set HF_TOKEN)")
+_UNAUTHORIZED = (
+    " (no such repo, or a private or gated one: check the name, or accept its "
+    "terms on the Hub and set HF_TOKEN)"
+)
 _GATED = " (gated: accept its terms on the Hub and set HF_TOKEN)"
 
 

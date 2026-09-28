@@ -129,8 +129,9 @@ def test_two_stage_plans_render_the_fine_tune_and_convert_its_output() -> None:
     the QLoRA step before it carries nf4 (rendering used to pick that up and fail)."""
     import rightsize
 
-    plan = rightsize.recommend("chat", "RTX 4070 12GB", finetune_device="T4 16GB",
-                               mode="qlora", top_k=1)[0]
+    plan = rightsize.recommend(
+        "chat", "RTX 4070 12GB", finetune_device="T4 16GB", mode="qlora", top_k=1
+    )[0]
     steps = {s.recipe_id: s for s in plan.render()}
     assert "load_in_4bit=True" in steps["unsloth/sft"].text
     slug = plan.model.ref.repo.replace("/", "__")
@@ -143,8 +144,9 @@ def test_two_stage_plans_render_the_fine_tune_and_convert_its_output() -> None:
 def test_qlora_on_a_mac_quantizes_with_mlx_first() -> None:
     import rightsize
 
-    plan = rightsize.recommend("chat", "RTX 4070 12GB", finetune_device="M4 Max 64GB",
-                               mode="qlora", top_k=1)[0]
+    plan = rightsize.recommend(
+        "chat", "RTX 4070 12GB", finetune_device="M4 Max 64GB", mode="qlora", top_k=1
+    )[0]
     rendered = plan.render()
     ids = [s.recipe_id for s in rendered]
     assert ids[:2] == ["mlx-lm/convert", "mlx-lm/lora"]

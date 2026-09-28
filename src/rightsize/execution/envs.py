@@ -125,14 +125,28 @@ def _run(argv: list[str], log: Log, *, quiet: bool = False, cwd: Path | None = N
     line as it comes: installing PyTorch is a few GB, and minutes of silence look like a
     hang."""
     if quiet:
-        proc = subprocess.run(argv, capture_output=True, text=True, encoding="utf-8",
-                              errors="replace", check=False, cwd=cwd)
+        proc = subprocess.run(
+            argv,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=False,
+            cwd=cwd,
+        )
         out, rc = (proc.stdout or ""), proc.returncode
         tail = (proc.stdout or "") + (proc.stderr or "")
     else:
         log("$ " + " ".join(argv))
-        popen = subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                 text=True, encoding="utf-8", errors="replace", cwd=cwd)
+        popen = subprocess.Popen(
+            argv,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            cwd=cwd,
+        )
         lines = []
         assert popen.stdout is not None
         for line in popen.stdout:
@@ -148,8 +162,10 @@ def _run(argv: list[str], log: Log, *, quiet: bool = False, cwd: Path | None = N
     return out
 
 
-_TORCH_CHECK = ("import json, torch; print(json.dumps([torch.__version__, "
-                "torch.cuda.is_available(), torch.version.cuda]))")
+_TORCH_CHECK = (
+    "import json, torch; print(json.dumps([torch.__version__, "
+    "torch.cuda.is_available(), torch.version.cuda]))"
+)
 
 
 def install(info, *, python: str = DEFAULT_PYTHON, log: Log = print) -> Env:
@@ -160,8 +176,10 @@ def install(info, *, python: str = DEFAULT_PYTHON, log: Log = print) -> Env:
     if spec.kind != "pip":
         raise ToolkitMissing(f"{info.title} is not a Python package; install it with: {spec.line}")
     if not spec.packages:
-        raise ToolkitMissing(f"{info.name}'s framework.yaml lists no packages to install; "
-                             f"install it yourself: {spec.line}")
+        raise ToolkitMissing(
+            f"{info.name}'s framework.yaml lists no packages to install; "
+            f"install it yourself: {spec.line}"
+        )
     uv = _uv()
     root = tools_root() / info.name
     py = _python_in(root)
@@ -217,9 +235,14 @@ def status(info) -> dict[str, str | None]:
             except ToolchainError:
                 pass
         return {"where": None, "path": None, "version": None}
-    names = {p.split("[")[0].split("=")[0].split("<")[0].split(">")[0].lower()
-             for p in info.install.packages}
+    names = {
+        p.split("[")[0].split("=")[0].split("<")[0].split(">")[0].lower()
+        for p in info.install.packages
+    }
     version = next((v for k, v in env.versions.items() if k.lower() in names), None)
-    path = str(env.python.parent.parent) if env.where == "managed" else (
-        str(env.python) if env.where == "current" else shutil.which(info.install.check or ""))
+    path = (
+        str(env.python.parent.parent)
+        if env.where == "managed"
+        else (str(env.python) if env.where == "current" else shutil.which(info.install.check or ""))
+    )
     return {"where": env.where, "path": path, "version": version}

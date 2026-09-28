@@ -120,7 +120,9 @@ torch = [{ index = "pytorch-cpu", marker = "sys_platform != 'darwin'" }]
 line-length = 100
 target-version = "py311"
 src = ["src", "tests"]
-extend-exclude = ["notebooks"]
+# ruff 0.16 also formats the Python blocks in Markdown; the framework pages are generated
+# from recipe renders and the guides align their comments by hand, so Markdown stays out
+extend-exclude = ["notebooks", "*.md"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "T20"]
