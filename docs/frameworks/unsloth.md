@@ -6,17 +6,17 @@ LoRA and QLoRA fine-tuning on a single GPU, writing a merged 16-bit model (or a 
 
 - Runs on: nvidia, amd, intel; on linux, windows; NVIDIA compute capability 7.0+
 - Writes: safetensors
-- Install: `uv pip install unsloth --torch-backend=auto` (in its own environment: unsloth pins trl<=0.24.0, transformers<=5.5.0 and datasets<4.4)
+- Install: `uv pip install unsloth --torch-backend=auto` (in its own environment: unsloth pins trl<=0.24.0, transformers<=5.5.0 and datasets<4.4. Installed here with uv on Windows: PyTorch 2.11 for CUDA 12.8, Transformers 5.5.0, TRL 0.24.0 and triton-windows came with it, 5.0 GB)
 - Fine-tunes: lora, qlora; the default trainer on nvidia, intel and wherever no other framework is
 - Home: <https://unsloth.ai>
 
 | recipe | stage | families | checked | version |
 |---|---|---|---|---|
-| `unsloth/sft` | finetune | llm | docs | 2026.9.11 |
+| `unsloth/sft` | finetune | llm | run | 2026.9.11 |
 
 ## `unsloth/sft`
 
-Finetune step; from the documentation; not yet run here at 2026.9.11.
+Finetune step; run end to end at 2026.9.11.
 
 Install: uv pip install unsloth --torch-backend=auto, in its own environment: unsloth pins trl<=0.24.0, transformers<=5.5.0 and datasets<4.4
 
@@ -76,5 +76,6 @@ if __name__ == "__main__":  # worker processes re-import this file on Windows an
 - save_pretrained_merged writes the 16-bit model the llama.cpp steps convert next; model.save_pretrained_gguf(dir, tokenizer, quantization_method='q4_k_m') is the one-step alternative, and builds llama.cpp on first use
 - use the same chat template at inference as in training
 - tokenizer= is Unsloth's name for TRL's processing_class; TRL 0.24 calls the length max_length
+- run end to end on Windows with an RTX 4070 Ti SUPER: QLoRA on Qwen3-0.6B, 30 steps in 37 s, then the merge and llama.cpp's convert and Q8_0 (rightsize run)
 
 Source: <https://github.com/unslothai/notebooks/blob/main/nb/Qwen3_(14B)-Reasoning-Conversational.ipynb>

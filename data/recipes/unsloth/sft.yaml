@@ -62,6 +62,7 @@ notes:
   - "save_pretrained_merged writes the 16-bit model the llama.cpp steps convert next; model.save_pretrained_gguf(dir, tokenizer, quantization_method='q4_k_m') is the one-step alternative, and builds llama.cpp on first use"
   - "use the same chat template at inference as in training"
   - "tokenizer= is Unsloth's name for TRL's processing_class; TRL 0.24 calls the length max_length"
+  - "run end to end on Windows with an RTX 4070 Ti SUPER: QLoRA on Qwen3-0.6B, 30 steps in 37 s, then the merge and llama.cpp's convert and Q8_0 (rightsize run)"
 source_doc_url: https://github.com/unslothai/notebooks/blob/main/nb/Qwen3_(14B)-Reasoning-Conversational.ipynb
 version_tested: 2026.9.11
-verified: docs
+verified: run

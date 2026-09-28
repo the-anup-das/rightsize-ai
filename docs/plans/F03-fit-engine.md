@@ -104,6 +104,13 @@ LLM analytic + oobabooga path + speed; fine-tune components with Unsloth floors;
       time; confidence 0.3 because nothing measured backs it
 - [x] Audio estimator: Whisper per runtime, anything else weights-only
 - [x] Vision / embedding estimator: weights + one batch of activations
+- [ ] Fine-tuning memory for small models with large vocabularies runs low: Unsloth QLoRA on
+      Qwen3-0.6B (batch 2, 2048 tokens) used 3.72 GB against 1.82 GB predicted. The logits
+      of a 152k vocabulary are likely the gap; measure the training step alone (the peak also
+      spans the merge) before refitting
+- [ ] After a fine-tune the converter reads the merged model, which stores a tied output head
+      once: the Q8_0 of Unsloth's Qwen3-0.6B merge was 0.639 GB against 0.799 GB predicted
+      from the checkpoint's count (`tied_head_stored`, F1). Size post-fine-tune steps without it
 - [ ] Multi-GPU and offload split
 - [ ] `bits_that_fit(model, device, ctx, runtime)` helper: the effective bits-per-weight a budget allows after KV and overhead; feeds ModelOpt AutoQuantize and GGUF mix candidates (F4, F5)
 - [ ] Golden tests listed above

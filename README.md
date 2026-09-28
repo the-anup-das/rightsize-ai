@@ -23,7 +23,7 @@ Surfaces: Python SDK, CLI with `--json`, MCP server so agents can call it.
 
 - The core depends on `httpx`, `pydantic` and `pyyaml` only. No torch, no transformers. Enforced in CI.
 - Hardware tables, quant tables, rules and recipes are versioned data, not code.
-- Frameworks are declarative recipes that render commands. Running them is an opt-in extra (`rightsize[unsloth]`, `rightsize[llamacpp]`, ...), loaded lazily.
+- Frameworks are declarative recipes that render commands. Running them is opt-in: `rightsize tools install NAME` gives each toolkit its own environment when you pick it, because toolkits pin conflicting library versions. `rightsize[llamacpp]` adds what the GGUF converter needs.
 - Model metadata is fetched on demand from safetensors and GGUF headers (a few KB) and cached.
 
 ## New to model formats?

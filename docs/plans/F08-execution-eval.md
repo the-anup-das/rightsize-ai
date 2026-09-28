@@ -19,7 +19,7 @@ run(step: RenderedStep, workdir: Path, adapter: str | None = None) -> RunManifes
 evaluate(base: ModelRef, candidate: Path, suite: str = "default", thresholds: dict | None = None) -> EvalReport
 ```
 
-Adapters register via the `rightsize.adapters` entry point and live behind extras (`[unsloth]`, `[llamacpp]`, `[diffusers]`). Missing extra raises `MissingExtraError` with the install line.
+Runners register via the `rightsize.runners` entry point. Toolkits are not extras of rightsize: each gets its own uv environment under `.tools/<framework>` when someone picks it, since they pin conflicting library versions. A missing toolkit raises `ToolkitMissing` with the install line.
 
 ## Design
 
@@ -62,7 +62,12 @@ Unsloth QLoRA adapter (fine-tune -> merged or GGUF), llama.cpp quantize adapter,
       `rightsize.runners`; toolkits install on demand, each into its own uv environment under
       `.tools/<framework>` (`rightsize tools install | list | remove`), and a missing one
       raises `ToolkitMissing` with the install command rather than an ImportError
-- [ ] Unsloth adapter ported from `finetune.py`
+- [x] Unsloth runs end to end without an adapter of its own: the generic runner writes the
+      recipe's training script into the run directory and runs it in Unsloth's environment.
+      A QLoRA plan for Qwen3-0.6B on an RTX 4070 Ti SUPER (Windows): Unsloth 2026.9.11, 30
+      steps on 300 FineTome examples in 37 s (loss 1.23), merge to 16-bit (1.20 GB), llama.cpp
+      convert (20 s) and Q8_0 (3 s, 0.64 GB); `runs/unsloth-qwen06/manifest.json`. The
+      notebook repo's `finetune.py` was not needed
 - [x] llama.cpp quantize adapter: convert, imatrix, quantize, and `rightsize tools install`
       for pinned binaries plus the matching converter
 - [x] VRAM is measured as the rise over what the card held before the step started; the raw
@@ -91,6 +96,6 @@ Unsloth QLoRA adapter (fine-tune -> merged or GGUF), llama.cpp quantize adapter,
       RAM (src/llama-model.cpp: "always keep it on the CPU"); taking it out of the estimate,
       then refitting the overheads, is the likely fix (F3). The sampler has to measure the
       rise over its starting point first
-- [ ] Extras populated in `pyproject.toml` (`unsloth`, `llamacpp`)
-      (partial: `llamacpp` done; `unsloth` still empty)
+- [x] Extras: `llamacpp` for the converter. The empty `unsloth` and `diffusers` extras are
+      gone: toolkits install into their own environments instead
 - [x] Mocked tests; one `slow` GPU test (Qwen3-0.6B end to end)

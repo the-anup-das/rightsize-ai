@@ -14,11 +14,14 @@ hardware:
   note: NVIDIA compute capability 7.0 or newer
 install:
   kind: pip
-  packages: [unsloth]
+  packages: ["unsloth==2026.9.11"]
   needs_torch: true
   check: unsloth
   line: uv pip install unsloth --torch-backend=auto
-  note: "in its own environment: unsloth pins trl<=0.24.0, transformers<=5.5.0 and datasets<4.4"
+  note: >-
+    in its own environment: unsloth pins trl<=0.24.0, transformers<=5.5.0 and datasets<4.4.
+    Installed here with uv on Windows: PyTorch 2.11 for CUDA 12.8, Transformers 5.5.0, TRL
+    0.24.0 and triton-windows came with it, 5.0 GB
 finetune:
   modes: [lora, qlora]
   recipe: unsloth/sft

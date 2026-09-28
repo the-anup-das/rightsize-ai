@@ -41,9 +41,11 @@ mcp = ["mcp>=1.2"]
 cli = ["rich>=13.7"]
 # Hardware detection uses subprocess + httpx only today; extra reserved for optional probes.
 detect = []
-# Execution adapters (F8). Imported lazily, never at startup.
-# llamacpp: converting safetensors -> GGUF runs llama.cpp's convert_hf_to_gguf.py, which needs
-# torch + transformers. Quantizing an existing GGUF needs only the llama.cpp binaries.
+# Execution (F8). Imported lazily, never at startup. Toolkits such as Unsloth are not extras:
+# they pin conflicting versions of the same libraries, so each gets its own environment
+# (rightsize tools install NAME). llamacpp: converting safetensors -> GGUF runs llama.cpp's
+# convert_hf_to_gguf.py in this environment, which needs torch + transformers. Quantizing an
+# existing GGUF needs only the llama.cpp binaries.
 llamacpp = [
   "rich>=13.7",
   "gguf>=0.17",
@@ -55,8 +57,6 @@ llamacpp = [
   "safetensors>=0.4",
   "huggingface_hub>=0.30",
 ]
-unsloth = []
-diffusers = []
 
 [dependency-groups]
 dev = [

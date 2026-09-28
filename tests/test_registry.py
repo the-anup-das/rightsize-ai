@@ -130,8 +130,11 @@ def test_python_recipes_spell_booleans_the_python_way() -> None:
 
 
 def test_every_toolkit_recipe_says_how_far_it_was_checked() -> None:
-    """Recipes transcribed from documentation say so; only llama.cpp's were run here."""
+    """Recipes transcribed from documentation say so. The ones marked run were run end to end
+    here, and adding one to that list is a deliberate edit to this test."""
+    ran_outside_llama_cpp = set()
     for recipe in all_recipes().values():
         assert recipe.version_tested, recipe.id
-        if recipe.framework != "llama.cpp":
-            assert recipe.verified == "docs", recipe.id
+        if recipe.framework != "llama.cpp" and recipe.verified != "docs":
+            ran_outside_llama_cpp.add(recipe.id)
+    assert ran_outside_llama_cpp == {"unsloth/sft"}
