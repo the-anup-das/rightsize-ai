@@ -143,12 +143,15 @@ The 14 MVP recipes above plus 4 serve recipes; docs generation; entry point disc
 - [x] Recipes that make a format declare it as a target: the name `--to` takes, the inputs
       that select it, the `quants/formats.yaml` entry that sizes it, the bits the embedding
       and an untied head keep, which files are the weights, and the `gate` recipe that
-      checks the output (`quantize --to X --eval`). Ten targets over six
+      checks the output (`quantize --to X --eval`). Fourteen targets over seven
       toolkits: fp8, w4a16, awq (llm-compressor), nf4 (transformers), openvino-int4/int8
-      (Optimum Intel), mlx-4bit/8bit (MLX LM), onnx-int8 (sentence-transformers), ct2-int8
+      (Optimum Intel), modelopt-fp8/int8-sq/int4-awq/nvfp4 (Model Optimizer),
+      mlx-4bit/8bit (MLX LM), onnx-int8 (sentence-transformers), ct2-int8
       (CTranslate2); the
       framework pages name each recipe's formats
-- [ ] TensorRT Model Optimizer recipes: FP8, INT8 SmoothQuant, INT4 AWQ, NVFP4 (`mtq.quantize` + `export_hf_checkpoint`) with serve targets vLLM / SGLang / TensorRT-LLM
+- [x] Model Optimizer recipes: FP8, INT8 SmoothQuant, INT4 AWQ, NVFP4 (`mtq.quantize` +
+      `export_hf_checkpoint`) as `modelopt/ptq`, run and gated on Qwen3-0.6B (F8); the
+      export serves through vLLM (`--quantization modelopt`), SGLang and TensorRT-LLM
 - [ ] AutoQuantize recipe with `effective_bits` supplied by F3's budget-to-bits helper
 - [x] `render()` and `Plan.render()`. Two-stage plans render the fine-tune too: Unsloth on
       NVIDIA and Intel, Axolotl on AMD, MLX-LM on Apple (with an `mlx_lm.convert -q` step first

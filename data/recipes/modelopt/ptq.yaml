@@ -66,6 +66,8 @@ notes:
   - "the example scripts calibrate on cnn_dailymail by default; Open-Platypus is 16 MB and its output column is plain prose"
   - "presets come from modelopt_recipes/configs/ptq/presets/model/*.yaml (fp8, int8_smoothquant, int4_awq, nvfp4 and 30 more); these four are the ones vLLM serves on the widest set of GPUs"
   - "mtq.NVFP4_MLP_ONLY_CFG keeps attention in higher precision when NVFP4 costs too much accuracy; AutoQuantize (mtq.auto_quantize) mixes FP8 and NVFP4 to an effective_bits target"
+  - "run on Windows with an RTX 4070 Ti SUPER (rightsize quantize --to modelopt-FORMAT --eval, 2026-09-28; Model Optimizer 0.47.0 on torch 2.10+cu128): Qwen3-0.6B on 128 Open-Platypus rows. fp8 in 38 s at 1.9 GB of VRAM, 0.752 GB of weights as predicted, gate pass (KLD 0.022, top-1 0.922, perplexity 22.41 against 22.15). nvfp4 in 37 s, 0.559 GB as predicted (block-16 FP8 scales, embedding and head left 16-bit); its gate needs the MX CUDA kernel Model Optimizer builds on first use, which wants nvcc, so it did not run here. int4_awq in 307 s, 0.546 GB against 0.538 predicted (the AWQ pre-quant scales), gate fail (KLD 0.263, top-1 0.750). int8_sq in 40 s, 0.754 GB, gate fail (KLD 0.366, top-1 0.726, perplexity 30.5): per-tensor int8 activations hurt this small model where weight-only int8 (OpenVINO's, KLD 0.005) does not"
+  - "the gate restores the saved state onto a fresh 16-bit model with mto.restore, which carries the weights SmoothQuant and AWQ modified as well as the calibrated scales (mto.save writes both)"
 source_doc_url: https://github.com/NVIDIA/Model-Optimizer/blob/0.47.0/examples/hf_ptq/README.md
 version_tested: 0.47.0
-verified: docs
+verified: run
