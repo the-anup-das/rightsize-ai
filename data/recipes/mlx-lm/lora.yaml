@@ -11,6 +11,7 @@ inputs:
   iters: { type: int, default: 1000 }
   batch_size: { type: int, default: 4 }
   adapter_dir: { type: path, default: adapters }
+writes: [adapter_dir]
 template: >-
   mlx_lm.lora --model {{ model }} --train --data {{ data }} --iters {{ iters }} --batch-size {{ batch_size }} --adapter-path {{ adapter_dir }}
 notes:

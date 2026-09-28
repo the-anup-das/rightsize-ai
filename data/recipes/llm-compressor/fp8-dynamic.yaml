@@ -9,6 +9,8 @@ language: python
 inputs:
   model: { type: str, required: true }
   output_dir: { type: path, default: model-FP8-Dynamic }
+file: llmcompressor_fp8.py
+writes: [output_dir]
 template: |
   from llmcompressor import oneshot
   from llmcompressor.modifiers.quantization import QuantizationModifier

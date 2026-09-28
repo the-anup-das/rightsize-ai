@@ -9,6 +9,7 @@ language: modelfile
 inputs:
   model_gguf: { type: path, required: true, help: "the GGUF to import, absolute or relative to the Modelfile" }
   num_ctx: { type: int, default: 8192, help: context length the plan was sized for }
+file: Modelfile
 template: |
   FROM {{ model_gguf }}
   PARAMETER num_ctx {{ num_ctx }}

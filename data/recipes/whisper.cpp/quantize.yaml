@@ -10,6 +10,7 @@ inputs:
   input_model: { type: path, default: models/ggml-large-v3-turbo.bin }
   output_model: { type: path, default: models/ggml-large-v3-turbo-q5_0.bin }
   qtype: { type: enum, values: [q5_0, q5_1, q8_0, q4_0, q4_1, q2_k, q3_k, q4_k, q5_k, q6_k], default: q5_0 }
+writes: [output_model]
 template: >-
   {{ quantize_bin }} {{ input_model }} {{ output_model }} {{ qtype }}
 notes:

@@ -19,6 +19,9 @@ inputs:
   num_epochs: { type: int, default: 1 }
   learning_rate: { type: float, default: 0.0002, help: required by axolotl }
   output_dir: { type: path, default: ./outputs/qlora-out }
+file: axolotl.yml
+run: axolotl train {file}
+writes: [output_dir]
 template: |
   base_model: {{ model }}
   load_in_4bit: {{ load_in_4bit }}

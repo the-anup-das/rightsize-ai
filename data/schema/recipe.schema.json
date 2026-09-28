@@ -64,6 +64,19 @@
       "title": "Families",
       "type": "array"
     },
+    "file": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "for a config: the file it is written to in the run directory (default <framework>_<name>.<ext>)",
+      "title": "File"
+    },
     "framework": {
       "title": "Framework",
       "type": "string"
@@ -143,6 +156,19 @@
       "title": "Notes",
       "type": "array"
     },
+    "run": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "for a config: the command that runs the written file, with {file} for its path; python configs default to 'python {file}', other configs are only written",
+      "title": "Run"
+    },
     "source_doc_url": {
       "title": "Source Doc Url",
       "type": "string"
@@ -186,6 +212,14 @@
       ],
       "default": null,
       "title": "Version Tested"
+    },
+    "writes": {
+      "description": "the inputs naming what this step produces (a file or a directory), checked and measured after a run",
+      "items": {
+        "type": "string"
+      },
+      "title": "Writes",
+      "type": "array"
     }
   },
   "required": [

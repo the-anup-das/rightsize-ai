@@ -35,6 +35,21 @@ class Recipe(BaseModel):
         description="what a config renders to; tests parse python and yaml renders",
     )
     template: str
+    file: str | None = Field(
+        default=None,
+        description="for a config: the file it is written to in the run directory "
+        "(default <framework>_<name>.<ext>)",
+    )
+    run: str | None = Field(
+        default=None,
+        description="for a config: the command that runs the written file, with {file} for "
+        "its path; python configs default to 'python {file}', other configs are only written",
+    )
+    writes: list[str] = Field(
+        default_factory=list,
+        description="the inputs naming what this step produces (a file or a directory), "
+        "checked and measured after a run",
+    )
     notes: list[str] = Field(default_factory=list)
     source_doc_url: str
     version_tested: str | None = None
@@ -46,6 +61,20 @@ class Recipe(BaseModel):
             "'docs' that it was transcribed from the documentation only"
         ),
     )
+
+
+    def file_name(self) -> str:
+        """Where a config recipe is written in the run directory."""
+        if self.file:
+            return self.file
+        ext = {"python": "py", "yaml": "yml", "bash": "sh"}.get(self.language or "", "txt")
+        return f"{self.id.replace('/', '_').replace('.', '_').replace('-', '_')}.{ext}"
+
+    def run_line(self) -> str | None:
+        """The command that runs a config recipe, or None when it is only written."""
+        if self.run:
+            return self.run
+        return "python {file}" if self.kind == "config" and self.language == "python" else None
 
 
 class RenderedStep(BaseModel):

@@ -10,6 +10,7 @@ inputs:
   weight_format: { type: enum, values: [int4, int8, fp16, fp32, mxfp4, nf4, cb4], default: int4 }
   group_size: { type: int, default: 128, help: "-1 quantizes per column" }
   output_dir: { type: path, default: ov_model }
+writes: [output_dir]
 template: >-
   optimum-cli export openvino --model {{ model }} --weight-format {{ weight_format }} {% if group_size %}--group-size {{ group_size }}{% endif %} {{ output_dir }}
 notes:

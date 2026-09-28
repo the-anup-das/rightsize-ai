@@ -13,6 +13,7 @@ inputs:
   gpu_layers: { type: str, default: all }
   ctx: { type: int, default: 512 }
   chunks: { type: int, required: false }
+writes: [logits_file]
 template: >-
   {{ perplexity_bin }} -m {{ model_gguf }} -f {{ eval_file }} --kl-divergence-base {{ logits_file }} -ngl {{ gpu_layers }} -c {{ ctx }} {% if chunks %}--chunks {{ chunks }}{% endif %}
 notes:

@@ -55,6 +55,8 @@ rightsize search --family diffusion --task text-to-image --max-b 13   # curated 
 # To actually produce files:
 uv sync --group dev --extra llamacpp     # torch CPU + transformers for the conversion step
 rightsize tools install llama.cpp        # pinned binaries + converter into .tools/llama.cpp (auto-picks CUDA/CPU/Metal)
+rightsize tools install unsloth          # any other toolkit: its own environment under .tools/, when you pick it
+rightsize recommend --json > plans.json && rightsize run plans.json   # carry out the top plan here
 rightsize quantize Qwen/Qwen3-1.7B --quant Q4_K_M --imatrix --eval
 rightsize bench Qwen/Qwen3-1.7B           # measure this machine's real memory bandwidth
 rightsize calibrate                       # predicted vs measured for what Ollama / LM Studio has loaded

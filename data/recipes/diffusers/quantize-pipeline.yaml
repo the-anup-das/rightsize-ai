@@ -10,6 +10,7 @@ inputs:
   model: { type: str, required: true }
   components: { type: str, default: '["transformer", "text_encoder_2"]', help: "the components to quantize; FLUX: transformer and text_encoder_2 (T5)" }
   offload: { type: bool, default: false, help: "enable_model_cpu_offload instead of moving the pipeline to the GPU" }
+file: diffusers_quantize.py
 template: |
   import torch
   from diffusers import DiffusionPipeline

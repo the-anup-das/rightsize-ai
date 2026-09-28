@@ -9,6 +9,7 @@ language: python
 inputs:
   model: { type: str, required: true }
   double_quant: { type: enum, values: ["True", "False"], default: "True", help: "saves about 0.4 bits per parameter" }
+file: bnb_nf4.py
 template: |
   import torch
   from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig

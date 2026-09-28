@@ -90,34 +90,55 @@ def _now() -> str:
 
 
 class _VramSampler:
-    """Samples nvidia-smi memory.used every second; reports the peak in GB."""
+    """Samples nvidia-smi memory.used every second while a step runs, and reports how far
+    it rose above what was in use just before the step started.
+
+    memory.used is the whole card: the desktop, a browser, anything else on it. Reporting
+    the raw peak put the 1.5 GB a Windows desktop holds into every measurement, and made
+    the KL gate's evaluation passes look 37-65% over the prediction when they were 10-14%
+    under it. Another program growing during the step still counts; the step's log and the
+    per-process figures from ``rightsize calibrate`` are the cross-check."""
 
     def __init__(self) -> None:
-        self.peak_mib = 0
+        self.base_mib: list[int] | None = None
+        self.peak_mib: list[int] = []
         self._stop = threading.Event()
         self._t: threading.Thread | None = None
 
+    @staticmethod
+    def _read() -> list[int]:
+        """memory.used per GPU, in MiB; empty when there is no NVIDIA driver."""
+        if not shutil.which("nvidia-smi"):
+            return []
+        try:
+            out = subprocess.run(
+                ["nvidia-smi", "--query-gpu=memory.used", "--format=csv,noheader,nounits"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+                check=False,
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            return []
+        return [int(line.strip()) for line in out.stdout.splitlines() if line.strip().isdigit()]
+
+    def baseline(self) -> None:
+        """What is in use before the step starts; call it before launching the process."""
+        self.base_mib = self._read()
+
     def __enter__(self) -> _VramSampler:
-        if shutil.which("nvidia-smi"):
+        if self.base_mib is None:
+            self.baseline()
+        if self.base_mib:
             self._t = threading.Thread(target=self._loop, daemon=True)
             self._t.start()
         return self
 
     def _loop(self) -> None:
         while not self._stop.is_set():
-            try:
-                out = subprocess.run(
-                    ["nvidia-smi", "--query-gpu=memory.used", "--format=csv,noheader,nounits"],
-                    capture_output=True,
-                    text=True,
-                    timeout=5,
-                    check=False,
-                )
-                for line in out.stdout.splitlines():
-                    if line.strip().isdigit():
-                        self.peak_mib = max(self.peak_mib, int(line.strip()))
-            except (OSError, subprocess.TimeoutExpired):
-                pass
+            now = self._read()
+            if len(now) == len(self.base_mib or []):
+                self.peak_mib = [max(p, n) for p, n in zip(self.peak_mib or now, now, strict=True)]
             self._stop.wait(1.0)
 
     def __exit__(self, *exc: object) -> None:
@@ -127,8 +148,12 @@ class _VramSampler:
 
     @property
     def peak_gb(self) -> float | None:
-        """Peak in decimal GB, to sit next to the fit engine's prediction in a Measurement."""
-        return round(self.peak_mib * 1024**2 / GB, 2) if self.peak_mib else None
+        """The largest rise over the baseline on any GPU, in decimal GB, to sit next to the
+        fit engine's prediction in a Measurement."""
+        if not (self.peak_mib and self.base_mib):
+            return None
+        rise = max(p - b for p, b in zip(self.peak_mib, self.base_mib, strict=True))
+        return round(max(rise, 0) * 1024**2 / GB, 2)
 
 
 # ------------------------------------------------------------------ GPU preflight
@@ -230,6 +255,7 @@ def run_step(
     cwd: Path | None = None,
     extra_path: Path | None = None,
     sample_vram: bool = False,
+    env_extra: dict[str, str] | None = None,
 ) -> tuple[RunStep, str, float | None]:
     """Run a rendered command, stream its output, return (RunStep, captured text, peak VRAM GB).
 
@@ -239,6 +265,7 @@ def run_step(
     """
     assert step.argv, "run_step needs a command recipe"
     env = dict(os.environ)
+    env.update(env_extra or {})
     if extra_path:
         env["PATH"] = str(extra_path) + os.pathsep + env.get("PATH", "")
     rs = RunStep(recipe_id=step.recipe_id, argv=step.argv, started=_now(), log_path=str(log_path))
@@ -246,6 +273,8 @@ def run_step(
     captured: list[str] = []
     t0 = time.perf_counter()
     sampler = _VramSampler() if sample_vram else None
+    if sampler:
+        sampler.baseline()  # before the process allocates anything
     decoder = codecs.getincrementaldecoder("utf-8")(errors="replace")
     pending = ""
     with log_path.open("w", encoding="utf-8", errors="replace") as fh:

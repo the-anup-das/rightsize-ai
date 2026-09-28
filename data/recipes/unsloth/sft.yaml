@@ -18,6 +18,8 @@ inputs:
   num_epochs: { type: int, default: 1 }
   output_dir: { type: path, default: outputs }
   merged_dir: { type: path, default: merged, help: "the merged 16-bit model the llama.cpp steps convert next" }
+file: unsloth_sft.py
+writes: [merged_dir]
 template: |
   from unsloth import FastLanguageModel  # import unsloth before trl and transformers
   from unsloth.chat_templates import get_chat_template, standardize_sharegpt

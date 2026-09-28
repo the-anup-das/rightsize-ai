@@ -12,6 +12,7 @@ inputs:
   model_dir: { type: path, required: true, help: local snapshot of the Hub repo }
   outfile: { type: path, required: true }
   outtype: { type: enum, values: [auto, f16, bf16, f32, q8_0], default: auto }
+writes: [outfile]
 template: >-
   {{ python }} {{ convert_script }} {{ model_dir }} --outfile {{ outfile }} --outtype {{ outtype }}
 notes:

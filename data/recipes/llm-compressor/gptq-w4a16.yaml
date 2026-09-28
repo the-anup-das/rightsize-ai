@@ -13,6 +13,8 @@ inputs:
   num_samples: { type: int, default: 512 }
   max_seq_length: { type: int, default: 2048 }
   output_dir: { type: path, default: model-W4A16-G128 }
+file: llmcompressor_w4a16.py
+writes: [output_dir]
 template: |
   from llmcompressor import oneshot
   from llmcompressor.modifiers.gptq import GPTQModifier

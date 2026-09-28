@@ -63,6 +63,14 @@ Third-party packages ship the same folder layout through the `rightsize.recipes`
 (a directory, or a callable returning dicts: recipes have a `template`, descriptors do not).
 A plugin may add frameworks and recipes but never replace a bundled one.
 
+A recipe also says how it runs: a config recipe names the `file` it is written to and the
+`run` line that executes it (Python configs default to `python {file}`), and `writes` lists
+the inputs that name what the step produces, which `rightsize run` checks and measures. List
+the Python packages in `framework.yaml`'s `install.packages` and `rightsize tools install
+<name>` gives the toolkit its own environment. A toolkit whose steps need more than a
+command (binaries of its own, a download first) can register a runner under the
+`rightsize.runners` entry point; `execution/runner.py` has the protocol and llama.cpp's.
+
 ## Adding a rule
 
 Rules live in `data/rules/*.yaml` and require `id`, `applies_to`, `condition`, `effect`, `source_url` and a `test`. A rule without a test fails schema validation. See `docs/plans/F04-rules-engine.md`.

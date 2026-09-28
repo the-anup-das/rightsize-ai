@@ -169,3 +169,9 @@ def test_mlx_qlora_records_mlx_4bit_not_bitsandbytes() -> None:
     first, ft = plan.steps[0], plan.steps[1]
     assert (first.recipe_id, first.quant.method) == ("mlx-lm/convert", "mlx")
     assert (ft.recipe_id, ft.quant.method, ft.quant.variant) == ("mlx-lm/lora", "mlx", "4bit")
+
+
+def test_what_a_recipe_writes_is_one_of_its_inputs() -> None:
+    """A misspelt output name would make a run skip the check that the step wrote it."""
+    for recipe in all_recipes().values():
+        assert set(recipe.writes) <= set(recipe.inputs), (recipe.id, recipe.writes)

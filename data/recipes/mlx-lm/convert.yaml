@@ -9,6 +9,7 @@ inputs:
   model: { type: str, required: true }
   bits: { type: enum, values: ["2", "3", "4", "5", "6", "8"], default: "4" }
   mlx_path: { type: path, default: mlx_model, help: must not exist yet }
+writes: [mlx_path]
 template: >-
   mlx_lm.convert --hf-path {{ model }} -q --q-bits {{ bits }} --mlx-path {{ mlx_path }}
 notes:

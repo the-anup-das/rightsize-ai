@@ -13,6 +13,7 @@ inputs:
   lora_alpha: { type: int, default: 32 }
   dtype: { type: enum, values: [bfloat16, float16, float32, auto], default: bfloat16, help: "the default, float32, also becomes the 4-bit compute dtype" }
   output_dir: { type: path, default: outputs }
+writes: [output_dir]
 template: >-
   trl sft --model_name_or_path {{ model }} --dataset_name {{ dataset }} {% if load_in_4bit %}--load_in_4bit{% endif %} --use_peft --lora_r {{ lora_r }} --lora_alpha {{ lora_alpha }} --dtype {{ dtype }} --output_dir {{ output_dir }}
 notes:

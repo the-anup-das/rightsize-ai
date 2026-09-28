@@ -8,6 +8,7 @@ from the optional ``rich`` package (extras ``cli`` / ``llamacpp``); without it, 
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import os
 import sys
@@ -195,19 +196,37 @@ def build_parser() -> argparse.ArgumentParser:
     b.add_argument("--revision", default="main")
     b.add_argument("--no-save", action="store_true", help="print it but do not remember it")
 
-    t = sub.add_parser("tools", help="install pinned toolchains into .tools/")
+    t = sub.add_parser("tools", help="install, list and remove toolkits (one per framework)")
     t_sub = t.add_subparsers(dest="tools_command")
-    ti = t_sub.add_parser("install", help="download a toolchain (binaries + converter)")
-    ti.add_argument("name", choices=["llama.cpp"])
+    ti = t_sub.add_parser(
+        "install", help="llama.cpp's binaries, or a Python toolkit in its own environment")
+    ti.add_argument("name", help="a framework: llama.cpp, unsloth, llm-compressor, ...")
     ti.add_argument(
         "--backend",
         default=None,
-        help="cuda-12.4, cuda-13.4, cpu, vulkan, rocm-10.0, sycl (default: auto)",
+        help="llama.cpp: cuda-12.4, cuda-13.4, cpu, vulkan, rocm-10.0, sycl (default: auto)",
     )
     ti.add_argument(
-        "--version", dest="tool_version", default=None, help="release tag (default: pinned)"
+        "--version", dest="tool_version", default=None,
+        help="llama.cpp: release tag (default: pinned)",
     )
-    ti.add_argument("--dest", default=".tools/llama.cpp")
+    ti.add_argument("--dest", default=None, help="llama.cpp: where (default .tools/llama.cpp)")
+    ti.add_argument("--python", default="3.12", help="Python toolkits: the version to use")
+    t_sub.add_parser("list", help="each framework and where it is installed, if anywhere")
+    tr = t_sub.add_parser("remove", help="delete a toolkit environment rightsize made")
+    tr.add_argument("name")
+
+    ru = sub.add_parser("run", help="carry out a saved plan on this machine, step by step")
+    ru.add_argument("plan_file", help="a Plan as JSON, or a list of them (recommend --json)")
+    ru.add_argument("--rank", type=int, default=1, help="which plan of a list (default 1)")
+    ru.add_argument("--set", action="append", default=[], metavar="NAME=VALUE",
+                    help="override a recipe input, e.g. --set max_steps=30")
+    ru.add_argument("--workdir", default=None, help="run directory (default runs/<model>-<time>)")
+    ru.add_argument("--models-dir", default="models", help="where Hub snapshots are downloaded")
+    ru.add_argument("--install", action="store_true",
+                    help="install a toolkit the plan needs when it is missing")
+    ru.add_argument("--serve", action="store_true", help="also start the serve step")
+    ru.add_argument("--dry-run", action="store_true", help="prepare every step, run none")
 
     sub.add_parser("mcp", help="run the MCP server on stdio (needs the mcp extra)")
 
@@ -831,19 +850,78 @@ def cmd_frameworks(args: argparse.Namespace) -> int:
 
 
 def cmd_tools(args: argparse.Namespace) -> int:
-    from rightsize.execution.install import LLAMA_CPP_VERSION, install_llama_cpp
+    from rightsize.execution import envs
+    from rightsize.registry import framework, framework_infos
 
     con = _console(args)
+    if args.tools_command == "list":
+        rows = []
+        for name, info in sorted(framework_infos().items()):
+            st = envs.status(info)
+            rows.append([name, info.install.kind, st["where"] or "not installed",
+                         st["version"] or "", st["path"] or info.install.line])
+        if args.json:
+            print(json.dumps({r[0]: dict(zip(["kind", "where", "version", "path"], r[1:],
+                                             strict=True)) for r in rows}, indent=2))
+            return 0
+        con.table(["framework", "kind", "installed", "version", "where / how"], rows)
+        return 0
+    if args.tools_command == "remove":
+        framework(args.name)
+        if envs.remove(args.name):
+            con.ok(f"removed {envs.tools_root() / args.name}")
+            return 0
+        con.info(f"no environment rightsize made for {args.name} under {envs.tools_root()}")
+        return 1
     if args.tools_command != "install":
-        print("usage: rightsize tools install llama.cpp [--backend ...]")
+        print("usage: rightsize tools install NAME | list | remove NAME", file=sys.stderr)
         return 2
-    dest = install_llama_cpp(
-        args.dest,
-        version=args.tool_version or LLAMA_CPP_VERSION,
-        backend=args.backend,
-        log=con.info,
+    info = framework(args.name)
+    if info.name == "llama.cpp":
+        from rightsize.execution.install import LLAMA_CPP_VERSION, install_llama_cpp
+
+        dest = install_llama_cpp(
+            args.dest or envs.tools_root() / "llama.cpp",
+            version=args.tool_version or LLAMA_CPP_VERSION,
+            backend=args.backend,
+            log=con.info,
+        )
+        con.ok(f"installed into {dest}")
+        return 0
+    env = envs.install(info, python=args.python, log=con.info)
+    con.ok(f"{info.title} installed into {env.python.parent.parent}")
+    return 0
+
+
+def cmd_run(args: argparse.Namespace) -> int:
+    from rightsize.execution.runner import run_plan
+    from rightsize.types import Plan
+
+    raw = json.loads(Path(args.plan_file).read_text(encoding="utf-8"))
+    plans = [Plan.model_validate(p) for p in (raw if isinstance(raw, list) else [raw])]
+    plan = next((p for p in plans if p.rank == args.rank), None)
+    if plan is None:
+        raise KeyError(f"no plan with rank {args.rank} in {args.plan_file}")
+    con = _console(args)
+    manifest = run_plan(
+        plan, workdir=args.workdir, inputs=dict(kv.split("=", 1) for kv in args.set),
+        models_dir=args.models_dir, install_missing=args.install, include_serve=args.serve,
+        dry_run=args.dry_run, log=con.info, echo=con.debug,
     )
-    con.ok(f"installed into {dest}")
+    if args.json:
+        print(manifest.model_dump_json(indent=2))
+        return 0
+    rows = []
+    for st in manifest.steps:
+        wall = next((m.value for m in st.measurements if m.kind == "wall_s"), None)
+        vram = next((m.value for m in st.measurements if m.kind == "peak_vram_gb"), None)
+        sizes = ", ".join(f"{m.value:.2f} GB" for m in st.measurements
+                          if m.kind == "file_size_gb")
+        rows.append([st.recipe_id, "skipped" if st.skipped else f"exit {st.returncode}",
+                     f"{wall:.0f} s" if wall else "", f"{vram:.2f}" if vram else "", sizes])
+    con.table(["step", "result", "time", "VRAM used GB", "wrote"], rows)
+    where = Path(args.workdir) if args.workdir else Path("runs") / manifest.id
+    con.ok(f"{manifest.status}: {where}")
     return 0
 
 
@@ -962,6 +1040,11 @@ def _find_gguf(args: argparse.Namespace):
 
 
 def main(argv: list[str] | None = None) -> int:
+    # A tool's output (progress bars, a model card's emoji) can hold characters the console's
+    # codepage cannot encode; print a replacement rather than fail the command over it.
+    for stream in (sys.stdout, sys.stderr):
+        with contextlib.suppress(AttributeError, ValueError):
+            stream.reconfigure(errors="replace")
     parser = build_parser()
     args = parser.parse_args(argv)
     if not args.command:
@@ -984,6 +1067,7 @@ def main(argv: list[str] | None = None) -> int:
         "frameworks": cmd_frameworks,
         "quantize": cmd_quantize,
         "tools": cmd_tools,
+        "run": cmd_run,
         "bench": cmd_bench,
     }
     try:

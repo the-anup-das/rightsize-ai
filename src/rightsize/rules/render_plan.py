@@ -65,19 +65,28 @@ def _typed(recipe: Any, name: str, value: Any) -> Any:
 
 
 def render_plan(plan: Any, **inputs: Any) -> list[RenderedStep]:
+    return [render(recipe, **wanted) for _step, recipe, wanted in step_values(plan, **inputs)]
+
+
+def step_values(plan: Any, **inputs: Any) -> list[tuple[Any, Any, dict[str, Any]]]:
+    """(plan step, recipe, the inputs it renders with) for every step that has a recipe:
+    what render_plan renders, and what a run needs to find each step's outputs."""
     values = _defaults(plan)
     _finetune_values(plan, values)
     serve = next((s for s in plan.steps if s.stage == "serve"), None)
     if serve is not None and serve.runtime and serve.runtime.ctx:
         values["ctx"] = serve.runtime.ctx
-    values["model_gguf_served"] = values["output_gguf"]
-    recipe_ids = {s.recipe_id for s in plan.steps}
-    has_imatrix = "llama.cpp/imatrix" in recipe_ids
-    if has_imatrix:
-        values["imatrix"] = values["output_file"]
     values.update(inputs)
+    # llama.cpp's chain: the server loads the quantized file, and llama-quantize reads the
+    # importance matrix the step before wrote. Set after the caller's values, so renaming an
+    # output renames what reads it; a plan without llama.cpp has neither.
+    recipe_ids = {s.recipe_id for s in plan.steps}
+    if "output_gguf" in values:
+        values.setdefault("model_gguf_served", values["output_gguf"])
+    if "llama.cpp/imatrix" in recipe_ids and "output_file" in values:
+        values.setdefault("imatrix", values["output_file"])
     trains_on = _trains_on(plan, recipe_ids)
-    out: list[RenderedStep] = []
+    out: list[tuple[Any, Any, dict[str, Any]]] = []
     for step in plan.steps:
         if not step.recipe_id:
             continue
@@ -87,7 +96,7 @@ def render_plan(plan: Any, **inputs: Any) -> list[RenderedStep]:
             wanted["model_gguf"] = values.get("model_gguf_served", wanted.get("model_gguf"))
         if step.stage == "finetune" and trains_on and trains_on in values:
             wanted["model"] = values[trains_on]  # the model the step before produced
-        out.append(render(recipe, **wanted))
+        out.append((step, recipe, wanted))
     return out
 
 
