@@ -1,0 +1,71 @@
+id: modelopt/ptq
+framework: modelopt
+stage: quantize
+families: [llm]
+hardware: { vendors: [nvidia] }
+install_line: pip install nvidia-modelopt transformers accelerate datasets
+kind: config
+language: python
+inputs:
+  model: { type: str, required: true }
+  qformat: { type: enum, values: [fp8, int8_sq, int4_awq, nvfp4], default: fp8, help: "the preset: FP8 per-tensor weights and activations, INT8 SmoothQuant, INT4 AWQ (block 128, weights only), NVFP4 (block 16, FP8 scales)" }
+  dataset: { type: str, default: garage-bAInd/Open-Platypus, help: "a Hub dataset whose rows have the text column; 16 MB" }
+  text_column: { type: str, default: output }
+  num_samples: { type: int, default: 128, help: calibration rows the activation ranges come from }
+  max_seq_length: { type: int, default: 512 }
+  output_dir: { type: path, default: model-modelopt, help: "the unified Hugging Face checkpoint vLLM, SGLang and TensorRT-LLM load" }
+  state_file: { type: path, default: modelopt_state.pth, help: "the calibrated quantizer state; the gate restores it onto the 16-bit model" }
+file: modelopt_ptq.py
+writes: [output_dir]
+targets:
+  - {name: modelopt-fp8, inputs: {qformat: fp8}, size_from: fp8, embedding_bits: 16, head_bits: 16,
+     gate: {recipe: transformers/kld-eval, inputs: {loader: modelopt}}}
+  - {name: modelopt-int8-sq, inputs: {qformat: int8_sq}, size_from: int8, embedding_bits: 16, head_bits: 16,
+     gate: {recipe: transformers/kld-eval, inputs: {loader: modelopt}}}
+  - {name: modelopt-int4-awq, inputs: {qformat: int4_awq}, size_from: int4-sym, embedding_bits: 16, head_bits: 16,
+     gate: {recipe: transformers/kld-eval, inputs: {loader: modelopt}}}
+  - {name: modelopt-nvfp4, inputs: {qformat: nvfp4}, size_from: nvfp4, embedding_bits: 16, head_bits: 16,
+     gate: {recipe: transformers/kld-eval, inputs: {loader: modelopt}}}
+template: |
+  import modelopt.torch.opt as mto
+  import modelopt.torch.quantization as mtq
+  import torch
+  from datasets import load_dataset
+  from modelopt.torch.export import export_hf_checkpoint
+  from transformers import AutoModelForCausalLM, AutoTokenizer
+
+  CONFIGS = {
+      "fp8": mtq.FP8_DEFAULT_CFG,
+      "int8_sq": mtq.INT8_SMOOTHQUANT_CFG,
+      "int4_awq": mtq.INT4_AWQ_CFG,
+      "nvfp4": mtq.NVFP4_DEFAULT_CFG,
+  }
+  tokenizer = AutoTokenizer.from_pretrained(r"{{ model }}")
+  model = AutoModelForCausalLM.from_pretrained(r"{{ model }}", dtype=torch.bfloat16).cuda().eval()
+  rows = load_dataset("{{ dataset }}", split="train").select(range({{ num_samples }}))
+  batches = [
+      tokenizer(row["{{ text_column }}"], return_tensors="pt", truncation=True,
+                max_length={{ max_seq_length }}).input_ids.cuda()
+      for row in rows
+  ]
+
+
+  def forward_loop(m):
+      with torch.no_grad():
+          for ids in batches:
+              m(ids)
+
+
+  model = mtq.quantize(model, CONFIGS["{{ qformat }}"], forward_loop)
+  mto.save(model, r"{{ state_file }}")  # what the gate restores onto a fresh 16-bit model
+  with torch.inference_mode():
+      export_hf_checkpoint(model, export_dir=r"{{ output_dir }}")
+  tokenizer.save_pretrained(r"{{ output_dir }}")
+notes:
+  - "the export is Model Optimizer's unified checkpoint: the original tensor names, quantized weights and an hf_quant_config.json; vllm serve --quantization modelopt loads it, as do SGLang and TensorRT-LLM. Transformers does not, which is why the gate restores the quantizer state instead"
+  - "the example scripts calibrate on cnn_dailymail by default; Open-Platypus is 16 MB and its output column is plain prose"
+  - "presets come from modelopt_recipes/configs/ptq/presets/model/*.yaml (fp8, int8_smoothquant, int4_awq, nvfp4 and 30 more); these four are the ones vLLM serves on the widest set of GPUs"
+  - "mtq.NVFP4_MLP_ONLY_CFG keeps attention in higher precision when NVFP4 costs too much accuracy; AutoQuantize (mtq.auto_quantize) mixes FP8 and NVFP4 to an effective_bits target"
+source_doc_url: https://github.com/NVIDIA/Model-Optimizer/blob/0.47.0/examples/hf_ptq/README.md
+version_tested: 0.47.0
+verified: docs

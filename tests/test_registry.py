@@ -36,6 +36,7 @@ def test_bundled_recipes_load_and_have_provenance() -> None:
         "whisper.cpp",
         "ctranslate2",
         "sentence-transformers",
+        "modelopt",
     } == set(frameworks())
 
 

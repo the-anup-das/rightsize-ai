@@ -14,9 +14,9 @@ writes: [output_dir]
 targets:
   - {name: openvino-int4, inputs: {weight_format: int4}, size_from: int4-asym,
      embedding_bits: 8, head_bits: 8, weights: openvino_model.bin,
-     gate: {recipe: transformers/kld-eval, inputs: {openvino: true, device: cpu}}}
+     gate: {recipe: transformers/kld-eval, inputs: {loader: openvino, device: cpu}}}
   - {name: openvino-int8, inputs: {weight_format: int8}, size_from: int8, weights: openvino_model.bin,
-     gate: {recipe: transformers/kld-eval, inputs: {openvino: true, device: cpu}}}
+     gate: {recipe: transformers/kld-eval, inputs: {loader: openvino, device: cpu}}}
 template: >-
   optimum-cli export openvino --model {{ model }} --weight-format {{ weight_format }} {% if group_size %}--group-size {{ group_size }}{% endif %} {{ output_dir }}
 notes:

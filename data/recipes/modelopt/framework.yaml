@@ -1,0 +1,24 @@
+# What this toolkit is for, where it runs, how it installs and how its steps join a plan.
+name: modelopt
+title: NVIDIA Model Optimizer
+summary: >-
+  Quantizes Hugging Face models to FP8, INT8 SmoothQuant, INT4 AWQ and NVFP4 checkpoints that
+  vLLM, SGLang and TensorRT-LLM load
+stages: [quantize]
+families: [llm]
+formats: [fp8, int8, int4, nvfp4]
+hardware: {vendors: [nvidia]}
+install:
+  kind: pip
+  packages: ["nvidia-modelopt==0.47.0", "transformers==5.17.0", "accelerate==1.15.0", "datasets"]
+  needs_torch: true
+  check: modelopt.torch.quantization
+  line: pip install nvidia-modelopt transformers accelerate datasets
+  note: >-
+    a pure-Python wheel; the quantizers run in PyTorch, with CUDA kernels compiled on first
+    use where a compiler exists and plain PyTorch otherwise. Quantizing works on any CUDA
+    GPU; serving the FP8 output needs Ada or newer and NVFP4 needs Blackwell, which the
+    serve-time rules say
+homepage: https://github.com/NVIDIA/Model-Optimizer
+source_doc_url: https://github.com/NVIDIA/Model-Optimizer/blob/0.47.0/examples/hf_ptq/README.md
+version_tested: 0.47.0

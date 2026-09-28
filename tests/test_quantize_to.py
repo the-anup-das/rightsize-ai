@@ -45,7 +45,19 @@ def test_every_target_names_real_inputs_and_a_known_size() -> None:
 
 def test_the_gated_formats() -> None:
     gated = {t.name for r in all_recipes().values() for t in r.targets if t.gate}
-    assert gated == {"fp8", "w4a16", "awq", "nf4", "openvino-int4", "openvino-int8", "onnx-int8"}
+    assert gated == {
+        "fp8",
+        "w4a16",
+        "awq",
+        "nf4",
+        "openvino-int4",
+        "openvino-int8",
+        "modelopt-fp8",
+        "modelopt-int8-sq",
+        "modelopt-int4-awq",
+        "modelopt-nvfp4",
+        "onnx-int8",
+    }
 
 
 def test_a_target_without_a_gate_says_so(monkeypatch) -> None:
@@ -72,6 +84,10 @@ def test_the_formats_on_offer() -> None:
         "nf4",
         "openvino-int4",
         "openvino-int8",
+        "modelopt-fp8",
+        "modelopt-int8-sq",
+        "modelopt-int4-awq",
+        "modelopt-nvfp4",
         "mlx-4bit",
         "mlx-8bit",
         "onnx-int8",

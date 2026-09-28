@@ -66,7 +66,6 @@ import math
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-
 def logits_of(model, ids):
     try:
         device = next(model.parameters()).device
@@ -83,9 +82,19 @@ tokenizer = AutoTokenizer.from_pretrained(r"<model>")
 # .to(), not device_map=: a device map needs accelerate, which not every toolkit's
 # environment has, and a 16-bit model moves whole
 base = AutoModelForCausalLM.from_pretrained(r"<model>", dtype=dtype).to(device).eval()
-candidate = AutoModelForCausalLM.from_pretrained(
-    r"<candidate>", dtype=dtype, device_map=device).eval()  # bitsandbytes needs the map
+loader = "auto"
+if loader == "openvino":
+    from optimum.intel import OVModelForCausalLM
 
+    candidate = OVModelForCausalLM.from_pretrained(r"<candidate>")
+elif loader == "modelopt":
+    import modelopt.torch.opt as mto
+
+    candidate = AutoModelForCausalLM.from_pretrained(r"<model>", dtype=dtype).to(device)
+    candidate = mto.restore(candidate, r"").eval()
+else:
+    candidate = AutoModelForCausalLM.from_pretrained(
+        r"<candidate>", dtype=dtype, device_map=device).eval()  # bitsandbytes needs the map
 text = open(r"<eval_file>", encoding="utf-8").read()
 tokens = tokenizer(text, return_tensors="pt", add_special_tokens=False).input_ids[0]
 ctx = 512
@@ -119,7 +128,8 @@ print("gate", json.dumps(result))
 |---|---|---|---|
 | `model` | str | required | the 16-bit model the candidate was made from |
 | `candidate` | path | required | the quantized checkpoint directory |
-| `openvino` | bool | False | load the candidate with Optimum Intel's OVModelForCausalLM (runs on the CPU) |
+| `loader` | enum | auto | auto: Transformers reads the candidate directory; openvino: Optimum Intel's OVModelForCausalLM (on the CPU); modelopt: the 16-bit model with the quantizer state in modelopt_state restored onto it |
+| `modelopt_state` | path |  | the state file the modelopt/ptq recipe saved (loader: modelopt) |
 | `eval_file` | path | required | plain text; the gate scores windows of it |
 | `ctx` | int | 512 | tokens per window |
 | `chunks` | int | 100 | windows scored; 0 scores the whole file |
@@ -127,7 +137,7 @@ print("gate", json.dumps(result))
 | `gate_file` | path | gate.json | where the numbers are written |
 
 - the same numbers as llama-perplexity --kl-divergence, on the same wikitext-2 windows, so the thresholds in data/quality/gate_thresholds.yaml apply; ppl_base says what the 16-bit model scores on the same tokens
-- runs in the environment that can load the candidate: llm-compressor's for FP8 and W4A16 (compressed-tensors), the Transformers toolkit's for NF4 (bitsandbytes), Optimum Intel's for OpenVINO (openvino: true)
+- runs in the environment that can load the candidate: llm-compressor's for FP8, W4A16 and AWQ (compressed-tensors), the Transformers toolkit's for NF4 (bitsandbytes), Optimum Intel's for OpenVINO (loader: openvino), Model Optimizer's for its formats (loader: modelopt, which restores the saved quantizer state onto the 16-bit model, since Transformers does not read the export)
 - memory: the 16-bit model plus the candidate, plus about 0.3 GB of logits per 512-token window for a 150k vocabulary
 - run on Windows with an RTX 4070 Ti SUPER (rightsize quantize --to FORMAT --eval, 2026-09-28): Qwen3-0.6B over 100 windows of wikitext-2, 30-40 s a gate on the GPU (fp8, w4a16, nf4; transformers 5.17.0) and about 140 s on the CPU for OpenVINO (transformers 5.5.4). Its scale is llama.cpp's: on Qwen3-1.7B's Q4_K_M GGUF, loaded dequantized, it scores KLD 0.055 and top-1 0.904 where llama-perplexity gave 0.059 and 0.900
 
