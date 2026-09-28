@@ -220,7 +220,11 @@ def rows_from(grid: list[list[str]]) -> list[dict[str, Any]]:
         cols = columns(grid[h], grid[h - 1] if h else None)
         if "bus_width_apple" in cols:
             cols["bus_width"] = cols["bus_width_apple"]
-        if "model" in cols and "bandwidth" in cols and ("bus_width" in cols or "bus_type_width" in cols):
+        if (
+            "model" in cols
+            and "bandwidth" in cols
+            and ("bus_width" in cols or "bus_type_width" in cols)
+        ):
             break
     else:
         return []
@@ -449,7 +453,9 @@ def disagreements(records: dict[str, dict[str, Any]]) -> list[str]:
             continue
         computed = r["bus_width"] * r["rate"] / 8
         if abs(computed - r["bandwidth"]) / r["bandwidth"] > TOLERANCE:
-            out.append(f"{key}: column {r['bandwidth']:g}, {r['bus_width']:g}-bit x {r['rate']:g} = {computed:.1f}")
+            out.append(
+                f"{key}: column {r['bandwidth']:g}, {r['bus_width']:g}-bit x {r['rate']:g} = {computed:.1f}"
+            )
     return out
 
 
