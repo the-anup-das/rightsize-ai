@@ -16,23 +16,44 @@ from pathlib import Path
 
 from rightsize import __version__
 
+_GLOBAL_FLAGS = [
+    (("--json",), {"action": "store_true", "help": "machine-readable output, no colour"}),
+    (("--no-color",), {"action": "store_true", "help": "plain text (also: NO_COLOR=1)"}),
+    (("-v", "--verbose"), {"action": "store_true", "help": "echo tool output as it runs"}),
+    (("-q", "--quiet"), {"action": "store_true", "help": "only failures and final tables"}),
+    (
+        ("--offline",),
+        {
+            "dest": "offline_all",
+            "action": "store_true",
+            "help": "no network: model facts and prices from the cache only "
+            "(also RIGHTSIZE_OFFLINE=1)",
+        },
+    ),
+]
+
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="rightsize", description="Quantize and fit any model to your hardware."
     )
     p.add_argument("--version", action="version", version=f"rightsize {__version__}")
-    p.add_argument("--json", action="store_true", help="machine-readable output, no colour")
-    p.add_argument("--no-color", action="store_true", help="plain text (also: NO_COLOR=1)")
-    p.add_argument("-v", "--verbose", action="store_true", help="echo tool output as it runs")
-    p.add_argument("-q", "--quiet", action="store_true", help="only failures and final tables")
-    p.add_argument(
-        "--offline",
-        dest="offline_all",
-        action="store_true",
-        help="no network: model facts and prices from the cache only (also RIGHTSIZE_OFFLINE=1)",
-    )
+    # the global flags, accepted before the subcommand (rightsize --json recommend) and after
+    # it (rightsize recommend --json): the copy on each subcommand suppresses its default so
+    # a flag given first is not overwritten by one not given second
+    late = argparse.ArgumentParser(add_help=False)
+    for flags, kwargs in _GLOBAL_FLAGS:
+        p.add_argument(*flags, **kwargs)
+        late.add_argument(*flags, **kwargs, default=argparse.SUPPRESS)
     sub = p.add_subparsers(dest="command")
+    add_parser = sub.add_parser
+
+    def add_parser_with_globals(*args, **kwargs):
+        # parents= shares the parent's Action objects, so no subcommand may define a flag
+        # of the same name: a conflict resolved on one would mutate the flag for all
+        return add_parser(*args, parents=[late], **kwargs)
+
+    sub.add_parser = add_parser_with_globals
 
     r = sub.add_parser("recommend", help="rank the models that fit your hardware, with plans")
     r.add_argument("--task", default="chat", choices=["chat", "coding", "agentic"])
@@ -90,7 +111,6 @@ def build_parser() -> argparse.ArgumentParser:
     cl.add_argument("--provider", action="append", help="limit to these (runpod, lambda, aws, ...)")
     cl.add_argument("--spot", action="store_true", help="spot / interruptible prices")
     cl.add_argument("--top", type=int, default=10)
-    cl.add_argument("--offline", action="store_true", help="use cached prices only")
 
     e = sub.add_parser(
         "estimate",
@@ -691,7 +711,7 @@ def cmd_cloud(args: argparse.Namespace) -> int:
     if not need:
         print("rightsize cloud: give --vram GB or --model", file=sys.stderr)
         return 2
-    pool, missing = offers(args.provider, offline=args.offline)
+    pool, missing = offers(args.provider, offline=args.offline_all)
     found = cheapest(need, pool=pool, spot=args.spot, top=args.top)
     tokens = _count(args.tokens)
     jobs = {}
@@ -719,7 +739,7 @@ def cmd_cloud(args: argparse.Namespace) -> int:
     what = f"{args.model} ({args.mode})" if args.model else "a job"
     con.title(f"rental GPUs for {what} needing {need:.1f} GB")
     if missing:
-        con.warn("no prices for " + ", ".join(missing) + (" (offline)" if args.offline else ""))
+        con.warn("no prices for " + ", ".join(missing) + (" (offline)" if args.offline_all else ""))
     if not found:
         con.fail("no single rental GPU has that much memory")
         return 1
