@@ -141,7 +141,13 @@ LLM analytic + oobabooga path + speed; fine-tune components with Unsloth floors;
       the expert count recovered from the active parameters, says 12.07 against the GGUF's
       12.10 GB of tensors
 - [ ] Multi-GPU and offload split
-- [ ] `bits_that_fit(model, device, ctx, runtime)` helper: the effective bits-per-weight a budget allows after KV and overhead; feeds ModelOpt AutoQuantize and GGUF mix candidates (F4, F5)
+- [x] `bits_that_fit(facts, device, ctx, runtime)` (fit/llm.py): the fit solved for the
+      weights. Usable memory less the headroom the verdict keeps, the KV cache and the
+      runtime's overhead is what the weights may take; the embedding and an untied head
+      stay 16-bit and the rest is shared over the quantized parameters. Qwen3-4B on a
+      12 GB card at 8k context: 15.3 bits; at 32k, under 16 and falling with the KV cache.
+      `rightsize quantize --to modelopt-auto` hands it to Model Optimizer's AutoQuantize as
+      `effective_bits` (F5); GGUF mix candidates from it are still to do
 - [ ] Golden tests listed above
       (partial: Llama 3.1 70B KV at 128K, Qwen3-4B Q4_K_M file size, measured Qwen3-1.7B
       file sizes within 3%, the diffusion and Whisper rows (tests/test_families.py); the

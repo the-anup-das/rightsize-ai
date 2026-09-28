@@ -12,7 +12,7 @@ from __future__ import annotations
 from typing import Any
 
 from rightsize.fit.finetune import estimate_finetune
-from rightsize.fit.llm import gguf_bpw, kv_cache_gb, predicted_file_gb
+from rightsize.fit.llm import bits_that_fit, gguf_bpw, kv_cache_gb, predicted_file_gb
 from rightsize.fit.quality import ppl_delta
 from rightsize.types import Device, Family, FitResult, Mode, ModelFacts
 
@@ -76,6 +76,7 @@ def estimate(
 __all__ = [
     "DEFAULT_QUANT",
     "FAMILY_ARGS",
+    "bits_that_fit",
     "estimate",
     "estimate_finetune",
     "gguf_bpw",

@@ -117,3 +117,24 @@ def test_an_llm_is_sized_at_a_format_outside_gguf() -> None:
     table = 151936 * 2560 * 8 / 8 / 1e9  # the embedding at 16 bits costs another 8 bits each
     assert kept.breakdown["weights"] - plain.breakdown["weights"] == pytest.approx(table, abs=0.01)
     assert "embedding at 16 bits" in kept.notes[0]
+
+
+def test_bits_that_fit_inverts_the_estimate() -> None:
+    """The bits a card has room for are the bits at which the estimate says "fits" with
+    nothing to spare: sizing the model at them lands on the usable memory less the headroom."""
+    import json
+    from pathlib import Path
+
+    from rightsize.fit.llm import _HEADROOM, bits_that_fit
+    from rightsize.hardware import resolve
+    from rightsize.types import QuantSpec
+
+    path = Path(__file__).parent / "fixtures" / "facts" / "Qwen__Qwen3-4B.json"
+    facts = ModelFacts.model_validate(json.loads(path.read_text(encoding="utf-8")))
+    card = resolve("RTX 3060 12GB")
+    bits, parts = bits_that_fit(facts, card, ctx=32768, runtime="vllm")
+    assert 4 < bits < 16
+    spec = QuantSpec(method="mixed", variant="auto", bits_per_weight=bits, embedding_bits=16)
+    fit = estimate(facts, spec, card, ctx=32768, runtime="vllm")
+    assert fit.vram_gb == pytest.approx(parts["usable_memory"] * (1 - _HEADROOM), abs=0.05)
+    assert fit.verdict.value in ("fits", "tight")

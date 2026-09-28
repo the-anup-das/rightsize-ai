@@ -63,7 +63,7 @@ def output_gb(fx: ModelFacts, bpw: float, spec: Any) -> float | None:
     """The weights a target's toolkit writes; the fit engine's format_weights_gb."""
     from rightsize.fit.llm import format_weights_gb
 
-    return format_weights_gb(fx, bpw, spec.embedding_bits, spec.head_bits)
+    return format_weights_gb(fx, bpw, spec.embedding_bits, spec.head_bits, spec.bits_over)
 
 
 def plan_for(
@@ -74,19 +74,21 @@ def plan_for(
     framework: str | None = None,
     revision: str = "main",
     evaluate: bool = False,
+    bits: float | None = None,
 ) -> Plan:
     """A one-step plan that turns ``model`` into ``target``, with the output size predicted
-    from the target's entry in quants/formats.yaml. ``evaluate`` adds the target's gate as a
-    second step, run in the same toolkit's environment."""
+    from the target's entry in quants/formats.yaml, or from ``bits`` for a target whose bits
+    are one of its inputs. ``evaluate`` adds the target's gate as a second step, run in the
+    same toolkit's environment."""
     from rightsize.catalog import facts
     from rightsize.fit.formats import lookup
 
     recipe, spec = choose(target, framework)
     fx = facts(model, revision)
-    bpw = lookup(spec.size_from).bpw if spec.size_from else None
+    bpw = bits if spec.bits_from_input else (lookup(spec.size_from).bpw if spec.size_from else None)
     size = output_gb(fx, bpw, spec) if bpw else None
     notes = [
-        f"{target}: about {bpw} bits per weight ({spec.size_from})"
+        f"{target}: about {bpw} bits per weight ({spec.bits_from_input or spec.size_from})"
         if bpw
         else f"{target}: no size model"
     ]
@@ -144,19 +146,51 @@ def quantize_to(
     dry_run: bool = False,
     evaluate: bool = False,
     eval_chunks: int = 100,
+    ctx: int = 8192,
     revision: str = "main",
     log: Log = print,
     echo: Log | None = None,
 ) -> RunManifest:
     """Run the recipe that produces ``target`` on ``model``; see run_plan for the rest.
     ``evaluate`` runs the target's gate on the output afterwards and records its verdict in
-    the manifest, as the GGUF pipeline does."""
+    the manifest, as the GGUF pipeline does. A target whose bits are one of its inputs
+    (modelopt-auto) gets them from what ``device`` has room for at ``ctx``, unless
+    ``inputs`` names them."""
     from rightsize.execution.runner import run_plan
 
-    plan = plan_for(
-        model, target, device, framework=framework, revision=revision, evaluate=evaluate
-    )
     recipe, spec = choose(target, framework)
+    inputs = dict(inputs or {})
+    bits: float | None = None
+    if spec.bits_from_input:
+        if spec.bits_from_input in inputs:
+            bits = float(inputs[spec.bits_from_input])
+        else:
+            from rightsize.catalog import facts
+            from rightsize.fit.llm import bits_that_fit
+
+            runtime = (
+                "vllm"
+                if spec.serve_format in ("modelopt", "compressed-tensors", "fp8")
+                else "llama.cpp"
+            )
+            bits, parts = bits_that_fit(facts(model, revision), device, ctx=ctx, runtime=runtime)
+            if bits is not None and spec.bits_over == "linear":
+                bits = parts["bits_linear"]
+            if bits is None:
+                raise ValueError(
+                    f"{device.name} has no room for {model} at ctx {ctx} even with the weights "
+                    f"at 0 bits: KV cache {parts['kv_cache']} GB, overhead {parts['overhead']} GB"
+                )
+            bits = min(bits, 16.0)
+            inputs[spec.bits_from_input] = bits
+            log(
+                f"{spec.bits_from_input} {bits:g}: what {device.name} has room for at ctx {ctx} "
+                f"with {runtime} ({parts['weights_max_gb']} GB for the weights after "
+                f"{parts['kv_cache']} GB of KV cache and {parts['overhead']} GB of overhead)"
+            )
+    plan = plan_for(
+        model, target, device, framework=framework, revision=revision, evaluate=evaluate, bits=bits
+    )
     slug = model.replace("/", "__")
     stamp = _dt.datetime.now().strftime("%Y%m%d-%H%M%S")
     run_dir = Path(workdir or Path("runs") / f"{slug}-{stamp}")
@@ -178,7 +212,7 @@ def quantize_to(
                 **spec.gate.inputs,
             }
         )
-    values.update(inputs or {})
+    values.update(inputs)
     manifest = run_plan(
         plan,
         workdir=run_dir,

@@ -114,12 +114,21 @@ def repo_file(facts: ModelFacts, quant: str) -> dict | None:
 
 
 def format_weights_gb(
-    facts: ModelFacts, bpw: float, embedding_bits: float | None, head_bits: float | None
+    facts: ModelFacts,
+    bpw: float,
+    embedding_bits: float | None,
+    head_bits: float | None,
+    over: str = "quantized",
 ) -> float | None:
     """The weights a toolkit writes: the body at the format's bits, the input embedding and
     an output head of its own at the bits the toolkit leaves them (llm-compressor and
     bitsandbytes quantize Linear layers only). A head tied to the embedding is saved once,
-    even where the source checkpoint stores it twice (F1's tied_head_stored)."""
+    even where the source checkpoint stores it twice (F1's tied_head_stored).
+
+    ``over="linear"`` is Model Optimizer's average: ``bpw`` spans every Linear layer, the
+    output head included at whatever it kept, with only the embedding outside. A tied head
+    is one tensor with the embedding, so the file is exactly the Linear layers at ``bpw``;
+    an untied model adds its embedding at 16 bits."""
     if not facts.params_total:
         return None
     extra = facts.extra or {}
@@ -129,6 +138,10 @@ def format_weights_gb(
         return body * bpw / 8 / 1e9
     table = vocab * hidden
     head = table if extra.get("tie_word_embeddings") is False else 0
+    if over == "linear":
+        # tied: lm_head is in the scope and its tensor is the embedding, so the file is the
+        # whole scope at bpw; untied: the embedding sits outside the scope, at 16 bits
+        return (body * bpw if not head else (body - table) * bpw + table * 16) / 8 / 1e9
     bits = (body - table - head) * bpw + table * (embedding_bits or bpw) + head * (head_bits or bpw)
     return bits / 8 / 1e9
 
@@ -383,3 +396,51 @@ def estimate(
         formula_id=FORMULA_ID,
         notes=notes,
     )
+
+
+def bits_that_fit(
+    facts: ModelFacts,
+    device: Device,
+    *,
+    ctx: int = 8192,
+    runtime: str = "vllm",
+    keep_bits: float = 16.0,
+) -> tuple[float | None, dict[str, float]]:
+    """The bits per weight a device has room for, over the layers a toolkit quantizes: the
+    fit estimate solved for the weights. Usable memory, less the headroom the "fits" verdict
+    keeps, the KV cache at ``ctx`` and the runtime's overhead, is what the weights may take;
+    the input embedding and an output head of its own stay at ``keep_bits`` (the toolkits
+    quantize Linear layers only) and the rest is shared over the other parameters. None when
+    even that is below zero. Feeds Model Optimizer's AutoQuantize (modelopt/autoquant)."""
+    if not (facts.params_total and facts.num_layers and facts.num_kv_heads and facts.head_dim):
+        raise ValueError(f"{facts.ref.repo}: parameter count or attention shape unknown")
+    fixed, frac = overhead_constants(runtime)
+    usable = device.memory_gb * device.usable_fraction
+    kv = kv_cache_gb(facts, ctx)
+    weights_max = (usable * (1 - _HEADROOM) - kv - fixed) / (1 + frac)
+    extra = facts.extra or {}
+    vocab, hidden = extra.get("vocab_size") or 0, extra.get("hidden_size") or 0
+    table = vocab * hidden
+    head = table if extra.get("tie_word_embeddings") is False else 0
+    kept_bits = (table + head) * keep_bits
+    stored = int(extra.get("tied_head_stored") or 0)
+    body = facts.params_total - stored - table - head
+    bits = (weights_max * 8e9 - kept_bits) / body if body > 0 else 0.0
+    # Model Optimizer's effective_bits averages over the Linear layers, output head included
+    # (kept 16-bit), with only the embedding outside. A tied head is a Linear whose tensor is
+    # the embedding, so the scope is every parameter but the stored duplicate and the file
+    # is the scope at those bits; an untied model keeps its embedding outside, at 16 bits
+    linear = facts.params_total - stored - (table if head else 0)
+    bits_linear = (weights_max * 8e9 - (table * keep_bits if head else 0)) / linear
+    breakdown = {
+        "usable_memory": round(usable, 2),
+        "headroom": round(usable * _HEADROOM, 2),
+        "kv_cache": round(kv, 3),
+        "overhead": round(fixed + frac * max(weights_max, 0), 3),
+        "weights_max_gb": round(weights_max, 3),
+        "kept_16bit_gb": round(kept_bits / 8 / 1e9, 3),
+        "quantized_params": body,
+        "bits": round(bits, 2),
+        "bits_linear": round(bits_linear, 2),
+    }
+    return (round(bits, 2) if bits > 0 else None), breakdown

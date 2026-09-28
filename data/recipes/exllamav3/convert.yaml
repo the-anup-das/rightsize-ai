@@ -1,0 +1,40 @@
+id: exllamav3/convert
+framework: exllamav3
+stage: quantize
+families: [llm]
+hardware: { vendors: [nvidia] }
+install_line: pip install exllamav3 (or a prebuilt wheel from the releases page)
+kind: config
+language: python
+inputs:
+  model: { type: str, required: true, help: "Hub id or a local directory with config.json, tokenizer.json and safetensors" }
+  bits: { type: float, default: 4.0, help: "target average bits per weight; any value from 1 to 8" }
+  head_bits: { type: int, default: 6, help: "bits for the output layer, 1 to 8" }
+  cal_rows: { type: int, default: 250, help: rows of calibration data }
+  cal_cols: { type: int, default: 2048, help: tokens per calibration row }
+  output_dir: { type: path, default: model-exl3 }
+  work_dir: { type: path, default: exl3-work, help: "checkpoints and temporary files; needs room for a copy of the output, and -r resumes from it" }
+file: exl3_convert.py
+writes: [output_dir]
+template: |
+  """EXL3: trellis-coded quantization at any bit rate, layer by layer with Hessians computed on
+  the fly (exllamav3/conversion/convert_model.py, which the repo's convert.py wraps)."""
+  from huggingface_hub import snapshot_download
+  from exllamav3.conversion.convert_model import main, parser, prepare
+
+  source = snapshot_download(r"{{ model }}")  # a Hub id; a local directory comes back as is
+  args = parser.parse_args([
+      "-i", source, "-o", r"{{ output_dir }}", "-w", r"{{ work_dir }}",
+      "-b", "{{ bits }}", "-hb", "{{ head_bits }}", "-cr", "{{ cal_rows }}", "-cc", "{{ cal_cols }}",
+  ])
+  in_args, job_state, ok, err = prepare(args)
+  if not ok:
+      raise SystemExit(f"exllamav3: {err}")
+  main(in_args, job_state)
+notes:
+  - "the output loads in ExLlamaV3 itself and the servers built on it (TabbyAPI); vLLM and Transformers do not read EXL3, so there is no --to target and no gate here yet"
+  - "-hq raises the bit rate of attention and shared-expert layers for a small size increase; --resume with the work directory continues an interrupted job"
+  - "Windows: the PyPI wheel compiles its kernels and needs nvcc and Build Tools; the release page ships prebuilt wheels per CUDA and PyTorch version (cu128 with torch 2.10 and 2.11 at 1.5.3), and triton-windows comes with them. Not run here (2026-09-28)"
+source_doc_url: https://github.com/turboderp-org/exllamav3/blob/v1.5.3/doc/convert.md
+version_tested: 1.5.3
+verified: docs

@@ -81,6 +81,29 @@
       "additionalProperties": false,
       "description": "A format ``rightsize quantize --to NAME`` produces with this recipe.",
       "properties": {
+        "bits_from_input": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "the recipe input that is the output's bits per weight (a mixed-precision target); rightsize quantize sets it from the device when it is not given",
+          "title": "Bits From Input"
+        },
+        "bits_over": {
+          "default": "quantized",
+          "description": "what that input averages over: the quantized layers with the embedding and head kept 16-bit, or, as Model Optimizer counts, every Linear layer including the output head with only the embedding outside",
+          "enum": [
+            "quantized",
+            "linear"
+          ],
+          "title": "Bits Over",
+          "type": "string"
+        },
         "embedding_bits": {
           "anyOf": [
             {

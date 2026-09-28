@@ -31,7 +31,10 @@ def test_every_target_names_real_inputs_and_a_known_size() -> None:
     for recipe in recipes.values():
         for target in recipe.targets:
             assert set(target.inputs) <= set(recipe.inputs), (recipe.id, target.name)
-            assert target.size_from in formats, (recipe.id, target.size_from)
+            if target.bits_from_input:
+                assert target.bits_from_input in recipe.inputs, (recipe.id, target.name)
+            else:
+                assert target.size_from in formats, (recipe.id, target.size_from)
             assert recipe.writes, f"{recipe.id} must say what it writes to be a target"
             if target.gate is None:
                 continue
@@ -56,6 +59,7 @@ def test_the_gated_formats() -> None:
         "modelopt-int8-sq",
         "modelopt-int4-awq",
         "modelopt-nvfp4",
+        "modelopt-auto",
         "onnx-int8",
     }
 
@@ -88,6 +92,7 @@ def test_the_formats_on_offer() -> None:
         "modelopt-int8-sq",
         "modelopt-int4-awq",
         "modelopt-nvfp4",
+        "modelopt-auto",
         "mlx-4bit",
         "mlx-8bit",
         "onnx-int8",
@@ -293,3 +298,44 @@ def test_a_plugin_format_runs_and_is_measured_against_the_prediction(tmp_path, m
     assert (tmp_path / "run" / "Qwen__Qwen3-4B-squash-int8").stat().st_size == 4000
     size = next(m for m in manifest.steps[0].measurements if m.kind == "file_size_gb")
     assert size.predicted == pytest.approx(FACTS.params_total * 8 / 8 / 1e9, abs=0.001)
+
+
+def test_a_budget_becomes_the_bits_a_mixed_precision_target_gets(monkeypatch, tmp_path) -> None:
+    """modelopt-auto has no fixed size: rightsize quantize hands it the bits the device has
+    room for, and sizes the output from them."""
+    import rightsize.catalog as catalog
+    from rightsize.fit.llm import bits_that_fit
+
+    monkeypatch.setattr(catalog, "facts", lambda *a, **k: FACTS)
+    seen: list[str] = []
+    device = resolve("RTX 3060 12GB")
+    manifest = qt.quantize_to(
+        "Qwen/Qwen3-4B",
+        "modelopt-auto",
+        device,
+        dry_run=True,
+        workdir=str(tmp_path),
+        ctx=32768,
+        log=seen.append,
+    )
+    bits, parts = bits_that_fit(FACTS, device, ctx=32768, runtime="vllm")
+    assert 4 < bits < 16, parts
+    # Model Optimizer averages over the Linear layers, head included, embedding outside
+    assert any(f"effective_bits {parts['bits_linear']:g}" in line for line in seen)
+    predicted = manifest.predicted["01-modelopt/autoquant"]
+    assert predicted.breakdown["file_gb"] == pytest.approx(parts["weights_max_gb"], abs=0.02)
+    # a budget named by hand is kept, and a card with room for everything caps at 16 bits
+    manifest = qt.quantize_to(
+        "Qwen/Qwen3-4B",
+        "modelopt-auto",
+        resolve("H100 80GB"),
+        dry_run=True,
+        workdir=str(tmp_path / "big"),
+        inputs={"effective_bits": 6},
+        log=lambda _l: None,
+    )
+    assert manifest.predicted["01-modelopt/autoquant"].breakdown["file_gb"] == pytest.approx(
+        qt.output_gb(FACTS, 6.0, qt.choose("modelopt-auto")[1]), abs=0.001
+    )
+    bits, _ = bits_that_fit(FACTS, resolve("H100 80GB"), ctx=32768, runtime="vllm")
+    assert bits > 16  # the whole model fits in 16 bits; the caller caps it

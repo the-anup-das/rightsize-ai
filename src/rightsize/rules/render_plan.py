@@ -100,11 +100,13 @@ def step_values(plan: Any, **inputs: Any) -> list[tuple[Any, Any, dict[str, Any]
     if "llama.cpp/imatrix" in recipe_ids and "output_file" in values:
         values.setdefault("imatrix", values["output_file"])
     trains_on = _trains_on(plan, recipe_ids)
+    # every recipe that reads a model reads the plan's, unless a step before it wrote one
+    # (a fine-tune's merge, a converter's copy), which the cases below set
+    values.setdefault("model", plan.model.ref.repo)
     fmt = _format_step(plan)
     if fmt is not None:
         # a --to format: the target's own inputs, and one name for what it writes
         _fmt_step, fmt_recipe, target = fmt
-        values.setdefault("model", plan.model.ref.repo)
         for key, value in target.inputs.items():
             values.setdefault(key, value)
         if fmt_recipe.writes:
