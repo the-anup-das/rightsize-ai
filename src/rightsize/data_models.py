@@ -225,6 +225,41 @@ class _TypeMeasures(_Strict):
     requires_imatrix: bool | None = None
 
 
+class _LadderRow(_Strict):
+    model: str
+    type: str
+    kld: float = Field(ge=0)
+    top1: float | None = Field(default=None, ge=0, le=1)
+    ppl: float | None = Field(default=None, gt=0)
+
+
+class _FormatRow(_Strict):
+    format: str
+    model: str
+    toolkit: str
+    kld: float = Field(ge=0)
+    top1: float | None = Field(default=None, ge=0, le=1)
+    ppl: float | None = Field(default=None, gt=0)
+    ppl_base: float | None = Field(default=None, gt=0)
+
+
+class FormatsQualityFile(_Strict):
+    """data/quality/formats_quality.yaml: the gate's measurements for the formats outside
+    GGUF, and llama.cpp's types on the same models as the scale to read them on (F4)."""
+
+    provenance: Source
+    ladder: list[_LadderRow] = Field(min_length=1)
+    formats: list[_FormatRow]
+
+    @model_validator(mode="after")
+    def _every_format_has_a_ladder(self) -> FormatsQualityFile:
+        models = {r.model for r in self.ladder}
+        orphans = sorted({r.format for r in self.formats if r.model not in models})
+        if orphans:
+            raise ValueError(f"formats measured on a model with no llama.cpp ladder: {orphans}")
+        return self
+
+
 class GgufTypesFile(_Strict):
     """data/quality/gguf_types.yaml, generated from llama.cpp's own measurements."""
 
@@ -727,6 +762,7 @@ DATA_FILES: dict[str, tuple[str, Any]] = {
     "hardware/bandwidth*.yaml": ("bandwidth", BandwidthFile),
     "quality/gate_thresholds.yaml": ("gate_thresholds", GateThresholdsFile),
     "quality/gguf_types.yaml": ("gguf_types", GgufTypesFile),
+    "quality/formats_quality.yaml": ("formats_quality", FormatsQualityFile),
     "finetune/unsloth_vram.yaml": ("finetune_floors", FinetuneFloorsFile),
     "models/candidates.yaml": ("candidates", CandidatesFile),
     "models/variants.yaml": ("variants", VariantsFile),

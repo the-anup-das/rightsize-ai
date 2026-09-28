@@ -100,12 +100,36 @@ def step_values(plan: Any, **inputs: Any) -> list[tuple[Any, Any, dict[str, Any]
     if "llama.cpp/imatrix" in recipe_ids and "output_file" in values:
         values.setdefault("imatrix", values["output_file"])
     trains_on = _trains_on(plan, recipe_ids)
+    fmt = _format_step(plan)
+    if fmt is not None:
+        # a --to format: the target's own inputs, and one name for what it writes
+        _fmt_step, fmt_recipe, target = fmt
+        values.setdefault("model", plan.model.ref.repo)
+        for key, value in target.inputs.items():
+            values.setdefault(key, value)
+        if fmt_recipe.writes:
+            slug = plan.model.ref.repo.replace("/", "__")
+            values.setdefault(fmt_recipe.writes[0], f"{slug}-{target.name}")
     out: list[tuple[Any, Any, dict[str, Any]]] = []
     for step in plan.steps:
         if not step.recipe_id:
             continue
         recipe = get_recipe(step.recipe_id)
         wanted = {k: _typed(recipe, k, v) for k, v in values.items() if k in recipe.inputs}
+        if (
+            fmt is not None
+            and step is fmt[0]
+            and "merged_dir" in values
+            and "model" in recipe.inputs
+        ):
+            wanted["model"] = values["merged_dir"]  # quantize what the fine-tune saved
+        if fmt is not None and step.stage == "serve" and fmt[1].writes:
+            # the server loads what the format's toolkit wrote, with what it needs to know
+            if "model" in recipe.inputs:
+                wanted["model"] = values[fmt[1].writes[0]]
+            for key, value in fmt[2].serve_inputs.items():
+                if key in recipe.inputs:
+                    wanted[key] = value
         if step.stage == "serve" and "model_gguf" in recipe.inputs:
             wanted["model_gguf"] = values.get("model_gguf_served", wanted.get("model_gguf"))
         if (
@@ -118,6 +142,19 @@ def step_values(plan: Any, **inputs: Any) -> list[tuple[Any, Any, dict[str, Any]
             wanted["model"] = values[trains_on]
         out.append((step, recipe, wanted))
     return out
+
+
+def _format_step(plan: Any) -> tuple[Any, Any, Any] | None:
+    """(step, recipe, target) for a quantize step that makes a --to format, if the plan has
+    one: a step whose recipe declares a target named like the step's quantization."""
+    for step in plan.steps:
+        if step.stage != "quantize" or not step.recipe_id or not step.quant:
+            continue
+        recipe = get_recipe(step.recipe_id)
+        target = next((t for t in recipe.targets if t.name == step.quant.variant), None)
+        if target is not None:
+            return step, recipe, target
+    return None
 
 
 def _trains_on(plan: Any, recipe_ids: set[str | None]) -> str | None:

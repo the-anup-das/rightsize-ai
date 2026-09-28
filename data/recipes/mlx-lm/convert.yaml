@@ -11,7 +11,7 @@ inputs:
   mlx_path: { type: path, default: mlx_model, help: must not exist yet }
 writes: [mlx_path]
 targets:
-  - {name: mlx-4bit, inputs: {bits: "4"}, size_from: mlx-4bit}
+  - {name: mlx-4bit, method: mlx, serve_format: mlx, inputs: {bits: "4"}, size_from: mlx-4bit}
   - {name: mlx-8bit, inputs: {bits: "8"}, size_from: mlx-8bit}
 template: >-
   mlx_lm.convert --hf-path {{ model }} -q --q-bits {{ bits }} --mlx-path {{ mlx_path }}

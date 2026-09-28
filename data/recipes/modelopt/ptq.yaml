@@ -18,13 +18,13 @@ inputs:
 file: modelopt_ptq.py
 writes: [output_dir]
 targets:
-  - {name: modelopt-fp8, inputs: {qformat: fp8}, size_from: fp8, embedding_bits: 16, head_bits: 16,
+  - {name: modelopt-fp8, method: fp8, serve_format: modelopt, serve_inputs: {quantization: modelopt}, inputs: {qformat: fp8}, size_from: fp8, embedding_bits: 16, head_bits: 16,
      gate: {recipe: transformers/kld-eval, inputs: {loader: modelopt}}}
-  - {name: modelopt-int8-sq, inputs: {qformat: int8_sq}, size_from: int8, embedding_bits: 16, head_bits: 16,
+  - {name: modelopt-int8-sq, method: int8, serve_format: modelopt, serve_inputs: {quantization: modelopt}, inputs: {qformat: int8_sq}, size_from: int8, embedding_bits: 16, head_bits: 16,
      gate: {recipe: transformers/kld-eval, inputs: {loader: modelopt}}}
-  - {name: modelopt-int4-awq, inputs: {qformat: int4_awq}, size_from: int4-sym, embedding_bits: 16, head_bits: 16,
+  - {name: modelopt-int4-awq, method: awq, serve_format: modelopt, serve_inputs: {quantization: modelopt}, inputs: {qformat: int4_awq}, size_from: int4-sym, embedding_bits: 16, head_bits: 16,
      gate: {recipe: transformers/kld-eval, inputs: {loader: modelopt}}}
-  - {name: modelopt-nvfp4, inputs: {qformat: nvfp4}, size_from: nvfp4, embedding_bits: 16, head_bits: 16,
+  - {name: modelopt-nvfp4, method: nvfp4, serve_format: modelopt, serve_inputs: {quantization: modelopt}, inputs: {qformat: nvfp4}, size_from: nvfp4, embedding_bits: 16, head_bits: 16,
      gate: {recipe: transformers/kld-eval, inputs: {loader: modelopt}}}
 template: |
   import modelopt.torch.opt as mto

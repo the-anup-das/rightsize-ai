@@ -97,7 +97,13 @@ def _table_weights(facts: ModelFacts, quant: str) -> tuple[float, float, str]:
             bits / total,
             "MXFP4 routed experts, Q8_0 elsewhere (llama-quantize's MXFP4_MOE)",
         )
-    bpw, source = gguf_bpw(quant)
+    try:
+        bpw, source = gguf_bpw(quant)
+    except KeyError:
+        from rightsize.fit.formats import lookup
+
+        fmt = lookup(quant)  # a format outside GGUF, by id or alias
+        bpw, source = fmt.bpw, f"the {fmt.id} format (formats.yaml)"
     return total * bpw / 8 / 1e9, bpw, source
 
 
@@ -107,14 +113,47 @@ def repo_file(facts: ModelFacts, quant: str) -> dict | None:
     return {k.upper(): v for k, v in files.items()}.get(quant.upper())
 
 
-def weights(facts: ModelFacts, quant: str) -> tuple[float, float, str]:
+def format_weights_gb(
+    facts: ModelFacts, bpw: float, embedding_bits: float | None, head_bits: float | None
+) -> float | None:
+    """The weights a toolkit writes: the body at the format's bits, the input embedding and
+    an output head of its own at the bits the toolkit leaves them (llm-compressor and
+    bitsandbytes quantize Linear layers only). A head tied to the embedding is saved once,
+    even where the source checkpoint stores it twice (F1's tied_head_stored)."""
+    if not facts.params_total:
+        return None
+    extra = facts.extra or {}
+    body = facts.params_total - int(extra.get("tied_head_stored") or 0)
+    vocab, hidden = extra.get("vocab_size"), extra.get("hidden_size")
+    if not (vocab and hidden):
+        return body * bpw / 8 / 1e9
+    table = vocab * hidden
+    head = table if extra.get("tie_word_embeddings") is False else 0
+    bits = (body - table - head) * bpw + table * (embedding_bits or bpw) + head * (head_bits or bpw)
+    return bits / 8 / 1e9
+
+
+def weights(facts: ModelFacts, quant: QuantSpec | str) -> tuple[float, float, str]:
     """(GB, bits per weight, where from) for the weights at ``quant``.
 
     A GGUF repo's own file beats any table: its tensors are what llama.cpp loads, and
     publishers' own mixes (Unsloth's UD-Q4_K_XL) have no table entry at all. Otherwise
-    parameters x the bits per weight llama.cpp measured for the type."""
+    parameters x the bits per weight llama.cpp measured for the type, or, for a format a
+    toolkit makes (a QuantSpec with its bits), what that toolkit writes."""
     if not facts.params_total:
         raise ValueError(f"{facts.ref.repo}: parameter count unknown; cannot size the weights")
+    if isinstance(quant, QuantSpec):
+        if quant.bits_per_weight:
+            gb = format_weights_gb(
+                facts, quant.bits_per_weight, quant.embedding_bits, quant.head_bits
+            )
+            kept = f", embedding at {quant.embedding_bits:g} bits" if quant.embedding_bits else ""
+            return (
+                gb or 0.0,
+                gb * 8e9 / facts.params_total if gb else 0.0,
+                (f"the {quant.variant or quant.method} format (formats.yaml){kept}"),
+            )
+        quant = quant.variant or quant.method
     own = repo_file(facts, quant)
     if own and own.get("weights_bytes"):
         nbytes = own["weights_bytes"]
@@ -254,7 +293,8 @@ def estimate(
             f"{facts.ref.repo}: its layer count, KV heads and head size are unknown, so the "
             f"KV cache cannot be sized.{hint}"
         )
-    weights_gb, bpw, bpw_source = weights(facts, qname)
+    sized = quant if isinstance(quant, QuantSpec) and quant.bits_per_weight else qname
+    weights_gb, bpw, bpw_source = weights(facts, sized)
     notes = [f"bpw {bpw:.3f} from {bpw_source}", f"ctx {ctx}, kv {kv_bytes:g} B/elem"]
     logits = 0.0
     if all_logits:

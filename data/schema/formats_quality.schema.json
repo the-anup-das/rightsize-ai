@@ -1,0 +1,192 @@
+{
+  "$defs": {
+    "Source": {
+      "additionalProperties": false,
+      "description": "Where a number came from. Required on every record (lightweight rule 2).",
+      "properties": {
+        "fetched_at": {
+          "title": "Fetched At",
+          "type": "string"
+        },
+        "hand": {
+          "default": false,
+          "title": "Hand",
+          "type": "boolean"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        },
+        "source_url": {
+          "title": "Source Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_url",
+        "fetched_at"
+      ],
+      "title": "Source",
+      "type": "object"
+    },
+    "_FormatRow": {
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "title": "Format",
+          "type": "string"
+        },
+        "kld": {
+          "minimum": 0,
+          "title": "Kld",
+          "type": "number"
+        },
+        "model": {
+          "title": "Model",
+          "type": "string"
+        },
+        "ppl": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ppl"
+        },
+        "ppl_base": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ppl Base"
+        },
+        "toolkit": {
+          "title": "Toolkit",
+          "type": "string"
+        },
+        "top1": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top1"
+        }
+      },
+      "required": [
+        "format",
+        "model",
+        "toolkit",
+        "kld"
+      ],
+      "title": "_FormatRow",
+      "type": "object"
+    },
+    "_LadderRow": {
+      "additionalProperties": false,
+      "properties": {
+        "kld": {
+          "minimum": 0,
+          "title": "Kld",
+          "type": "number"
+        },
+        "model": {
+          "title": "Model",
+          "type": "string"
+        },
+        "ppl": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ppl"
+        },
+        "top1": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top1"
+        },
+        "type": {
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "model",
+        "type",
+        "kld"
+      ],
+      "title": "_LadderRow",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "data/quality/formats_quality.yaml: the gate's measurements for the formats outside\nGGUF, and llama.cpp's types on the same models as the scale to read them on (F4).",
+  "properties": {
+    "formats": {
+      "items": {
+        "$ref": "#/$defs/_FormatRow"
+      },
+      "title": "Formats",
+      "type": "array"
+    },
+    "ladder": {
+      "items": {
+        "$ref": "#/$defs/_LadderRow"
+      },
+      "minItems": 1,
+      "title": "Ladder",
+      "type": "array"
+    },
+    "provenance": {
+      "$ref": "#/$defs/Source"
+    }
+  },
+  "required": [
+    "provenance",
+    "ladder",
+    "formats"
+  ],
+  "title": "FormatsQualityFile",
+  "type": "object"
+}

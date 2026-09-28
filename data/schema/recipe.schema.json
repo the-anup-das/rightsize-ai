@@ -125,10 +125,42 @@
           "title": "Inputs",
           "type": "object"
         },
+        "method": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "the family the rules key on (quant.method): fp8, awq, gptq, nvfp4, int8, bnb ...; empty means the size_from format",
+          "title": "Method"
+        },
         "name": {
           "description": "what --to takes: fp8, w4a16, nf4, openvino-int4, ...",
           "title": "Name",
           "type": "string"
+        },
+        "serve_format": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "what a server lists in serve.formats to load the output; empty means no plan serves it",
+          "title": "Serve Format"
+        },
+        "serve_inputs": {
+          "additionalProperties": true,
+          "description": "inputs the serve step needs for this output, e.g. quantization: modelopt",
+          "title": "Serve Inputs",
+          "type": "object"
         },
         "size_from": {
           "anyOf": [

@@ -81,8 +81,58 @@ def test_a_trainer_pinned_without_a_fine_tune_says_what_is_missing() -> None:
 
 
 def test_frameworks_plans_do_not_cover_yet_say_so() -> None:
-    with pytest.raises(NotImplementedYet, match="Planning with vLLM"):
-        _plan(framework="vllm")
+    with pytest.raises(NotImplementedYet, match="Planning with Diffusers"):
+        _plan(framework="diffusers")
+
+
+def test_pinning_vllm_quantizes_to_a_format_it_loads_and_serves_it() -> None:
+    """A server of --to formats: its ladder is the formats it loads, best quality first, and
+    the plan is one toolkit's quantize step followed by the server."""
+    plan = _plan(framework="vllm")
+    assert [s.stage for s in plan.steps] == ["quantize", "serve"]
+    quantize, serve = plan.steps
+    assert (
+        quantize.recipe_id == "llm-compressor/fp8-dynamic"
+        and quantize.framework == "llm-compressor"
+    )
+    assert quantize.quant.method == "fp8" and quantize.quant.embedding_bits == 16
+    assert serve.recipe_id == "vllm/serve" and serve.runtime.name == "vllm"
+    assert any("format: fp8 made by llm-compressor" in line for line in plan.trace)
+    # the server loads the folder the quantizer wrote
+    text = _rendered(plan)
+    assert "vllm serve Qwen__Qwen3-4B-fp8 " in text["vllm/serve"]
+    assert 'output_dir="Qwen__Qwen3-4B-fp8"' in text["llm-compressor/fp8-dynamic"]
+
+
+def test_vllm_ranks_the_formats_by_the_gates_measurements() -> None:
+    result = recommend_for_model(FACTS, "RTX 4090", framework="vllm", quality="any", top_k=10)
+    order = [p.steps[0].quant.variant for p in result.plans]
+    assert order[:2] == ["fp8", "modelopt-fp8"]  # near-lossless first
+    assert order.index("awq") < order.index("w4a16") < order.index("modelopt-int4-awq")
+    assert "openvino-int8" not in order, "vLLM does not load OpenVINO"
+
+
+def test_a_model_optimizer_export_tells_vllm_what_it_is() -> None:
+    result = recommend_for_model(FACTS, "RTX 4090", framework="vllm", quality="any", top_k=10)
+    plan = next(p for p in result.plans if p.steps[0].quant.variant == "modelopt-fp8")
+    assert plan.steps[0].recipe_id == "modelopt/ptq"
+    text = _rendered(plan)
+    assert 'CONFIGS["fp8"]' in text["modelopt/ptq"]
+    assert "--quantization modelopt" in text["vllm/serve"]
+    assert "vllm serve Qwen__Qwen3-4B-modelopt-fp8 " in text["vllm/serve"]
+    # a format the gate never scored has no quality to rank by, and is left out honestly
+    variants = [p.steps[0].quant.variant for p in result.plans]
+    assert "modelopt-nvfp4" not in variants
+    assert any(r.quant == "modelopt-nvfp4" and "quality" in r.reason for r in result.rejected)
+
+
+def test_below_ada_fp8_is_penalised_and_awq_can_win() -> None:
+    """On Ampere vLLM runs FP8 weight-only (the rule fp8_weight_only_below_ada)."""
+    ampere = recommend_for_model(FACTS, "RTX 3090", framework="vllm", top_k=10)
+    fp8 = next(p for p in ampere.plans if p.steps[0].quant.variant == "fp8")
+    assert any("fp8_weight_only_below_ada" in line for line in fp8.trace)
+    ada = recommend_for_model(FACTS, "RTX 4090", framework="vllm", top_k=10)
+    assert not any("fp8_weight_only_below_ada" in line for line in ada.plans[0].trace)
 
 
 def test_an_unknown_framework_names_the_known_ones() -> None:

@@ -84,6 +84,17 @@ About 40 rules; LLM quant penalty from Unsloth KL tables; non-LLM families ranke
 
 ## TODO
 
+- [x] Plans for the formats outside GGUF: pinning a server that loads them (`--framework
+      vllm`) makes its ladder the `--to` formats it loads (each target's `serve_format`
+      against the server's `serve.formats`), ranked by the quality cost the gate measured
+      and bridged onto llama.cpp's scale (`data/quality/formats_quality.yaml`, F8), sized
+      with what each toolkit leaves 16-bit, and gated by the same rules (FP8 below Ada is
+      weight-only, NVFP4 below Blackwell likewise). The plan is one toolkit's quantize
+      step and the server, which loads the folder the toolkit wrote (a Model Optimizer
+      export adds `--quantization modelopt`). On an RTX 4090, Qwen3-0.6B ranks FP8
+      (llm-compressor, then Model Optimizer) above AWQ, W4A16 and INT4 AWQ; on an RTX
+      3090 the Ampere penalty applies and 30B-class models at AWQ fill the card
+
 - [x] `data/schema/rules.schema.json`; loader; test-case requirement enforced by the schema
 - [x] Safe condition evaluator, three-valued (an unknown never fires a rule), with parser tests
 - [ ] Seed 40 rules with sources and tests - **31**, each source fetched and quoted, rather than

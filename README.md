@@ -41,6 +41,7 @@ rightsize recommend                       # the best models for this machine, ra
 rightsize recommend --task coding --device "RTX 3060 12GB" --commands
 rightsize recommend --finetune-device T4 --mode qlora     # fine-tune on one box, serve on this
 rightsize recommend --mode lora --framework trl --device "RTX 4090"   # one toolkit: trl, axolotl, mlx-lm, unsloth, ollama
+rightsize recommend --framework vllm --device "RTX 4090"   # serve with vLLM: ranks FP8, AWQ, W4A16, Model Optimizer formats
 rightsize recommend --finetune-device "RTX 3060 12GB" --mode lora --cloud   # rent a GPU when it won't fit
 rightsize cloud --model Qwen/Qwen3-14B --mode lora --tokens 10M            # cheapest GPUs for that job
 rightsize detect                          # what machine is this?
@@ -148,7 +149,7 @@ every verdict on that card 7% pessimistic.
 | F1 Model catalog | [F01](docs/plans/F01-model-catalog.md) | facts from config, safetensors and GGUF headers without downloading; published quantizations (`variants`); curated lists and `search` for all five families ([how](docs/guide/model-facts.md)) |
 | F2 Hardware DB + detection | [F02](docs/plans/F02-hardware.md) | 259 devices ingested, bandwidth for ~200, detection, `bench`, HF profile import |
 | F3 Fit engine | [F03](docs/plans/F03-fit-engine.md) | LLM memory, KV and speed; fine-tune memory; diffusion (offload phases), Whisper, vision and embedding memory, each checked against published measurements |
-| F4 Rules + ranking | [F04](docs/plans/F04-rules-engine.md) | `recommend` both flows, 31 sourced rules, plans that render to commands |
+| F4 Rules + ranking | [F04](docs/plans/F04-rules-engine.md) | `recommend` both flows, 31 sourced rules, plans that render to commands; a pinned server such as vLLM ranks the `--to` formats on llama.cpp's quality scale |
 | F5 Framework registry + recipes | [F05](docs/plans/F05-framework-registry.md) | 28 recipes over 15 frameworks (fine-tune, quantize, export, serve); plans render the whole chain; generated [framework pages](docs/frameworks/README.md) |
 | F6 SDK / CLI / MCP | [F06](docs/plans/F06-surfaces.md) | SDK, CLI and MCP server (ten tools, stdio) over the same functions; Plan JSON Schema in `schema/` |
 | F7 Cloud fallback | [F07](docs/plans/F07-cloud-fallback.md) | cheapest rental GPU for a fine-tune that does not fit, from SkyPilot's open price catalog; job time and cost per 10M tokens (low confidence) |

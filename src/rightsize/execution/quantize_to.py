@@ -60,25 +60,10 @@ def choose(target: str, framework: str | None = None) -> tuple[Any, Any]:
 
 
 def output_gb(fx: ModelFacts, bpw: float, spec: Any) -> float | None:
-    """The weights a toolkit writes: the body at the format's bits, the input embedding and
-    an output head of its own at the bits the target says they keep. A head tied to the
-    embedding is saved once, even where the source checkpoint stores it twice (F1's
-    tied_head_stored)."""
-    if not fx.params_total:
-        return None
-    extra = fx.extra
-    body = fx.params_total - int(extra.get("tied_head_stored") or 0)
-    vocab, hidden = extra.get("vocab_size"), extra.get("hidden_size")
-    if not (vocab and hidden):
-        return body * bpw / 8 / 1e9
-    table = vocab * hidden
-    head = table if extra.get("tie_word_embeddings") is False else 0
-    bits = (
-        (body - table - head) * bpw
-        + table * (spec.embedding_bits or bpw)
-        + head * (spec.head_bits or bpw)
-    )
-    return bits / 8 / 1e9
+    """The weights a target's toolkit writes; the fit engine's format_weights_gb."""
+    from rightsize.fit.llm import format_weights_gb
+
+    return format_weights_gb(fx, bpw, spec.embedding_bits, spec.head_bits)
 
 
 def plan_for(

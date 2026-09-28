@@ -16,7 +16,7 @@ inputs:
 file: llmcompressor_w4a16.py
 writes: [output_dir]
 targets:
-  - {name: w4a16, size_from: gptq, embedding_bits: 16, head_bits: 16,
+  - {name: w4a16, method: gptq, serve_format: compressed-tensors, size_from: gptq, embedding_bits: 16, head_bits: 16,
      gate: {recipe: transformers/kld-eval}}
 template: |
   from llmcompressor import oneshot

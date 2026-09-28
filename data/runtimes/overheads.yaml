@@ -28,6 +28,18 @@ runtimes:
       fetched_at: "2026-09-25"
       hand: true
       note: first estimate; refit from measurements (F9)
+  - name: vllm
+    fixed_gb: 1.5
+    fraction: 0.03
+    source:
+      source_url: https://docs.vllm.ai/en/stable/configuration/conserving_memory/
+      fetched_at: "2026-09-28"
+      hand: true
+      note: >-
+        first estimate: the CUDA graphs and the profiling run vLLM keeps beside the
+        weights; vLLM then claims gpu_memory_utilization (0.92 by default) of the card
+        for the KV cache regardless. No measurement yet (vLLM does not run on the
+        Windows machine the other constants were fitted on)
   - name: lm studio
     fixed_gb: 0.80
     fraction: 0.02

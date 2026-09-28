@@ -137,3 +137,18 @@ def test_top_level_estimate_and_detect_are_real() -> None:
     given = rightsize.estimate(fx, "Q4_K_M", "Jetson Orin Nano 8GB", bandwidth_gbps=102)
     assert given.speed and given.speed < r.speed
     assert isinstance(rightsize.detect(), rightsize.Device)
+
+
+def test_global_flags_work_after_the_subcommand_too() -> None:
+    """README says `rightsize recommend --json > plans.json`; argparse only took the flag
+    before the subcommand. Both orders work, and neither order overwrites the other."""
+    from rightsize.cli import build_parser
+
+    parser = build_parser()
+    assert parser.parse_args(["recommend", "--json"]).json is True
+    assert parser.parse_args(["--json", "recommend"]).json is True
+    assert parser.parse_args(["recommend"]).json is False
+    assert parser.parse_args(["--offline", "estimate", "x"]).offline_all is True
+    # cloud used to have an --offline of its own; the global one means the same, no network
+    assert parser.parse_args(["cloud", "--offline"]).offline_all is True
+    assert parser.parse_args(["variants", "org/x"]).offline_all is False

@@ -96,3 +96,24 @@ def test_a_model_between_the_two_units_still_fits() -> None:
     assert r.breakdown["usable_memory"] == pytest.approx(17.18, abs=0.01), "budget is decimal GB"
     assert 16.0 < r.vram_gb <= dev.memory_gb, "sits between the decimal and binary readings"
     assert r.verdict is not Verdict.no_fit
+
+
+def test_an_llm_is_sized_at_a_format_outside_gguf() -> None:
+    """estimate --quant fp8 on an LLM: the formats table sizes it, and a QuantSpec that says
+    what the toolkit leaves 16-bit is sized the way the --to predictor sizes the file."""
+    import json
+    from pathlib import Path
+
+    from rightsize.hardware import resolve
+    from rightsize.types import QuantSpec
+
+    path = Path(__file__).parent / "fixtures" / "facts" / "Qwen__Qwen3-4B.json"
+    facts = ModelFacts.model_validate(json.loads(path.read_text(encoding="utf-8")))
+    card = resolve("RTX 4090")
+    plain = estimate(facts, "fp8", card, ctx=512)
+    assert plain.breakdown["weights"] == pytest.approx(facts.params_total * 8 / 8 / 1e9, abs=0.01)
+    spec = QuantSpec(method="fp8", variant="fp8", bits_per_weight=8.0, embedding_bits=16)
+    kept = estimate(facts, spec, card, ctx=512)
+    table = 151936 * 2560 * 8 / 8 / 1e9  # the embedding at 16 bits costs another 8 bits each
+    assert kept.breakdown["weights"] - plain.breakdown["weights"] == pytest.approx(table, abs=0.01)
+    assert "embedding at 16 bits" in kept.notes[0]

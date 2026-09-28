@@ -12,7 +12,7 @@ inputs:
 file: llmcompressor_fp8.py
 writes: [output_dir]
 targets:
-  - {name: fp8, size_from: fp8, embedding_bits: 16, head_bits: 16,
+  - {name: fp8, method: fp8, serve_format: fp8, size_from: fp8, embedding_bits: 16, head_bits: 16,
      gate: {recipe: transformers/kld-eval}}
 template: |
   from llmcompressor import oneshot
