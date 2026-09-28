@@ -144,7 +144,7 @@ def test_installing_a_toolkit_makes_its_own_environment(echo, monkeypatch) -> No
     recorded beside it; no network here, the uv calls are recorded instead."""
     calls: list[list[str]] = []
 
-    def fake_run(argv, log):
+    def fake_run(argv, log, **_kw):
         calls.append(argv)
         if argv[1:3] == ["venv", str(envs.tools_root() / "echo-tool")]:
             py = envs._python_in(Path(argv[2]))

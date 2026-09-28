@@ -120,17 +120,32 @@ def _uv() -> list[str]:
     raise ToolkitMissing("installing a toolkit needs uv: pip install uv")
 
 
-def _run(argv: list[str], log: Log) -> str:
-    log("$ " + " ".join(argv))
-    proc = subprocess.run(argv, capture_output=True, text=True, encoding="utf-8",
-                          errors="replace", check=False)
-    out = (proc.stdout or "") + (proc.stderr or "")
-    for line in out.splitlines()[-15:]:
-        log("  " + line)
-    if proc.returncode != 0:
-        raise ToolkitMissing(f"{argv[0]} failed with exit code {proc.returncode}: "
-                             f"{out.strip().splitlines()[-1] if out.strip() else ''}")
-    return proc.stdout or ""
+def _run(argv: list[str], log: Log, *, quiet: bool = False) -> str:
+    """Run a command and return its stdout. Unless ``quiet``, its output is logged line by
+    line as it comes: installing PyTorch is a few GB, and minutes of silence look like a
+    hang."""
+    if quiet:
+        proc = subprocess.run(argv, capture_output=True, text=True, encoding="utf-8",
+                              errors="replace", check=False)
+        out, rc = (proc.stdout or ""), proc.returncode
+        tail = (proc.stdout or "") + (proc.stderr or "")
+    else:
+        log("$ " + " ".join(argv))
+        popen = subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                 text=True, encoding="utf-8", errors="replace")
+        lines = []
+        assert popen.stdout is not None
+        for line in popen.stdout:
+            line = line.rstrip()
+            lines.append(line)
+            if line:
+                log("  " + line)
+        rc = popen.wait()
+        out = tail = "\n".join(lines)
+    if rc != 0:
+        last = tail.strip().splitlines()[-1] if tail.strip() else ""
+        raise ToolkitMissing(f"{Path(argv[0]).name} failed with exit code {rc}: {last}")
+    return out
 
 
 _TORCH_CHECK = ("import json, torch; print(json.dumps([torch.__version__, "
@@ -158,11 +173,11 @@ def install(info, *, python: str = DEFAULT_PYTHON, log: Log = print) -> Env:
     _run(cmd, log)
     if spec.check:
         _run([str(py), "-c", f"import {spec.check}"], log)
-    freeze = _run([*uv, "pip", "freeze", "--python", str(py)], lambda _line: None)
+    freeze = _run([*uv, "pip", "freeze", "--python", str(py)], log, quiet=True)
     versions = dict(line.split("==", 1) for line in freeze.splitlines() if "==" in line)
     torch = None
     if spec.needs_torch:
-        torch = json.loads(_run([str(py), "-c", _TORCH_CHECK], lambda _line: None).strip())
+        torch = json.loads(_run([str(py), "-c", _TORCH_CHECK], log, quiet=True).strip())
         if not torch[1]:
             log("warning: PyTorch installed without a usable GPU; steps will run on the CPU")
     marker = {
