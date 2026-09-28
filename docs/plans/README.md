@@ -40,6 +40,9 @@ early paid for itself: it found the llama.cpp converter packaging, the GiB/GB mi
 sdist shipping without data. The cost is that the SDK can execute a plan it cannot yet
 recommend - F4 is the gap that matters most.
 
+The lessons that cut across features, each with the measurement that taught it, are in
+[docs/lessons.md](../lessons.md); the item-by-item record stays in each plan's TODO.
+
 ## Lightweight rules (all features)
 
 1. Core deps: `httpx`, `pydantic`, `pyyaml` only. Enforced by `tests/budgets/`.
