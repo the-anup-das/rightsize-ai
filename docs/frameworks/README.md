@@ -9,6 +9,7 @@ Each framework is a folder in `data/recipes/`: a `framework.yaml` saying what it
 | [axolotl](axolotl.md) | 2 | export, finetune | nvidia, amd; on linux |
 | [ctranslate2](ctranslate2.md) | 1 | convert | nvidia, cpu |
 | [diffusers](diffusers.md) | 1 | quantize | nvidia, amd, intel |
+| [exllamav3](exllamav3.md) | 1 | quantize | nvidia |
 | [llama.cpp](llama.cpp.md) | 6 | calibrate, convert, evaluate, quantize, serve | any hardware; on linux, windows, macos |
 | [llm-compressor](llm-compressor.md) | 3 | quantize | nvidia |
 | [mlx-lm](mlx-lm.md) | 4 | export, finetune, quantize, serve | apple; on macos |

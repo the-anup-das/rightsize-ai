@@ -1,0 +1,23 @@
+# What this toolkit is for, where it runs, how it installs and how its steps join a plan.
+name: exllamav3
+title: ExLlamaV3
+summary: >-
+  Quantizes Hugging Face models to EXL3, a trellis-coded format at any bit rate from 1 to 8
+  bits, for its own inference library and the servers built on it (TabbyAPI)
+stages: [quantize]
+families: [llm]
+formats: [exl3]
+hardware: {vendors: [nvidia]}
+install:
+  kind: pip
+  packages: ["exllamav3==1.5.3"]
+  needs_torch: true
+  check: exllamav3
+  line: pip install exllamav3
+  note: >-
+    the PyPI wheel compiles its CUDA kernels on first use and needs nvcc; the release page
+    (github.com/turboderp-org/exllamav3/releases) has prebuilt wheels per CUDA, PyTorch and
+    Python version for Linux and Windows, e.g. exllamav3-1.5.3+cu128.torch2.10.0-cp312-cp312-win_amd64.whl
+homepage: https://github.com/turboderp-org/exllamav3
+source_doc_url: https://github.com/turboderp-org/exllamav3/blob/master/doc/convert.md
+version_tested: 1.5.3

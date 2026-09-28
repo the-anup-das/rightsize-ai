@@ -10,7 +10,9 @@ inputs:
   model: { type: str, required: true }
   components: { type: str, default: '["transformer", "text_encoder_2"]', help: "the components to quantize; FLUX: transformer and text_encoder_2 (T5)" }
   offload: { type: bool, default: false, help: "enable_model_cpu_offload instead of moving the pipeline to the GPU" }
+  output_dir: { type: path, default: model-nf4, help: "where the pipeline is saved with its quantized components; from_pretrained loads it back 4-bit" }
 file: diffusers_quantize.py
+writes: [output_dir]
 template: |
   import torch
   from diffusers import DiffusionPipeline
@@ -24,10 +26,13 @@ template: |
   )
   pipe = DiffusionPipeline.from_pretrained("{{ model }}", quantization_config=quant, dtype=torch.bfloat16)
   {% if offload %}pipe.enable_model_cpu_offload(){% endif %}{% if not offload %}pipe.to("cuda"){% endif %}
+  pipe.save_pretrained(r"{{ output_dir }}")  # the quantized components keep their quantization config
 notes:
   - "rightsize estimate MODEL --quant nf4 --te-quant nf4 --offload model sizes this before you download it"
   - "dtype= replaces torch_dtype= (passing both is an error)"
   - "torchao instead: quant_mapping={'transformer': TorchAoConfig(Int8WeightOnlyConfig())}; TorchAoConfig no longer takes strings, and the docs' Int8WeightOnlyConfig(group_size=128, version=2) fails on torchao 0.18"
+  - "run on Windows with an RTX 4070 Ti SUPER (rightsize run, a one-step plan, 2026-09-28; diffusers 0.40.0, bitsandbytes 0.50.2): segmind/tiny-sd with components [unet, text_encoder], 315 s of which most was the 1 GB download, 0.98 GB of VRAM, 0.74 GB saved: the UNet 450 MB (its Linear layers NF4; the convolutions, most of a UNet, stay 16-bit), the text encoder 124 MB, the VAE 167 MB untouched. The saved pipeline loads back with Linear4bit modules and makes a 256x256 image in 0.8 s at 0.92 GB"
+  - "bitsandbytes quantizes Linear layers only, so a UNet shrinks far less than a DiT: FLUX's transformer is all attention and MLP and is where nf4 pays"
 source_doc_url: https://huggingface.co/docs/diffusers/en/quantization/overview
 version_tested: 0.40.0
-verified: docs
+verified: run

@@ -158,6 +158,13 @@ The 14 MVP recipes above plus 4 serve recipes; docs generation; entry point disc
       predicted, gate pass at KLD 0.010 where every uniform 4-bit format of that model
       failed. The target says what its bits average over (`bits_over: linear`, Model
       Optimizer's definition), since the export lands on budget only when the two agree
+- [x] The diffusion and audio quantize recipes, checked as far as this machine allows:
+      `diffusers/quantize-pipeline` ran on segmind/tiny-sd (NF4 on the UNet and text encoder,
+      saved and loaded back, an image generated) and now writes the pipeline it quantizes;
+      `whisper.cpp/quantize` needs whisper.cpp built, and the Windows machine has no C++
+      toolchain, so it stays checked against the docs with that noted. `exllamav3/convert`
+      is new, from the 1.5.3 conversion guide: EXL3 at any bit rate through the package's
+      own converter, with no `--to` target since nothing but ExLlamaV3 loads the output
 - [x] `render()` and `Plan.render()`. Two-stage plans render the fine-tune too: Unsloth on
       NVIDIA and Intel, Axolotl on AMD, MLX-LM on Apple (with an `mlx_lm.convert -q` step first
       for QLoRA); llama.cpp then converts the merged model. Full fine-tunes have no recipe yet

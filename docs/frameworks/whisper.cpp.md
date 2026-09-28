@@ -33,6 +33,7 @@ Install: git clone https://github.com/ggml-org/whisper.cpp && cd whisper.cpp && 
 
 - the binary is whisper-quantize (the target in examples/quantize/CMakeLists.txt); the README still says ./build/bin/quantize
 - rightsize estimate openai/whisper-large-v3-turbo --quant q5_0 --runtime whisper.cpp gives the memory
+- not run here (2026-09-28): whisper.cpp's releases ship no binaries, so it has to be built, and the Windows machine the other recipes ran on has no C++ toolchain (Visual Studio Build Tools without the C++ workload, no cmake); on Linux or a Mac the install line builds it in minutes
 
 Source: <https://github.com/ggml-org/whisper.cpp/blob/master/README.md>
 
