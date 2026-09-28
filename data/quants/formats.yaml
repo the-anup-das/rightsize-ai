@@ -65,6 +65,14 @@ formats:
       source_url: https://github.com/pytorch/ao/blob/main/torchao/quantization/quant_api.py
       fetched_at: "2026-09-25"
       note: Int4WeightOnlyConfig group_size defaults to 128
+  - id: int4-sym
+    bpw: 4.125
+    aliases: [int4_awq, modelopt-int4-awq]
+    layout: int4, block 128, one fp16 scale per block and no zero point = 4 + 16/128
+    source:
+      source_url: https://github.com/NVIDIA/Model-Optimizer/blob/0.47.0/examples/hf_ptq/README.md
+      fetched_at: "2026-09-28"
+      note: INT4 AWQ is weight-only, symmetric, block size 128 (the README's format table)
   - id: awq
     bpw: 4.156
     aliases: [awq-int4]

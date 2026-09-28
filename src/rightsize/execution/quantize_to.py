@@ -185,6 +185,7 @@ def quantize_to(
         values.update(
             {
                 "candidate": out,
+                "modelopt_state": "modelopt_state.pth",  # what modelopt/ptq writes beside it
                 # absolute: the script runs inside the run folder
                 "eval_file": "wiki.test.raw" if dry_run else str(wikitext(log).resolve()),
                 "chunks": eval_chunks,

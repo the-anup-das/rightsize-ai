@@ -36,6 +36,7 @@ def test_bundled_recipes_load_and_have_provenance() -> None:
         "whisper.cpp",
         "ctranslate2",
         "sentence-transformers",
+        "modelopt",
     } == set(frameworks())
 
 
@@ -161,4 +162,5 @@ def test_every_toolkit_recipe_says_how_far_it_was_checked() -> None:
         "transformers/kld-eval",
         "sentence-transformers/cosine-eval",
         "llm-compressor/awq-w4a16",
+        "modelopt/ptq",
     }

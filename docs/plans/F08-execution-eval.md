@@ -123,6 +123,10 @@ Unsloth QLoRA adapter (fine-tune -> merged or GGUF), llama.cpp quantize adapter,
       | w4a16 | fail | 0.228 | 0.777 | 25.59 | 30 s |
       | openvino-int4 | fail | 0.308 | 0.729 | 26.72 | 144 s, CPU |
       | awq | fail | 0.199 | 0.778 | 25.26 | 33 s |
+      | modelopt-fp8 | pass | 0.022 | 0.922 | 22.41 | 60 s |
+      | modelopt-int4-awq | fail | 0.263 | 0.750 | 27.90 | 60 s |
+      | modelopt-int8-sq | fail | 0.366 | 0.726 | 30.50 | 60 s |
+      | modelopt-nvfp4 | no gate here: the MX kernel needs nvcc | | | | |
       | onnx-int8 (all-MiniLM-L6-v2) | pass | cosine 0.991, worst 0.982 | | | 42 s |
 
       Every 4-bit format fails on a 0.6B model, and so do llama.cpp's own: its Q4_K_M of the
@@ -137,6 +141,18 @@ Unsloth QLoRA adapter (fine-tune -> merged or GGUF), llama.cpp quantize adapter,
       1.355 GB as predicted, gate warn (KLD 0.133, top-1 0.850, perplexity 17.14 against
       17.11): the first 4-bit result above fail, and still twice llama.cpp's Q4_K_M on the
       same model (0.059). AutoAWQ itself is archived; llm-compressor's port is its successor
+- [x] NVIDIA Model Optimizer 0.47.0 as a toolkit (`modelopt/ptq`: FP8, INT8 SmoothQuant,
+      INT4 AWQ, NVFP4; `--to modelopt-fp8` and the rest). It installs on Windows with a CUDA
+      PyTorch and quantizes there; its unified checkpoint is what vLLM, SGLang and
+      TensorRT-LLM load, and since Transformers does not read it, the recipe also saves the
+      quantizer state and the gate restores that onto the 16-bit model (`mto.restore`).
+      Qwen3-0.6B: FP8 passes at KLD 0.022 (llm-compressor's FP8: 0.020), sizes match the
+      predictions to the byte (FP8 0.752 GB, NVFP4 0.559 GB), INT4 AWQ fails like every
+      4-bit format on this model, and INT8 SmoothQuant fails at 0.366: per-tensor int8
+      activations hurt a 0.6B model where weight-only int8 does not. NVFP4's gate needs
+      the MX CUDA kernel Model Optimizer compiles on first use, which wants nvcc; not on
+      this machine. AutoQuantize (mixed FP8 and NVFP4 to an `effective_bits` target) is
+      still open in F5, with `bits_that_fit` in F3
 - [x] llama.cpp quantize adapter: convert, imatrix, quantize, and `rightsize tools install`
       for pinned binaries plus the matching converter
 - [x] VRAM is measured as the rise over what the card held before the step started; the raw
