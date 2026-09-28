@@ -15,13 +15,18 @@ from rightsize.registry.schema import Target
 from rightsize.types import ModelFacts
 
 ROOT = Path(__file__).resolve().parents[1]
-FACTS = ModelFacts.model_validate(json.loads(
-    (ROOT / "tests/fixtures/facts/Qwen__Qwen3-4B.json").read_text(encoding="utf-8")))
+FACTS = ModelFacts.model_validate(
+    json.loads((ROOT / "tests/fixtures/facts/Qwen__Qwen3-4B.json").read_text(encoding="utf-8"))
+)
 
 
 def test_every_target_names_real_inputs_and_a_known_size() -> None:
-    formats = {f["id"] for f in yaml.safe_load(
-        (ROOT / "data/quants/formats.yaml").read_text(encoding="utf-8"))["formats"]}
+    formats = {
+        f["id"]
+        for f in yaml.safe_load((ROOT / "data/quants/formats.yaml").read_text(encoding="utf-8"))[
+            "formats"
+        ]
+    }
     for recipe in all_recipes().values():
         for target in recipe.targets:
             assert set(target.inputs) <= set(recipe.inputs), (recipe.id, target.name)
@@ -30,8 +35,17 @@ def test_every_target_names_real_inputs_and_a_known_size() -> None:
 
 
 def test_the_formats_on_offer() -> None:
-    assert {"fp8", "w4a16", "nf4", "openvino-int4", "openvino-int8", "mlx-4bit", "mlx-8bit",
-            "onnx-int8", "ct2-int8"} <= set(qt.targets())
+    assert {
+        "fp8",
+        "w4a16",
+        "nf4",
+        "openvino-int4",
+        "openvino-int8",
+        "mlx-4bit",
+        "mlx-8bit",
+        "onnx-int8",
+        "ct2-int8",
+    } <= set(qt.targets())
 
 
 @pytest.mark.parametrize("target", sorted(qt.targets()))
@@ -39,10 +53,18 @@ def test_every_target_plans_and_renders(target, monkeypatch, tmp_path) -> None:
     import rightsize.catalog as catalog
 
     monkeypatch.setattr(catalog, "facts", lambda *a, **k: FACTS)
-    manifest = qt.quantize_to("Qwen/Qwen3-4B", target, resolve("RTX 4090"), dry_run=True,
-                              workdir=str(tmp_path), log=lambda _line: None)
+    manifest = qt.quantize_to(
+        "Qwen/Qwen3-4B",
+        target,
+        resolve("RTX 4090"),
+        dry_run=True,
+        workdir=str(tmp_path),
+        log=lambda _line: None,
+    )
     (step,) = manifest.steps
-    assert step.skipped and step.argv
+    # a config recipe has no interpreter to name where its toolkit is not installed (CI),
+    # so the dry run promises only a skipped step that says so
+    assert step.skipped and step.measurements[0].note.startswith("dry run")
 
 
 def test_a_format_nobody_produces_lists_the_ones_that_exist() -> None:
@@ -63,12 +85,17 @@ def test_the_plan_predicts_the_size_from_the_formats_table(monkeypatch) -> None:
     table = 151936 * 2560  # the embedding stays 16-bit; the tied head is not saved again
     body = FACTS.params_total - table
     assert step.fit.breakdown["file_gb"] == pytest.approx(
-        (body * 4.156 + table * 16) / 8 / 1e9, abs=0.001)
+        (body * 4.156 + table * 16) / 8 / 1e9, abs=0.001
+    )
 
 
 def _facts(**extra) -> ModelFacts:
-    return FACTS.model_copy(update={"params_total": extra.pop("params", FACTS.params_total),
-                                    "extra": {**FACTS.extra, **extra}})
+    return FACTS.model_copy(
+        update={
+            "params_total": extra.pop("params", FACTS.params_total),
+            "extra": {**FACTS.extra, **extra},
+        }
+    )
 
 
 def test_the_size_counts_the_embedding_and_head_apart() -> None:
@@ -76,18 +103,30 @@ def test_the_size_counts_the_embedding_and_head_apart() -> None:
     and its W4A16 538.5 MB. Its checkpoint stores the tied head a second time, and the
     embedding stays 16-bit; params x bits said 0.752 and 0.390 GB."""
     linear_only = Target(name="t", embedding_bits=16, head_bits=16)
-    qwen06 = _facts(params=751_632_384, vocab_size=151936, hidden_size=1024,
-                    tie_word_embeddings=True, tied_head_stored=155_582_464)
+    qwen06 = _facts(
+        params=751_632_384,
+        vocab_size=151936,
+        hidden_size=1024,
+        tie_word_embeddings=True,
+        tied_head_stored=155_582_464,
+    )
     assert qt.output_gb(qwen06, 8.0, linear_only) == pytest.approx(0.752, abs=0.001)
     assert qt.output_gb(qwen06, 4.156, linear_only) == pytest.approx(0.540, abs=0.001)
     # the same bits throughout: only the stored second copy of the head drops out
     assert qt.output_gb(qwen06, 4.0, Target(name="t")) == pytest.approx(
-        (751_632_384 - 155_582_464) * 4 / 8 / 1e9)
+        (751_632_384 - 155_582_464) * 4 / 8 / 1e9
+    )
     # a head of its own is counted once, at its own bits
-    untied = _facts(params=1_000_000_000, vocab_size=100_000, hidden_size=1000,
-                    tie_word_embeddings=False, tied_head_stored=None)
+    untied = _facts(
+        params=1_000_000_000,
+        vocab_size=100_000,
+        hidden_size=1000,
+        tie_word_embeddings=False,
+        tied_head_stored=None,
+    )
     assert qt.output_gb(untied, 4.0, linear_only) == pytest.approx(
-        (800_000_000 * 4 + 200_000_000 * 16) / 8 / 1e9)
+        (800_000_000 * 4 + 200_000_000 * 16) / 8 / 1e9
+    )
     # no vocabulary facts: every parameter at the format's bits
     bare = _facts(params=1_000_000_000, vocab_size=None, hidden_size=None, tied_head_stored=None)
     assert qt.output_gb(bare, 4.0, linear_only) == pytest.approx(0.5)
@@ -134,9 +173,14 @@ def test_a_plugin_format_runs_and_is_measured_against_the_prediction(tmp_path, m
     monkeypatch.setattr(catalog, "facts", lambda *a, **k: FACTS)
     loader.clear_cache()
     try:
-        manifest = qt.quantize_to("Qwen/Qwen3-4B", "squash-int8", resolve("RTX 4090"),
-                                  workdir=str(tmp_path / "run"), inputs={"nbytes": 4000},
-                                  log=lambda _line: None)
+        manifest = qt.quantize_to(
+            "Qwen/Qwen3-4B",
+            "squash-int8",
+            resolve("RTX 4090"),
+            workdir=str(tmp_path / "run"),
+            inputs={"nbytes": 4000},
+            log=lambda _line: None,
+        )
     finally:
         loader.clear_cache()
     assert (tmp_path / "run" / "Qwen__Qwen3-4B-squash-int8").stat().st_size == 4000

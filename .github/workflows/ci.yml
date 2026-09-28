@@ -36,14 +36,16 @@ jobs:
       - uses: astral-sh/setup-uv@v6
       - run: uv python install 3.12
       - run: uv build
-      - name: wheel under 300 KB
+      - name: wheel under 400 KB
         run: |
           python3 - <<'PY'
           import glob, os, sys
           wheel = glob.glob("dist/*.whl")[0]
           size = os.path.getsize(wheel)
           print(f"{wheel}: {size/1024:.1f} KB")
-          sys.exit(0 if size < 300 * 1024 else 1)
+          # the data seed (hardware, recipes, quants, models, schemas) is about 100 KB of
+          # it and is the point of the package; the code is the rest
+          sys.exit(0 if size < 400 * 1024 else 1)
           PY
       - name: wheel carries the data seed
         run: |
