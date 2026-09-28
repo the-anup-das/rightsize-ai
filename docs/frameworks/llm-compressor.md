@@ -11,8 +11,55 @@ Quantizes models to the compressed-tensors checkpoints vLLM and SGLang load: FP8
 
 | recipe | stage | families | checked | version |
 |---|---|---|---|---|
+| `llm-compressor/awq-w4a16` | quantize | llm | run | 0.14.0 |
 | `llm-compressor/fp8-dynamic` | quantize | llm | run | 0.14.0 |
 | `llm-compressor/gptq-w4a16` | quantize | llm | run | 0.14.0 |
+
+## `llm-compressor/awq-w4a16`
+
+Quantize step; run end to end at 0.14.0.
+
+`rightsize quantize MODEL` runs it with `--to awq`.
+
+Install: pip install llmcompressor
+
+```python
+from llmcompressor import oneshot
+from llmcompressor.modifiers.quantization import QuantizationModifier
+from llmcompressor.modifiers.transform.awq import AWQModifier
+
+oneshot(
+    model="<model>",
+    dataset="open_platypus",
+    splits="train[:512]",
+    recipe=[
+        # AWQ scales the channels the calibration activations mark as salient, then the
+        # quantizer rounds them: the modifier smooths, it does not quantize on its own
+        AWQModifier(duo_scaling="both"),
+        QuantizationModifier(targets="Linear", scheme="W4A16_ASYM", ignore=["lm_head"]),
+    ],
+    max_seq_length=512,
+    num_calibration_samples=256,
+    output_dir="model-AWQ-W4A16-ASYM",
+)
+```
+
+| input | type | default | notes |
+|---|---|---|---|
+| `model` | str | required |  |
+| `dataset` | str | open_platypus | a name llm-compressor registers (open_platypus, perfectblend, ultrachat_200k, wikitext, ...) |
+| `split` | str | train[:512] |  |
+| `num_samples` | int | 256 | calibration samples the activation statistics come from |
+| `max_seq_length` | int | 512 |  |
+| `output_dir` | path | model-AWQ-W4A16-ASYM |  |
+
+- int4 asymmetric weights, group 128, 16-bit activations, with AWQ's activation-aware scaling; serve the directory with vllm serve
+- the example's dataset is perfectblend (1.5 GB fetched whole); open_platypus is 16 MB and also registered
+- 0.14 moved AWQModifier to llmcompressor.modifiers.transform.awq and split it from the quantizer; the old llmcompressor.modifiers.awq import still works with a deprecation warning
+- AWQ needs a mapping from each norm to the layers it feeds; llm-compressor ships them for the common architectures and infers them for the rest (llmcompressor/modifiers/transform/awq/mappings.py)
+- run on Windows with an RTX 4070 Ti SUPER (rightsize quantize --to awq --eval, 2026-09-28): Qwen3-0.6B in 4.5 min on 256 Open-Platypus samples, gate fail (KLD 0.199, top-1 0.778, perplexity 25.26 against 22.15), between NF4's 0.193 and GPTQ's 0.228; Qwen3-1.7B in 306 s at 5.24 GB of VRAM, 1.355 GB of weights as predicted, gate warn (KLD 0.133, top-1 0.850, perplexity 17.14 against 17.11), where llama.cpp's Q4_K_M of the same model scores 0.059
+
+Source: <https://github.com/vllm-project/llm-compressor/blob/0.14.0/examples/awq/llama_example.py>
 
 ## `llm-compressor/fp8-dynamic`
 

@@ -45,7 +45,7 @@ def test_every_target_names_real_inputs_and_a_known_size() -> None:
 
 def test_the_gated_formats() -> None:
     gated = {t.name for r in all_recipes().values() for t in r.targets if t.gate}
-    assert gated == {"fp8", "w4a16", "nf4", "openvino-int4", "openvino-int8", "onnx-int8"}
+    assert gated == {"fp8", "w4a16", "awq", "nf4", "openvino-int4", "openvino-int8", "onnx-int8"}
 
 
 def test_a_target_without_a_gate_says_so(monkeypatch) -> None:
@@ -68,6 +68,7 @@ def test_the_formats_on_offer() -> None:
     assert {
         "fp8",
         "w4a16",
+        "awq",
         "nf4",
         "openvino-int4",
         "openvino-int8",
@@ -108,7 +109,7 @@ def test_every_target_plans_and_renders(target, monkeypatch, tmp_path) -> None:
 
 def test_a_format_nobody_produces_lists_the_ones_that_exist() -> None:
     with pytest.raises(KeyError, match="formats: gguf, "):
-        qt.choose("awq")
+        qt.choose("exl3")
     with pytest.raises(KeyError, match="llm-compressor does"):
         qt.choose("fp8", framework="unsloth")
 

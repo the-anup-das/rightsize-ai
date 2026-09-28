@@ -122,6 +122,7 @@ Unsloth QLoRA adapter (fine-tune -> merged or GGUF), llama.cpp quantize adapter,
       | nf4 | fail | 0.193 | 0.781 | 25.25 | 32 s |
       | w4a16 | fail | 0.228 | 0.777 | 25.59 | 30 s |
       | openvino-int4 | fail | 0.308 | 0.729 | 26.72 | 144 s, CPU |
+      | awq | fail | 0.199 | 0.778 | 25.26 | 33 s |
       | onnx-int8 (all-MiniLM-L6-v2) | pass | cosine 0.991, worst 0.982 | | | 42 s |
 
       Every 4-bit format fails on a 0.6B model, and so do llama.cpp's own: its Q4_K_M of the
@@ -130,6 +131,12 @@ Unsloth QLoRA adapter (fine-tune -> merged or GGUF), llama.cpp quantize adapter,
       models, and the gate now says so where a file of the right size used to look fine.
       `ct2-int8` and the MLX formats have no gate yet; a transcription comparison for Whisper
       is the follow-up
+- [x] AWQ through llm-compressor 0.14 (`--to awq`: `AWQModifier(duo_scaling="both")` then
+      `QuantizationModifier(scheme="W4A16_ASYM")`, 256 Open-Platypus samples). Qwen3-0.6B:
+      fail, KLD 0.199, between NF4 and GPTQ. Qwen3-1.7B: 306 s, 5.24 GB of VRAM, weights
+      1.355 GB as predicted, gate warn (KLD 0.133, top-1 0.850, perplexity 17.14 against
+      17.11): the first 4-bit result above fail, and still twice llama.cpp's Q4_K_M on the
+      same model (0.059). AutoAWQ itself is archived; llm-compressor's port is its successor
 - [x] llama.cpp quantize adapter: convert, imatrix, quantize, and `rightsize tools install`
       for pinned binaries plus the matching converter
 - [x] VRAM is measured as the rise over what the card held before the step started; the raw
