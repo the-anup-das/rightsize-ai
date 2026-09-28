@@ -39,7 +39,7 @@ Presets (first set): RTX 3060 12 GB, RTX 4070 12 GB, RTX 4090 24 GB, RTX 5060 Ti
 - `data/hardware/gpus.json`, `cpus.json`, `apple.json`: one record per part, every numeric field paired with `provenance`. Ingest script `scripts/ingest_hardware.py` merges sources and writes `fetched_at`.
 - Fuzzy lookup: normalise vendor prefixes and memory suffixes ("4090", "RTX 4090 24GB", "GeForce RTX 4090" resolve to one record). Ambiguity returns the candidates instead of guessing.
 - Detection is subprocess and httpx only, imported lazily: `nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader`; `rocm-smi --showmeminfo vram --json`; macOS `sysctl hw.memsize` + `system_profiler SPDisplaysDataType -json`; Windows fallback `wmic`/CIM for RAM. Ollama and LM Studio endpoints add "already loaded" context for F9.
-- Multi-GPU: `detect()` returns one `Device` per GPU plus a `system_ram_gb`; aggregation policy lives in F3.
+- Multi-GPU: `detect()` returns one `Device` per GPU plus a `system_ram_gib`; aggregation policy lives in F3.
 
 ## MVP scope
 

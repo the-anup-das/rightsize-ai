@@ -57,7 +57,9 @@ def test_public_functions_raise_not_implemented_yet() -> None:
 
 
 def _sample_plan() -> Plan:
-    device = Device(name="RTX 4090", vendor="nvidia", memory_gb=24, bandwidth_gbps=1008, os="linux")
+    device = Device(
+        name="RTX 4090", vendor="nvidia", memory_gib=24, bandwidth_gbps=1008, os="linux"
+    )
     facts = ModelFacts(
         ref=ModelRef(repo="Qwen/Qwen3-14B"),
         family=Family.llm,

@@ -17,3 +17,12 @@ Everything Rightsize knows that is a *number* or a *table* lives here, not in Py
 - `source_url` and `fetched_at` are required. No number without a source.
 - Prefer ingest scripts (`scripts/ingest_*.py`, to come) over hand edits; hand tables are marked `"hand": true`.
 - Changing data never requires a code release.
+
+## Units
+
+Two units, each matching the source a reader would check the number against:
+
+- **Device memory is GiB** (`memory_gib`, `system_ram_gib`; 1024³ bytes). A "16GB" card is `16`, which is what the vendor page says and what `nvidia-smi` reports (16376 MiB). llama.cpp prints MiB too.
+- **Model and file sizes are decimal GB** (1e9 bytes), which is how Hugging Face lists file sizes and how the published numbers behind our golden tests are quoted.
+
+`Device.memory_gb` converts the first into the second, and the fit engine only ever uses that. 16 GiB is 17.18 GB; comparing model sizes against a bare `16` made every verdict on this card 7% pessimistic. Bandwidth (`bandwidth_gbps`) is decimal GB/s, as vendors state it.

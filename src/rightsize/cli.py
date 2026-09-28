@@ -70,6 +70,20 @@ def build_parser() -> argparse.ArgumentParser:
     q.add_argument("--revision", default="main")
     q.add_argument("--dry-run", action="store_true", help="render every step, run nothing")
 
+    t = sub.add_parser("tools", help="install pinned toolchains into .tools/")
+    t_sub = t.add_subparsers(dest="tools_command")
+    ti = t_sub.add_parser("install", help="download a toolchain (binaries + converter)")
+    ti.add_argument("name", choices=["llama.cpp"])
+    ti.add_argument(
+        "--backend",
+        default=None,
+        help="cuda-12.4, cuda-13.4, cpu, vulkan, rocm-10.0, sycl (default: auto)",
+    )
+    ti.add_argument(
+        "--version", dest="tool_version", default=None, help="release tag (default: pinned)"
+    )
+    ti.add_argument("--dest", default=".tools/llama.cpp")
+
     pl = sub.add_parser("plan", help="work with saved plans")
     pl_sub = pl.add_subparsers(dest="plan_command")
     pr = pl_sub.add_parser("render")
@@ -114,10 +128,10 @@ def cmd_detect(args: argparse.Namespace) -> int:
             [
                 dev.name,
                 dev.vendor,
-                f"{dev.memory_gb} GB",
+                f"{dev.memory_gib} GiB",
                 f"{dev.bandwidth_gbps or '?'} GB/s",
                 dev.compute_arch or "?",
-                f"{dev.system_ram_gb or '?'} GB",
+                f"{dev.system_ram_gib or '?'} GiB",
                 dev.os,
             ]
         ],
@@ -149,7 +163,7 @@ def cmd_estimate(args: argparse.Namespace) -> int:
     con.info(
         f"{fx.params_total / 1e9:.2f}B params, {fx.num_layers} layers, "
         f"kv_heads {fx.num_kv_heads}, head_dim {fx.head_dim}  |  "
-        f"{dev.memory_gb} GB, {dev.bandwidth_gbps or '?'} GB/s, ctx {args.ctx}"
+        f"{dev.memory_gib} GiB, {dev.bandwidth_gbps or '?'} GB/s, ctx {args.ctx}"
     )
     rows, styles = [], []
     for q, r in results.items():
@@ -191,6 +205,23 @@ def cmd_frameworks(args: argparse.Namespace) -> int:
         for r in recipes.values()
     ]
     con.table(["framework", "stage", "recipe", "tested", "families"], rows)
+    return 0
+
+
+def cmd_tools(args: argparse.Namespace) -> int:
+    from rightsize.execution.install import LLAMA_CPP_VERSION, install_llama_cpp
+
+    con = _console(args)
+    if args.tools_command != "install":
+        print("usage: rightsize tools install llama.cpp [--backend ...]")
+        return 2
+    dest = install_llama_cpp(
+        args.dest,
+        version=args.tool_version or LLAMA_CPP_VERSION,
+        backend=args.backend,
+        log=con.info,
+    )
+    con.ok(f"installed into {dest}")
     return 0
 
 
@@ -267,6 +298,7 @@ def main(argv: list[str] | None = None) -> int:
         "estimate": cmd_estimate,
         "frameworks": cmd_frameworks,
         "quantize": cmd_quantize,
+        "tools": cmd_tools,
     }
     if args.command in handlers:
         return handlers[args.command](args)

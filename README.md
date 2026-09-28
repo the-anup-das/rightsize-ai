@@ -38,8 +38,9 @@ uv sync --group dev                       # core only: detect, estimate, recipes
 rightsize detect                          # what machine is this?
 rightsize estimate Qwen/Qwen3-4B --quant Q4_K_M --quant Q8_0   # no download, reads Hub headers
 
-# To actually produce files: llama.cpp binaries in .tools/llama.cpp (see the guide) and
+# To actually produce files:
 uv sync --group dev --extra llamacpp     # torch CPU + transformers for the conversion step
+rightsize tools install llama.cpp        # pinned binaries + converter into .tools/llama.cpp (auto-picks CUDA/CPU/Metal)
 rightsize quantize Qwen/Qwen3-1.7B --quant Q4_K_M --imatrix --eval
 ```
 

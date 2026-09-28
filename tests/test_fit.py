@@ -53,7 +53,7 @@ def test_estimate_fits_on_16gb_and_reports_breakdown() -> None:
     dev = Device(
         name="RTX 4070 Ti SUPER 16GB",
         vendor="nvidia",
-        memory_gb=16,
+        memory_gib=16,
         bandwidth_gbps=672,
         usable_fraction=0.92,
     )
@@ -70,14 +70,26 @@ def test_estimate_fits_on_16gb_and_reports_breakdown() -> None:
 
 def test_estimate_no_fit_and_offload_verdicts() -> None:
     small = Device(
-        name="RTX 3060 12GB", vendor="nvidia", memory_gb=12, bandwidth_gbps=360, system_ram_gb=32
+        name="RTX 3060 12GB", vendor="nvidia", memory_gib=12, bandwidth_gbps=360, system_ram_gib=32
     )
     r = estimate(_llama_31_70b(), "Q4_K_M", small, ctx=4096)
     assert r.verdict in (Verdict.no_fit, Verdict.offload)
-    big = Device(name="H100 80GB", vendor="nvidia", memory_gb=80, bandwidth_gbps=3350)
+    big = Device(name="H100 80GB", vendor="nvidia", memory_gib=80, bandwidth_gbps=3350)
     assert estimate(_llama_31_70b(), "Q4_K_M", big, ctx=4096).verdict is Verdict.fits
 
 
 def test_unknown_quant_raises() -> None:
     with pytest.raises(KeyError):
         gguf_bpw("Q9_ULTRA")
+
+
+def test_a_model_between_the_two_units_still_fits() -> None:
+    """16 GiB is 17.18 GB, so a 16.6 GB model fits with room to spare. Under the old
+    mix-up the same model was judged against 16.0 and came back no_fit."""
+    dev = Device(name="16 GiB card", vendor="nvidia", memory_gib=16, usable_fraction=1.0)
+    assert dev.memory_gb == 17.18
+    facts = _qwen3_4b().model_copy(update={"params_total": 25_000_000_000})
+    r = estimate(facts, "Q4_K_M", dev, ctx=512)
+    assert r.breakdown["usable_memory"] == pytest.approx(17.18, abs=0.01), "budget is decimal GB"
+    assert 16.0 < r.vram_gb <= dev.memory_gb, "sits between the decimal and binary readings"
+    assert r.verdict is not Verdict.no_fit
